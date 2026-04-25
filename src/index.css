@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+:root {
+  font-family: 'Outfit', 'Inter', system-ui, sans-serif;
+  line-height: 1.6;
+  font-weight: 400;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+@theme {
+  /* Eraya Modern Classic Palette */
+  --color-primary: #1e293b; /* Slate 800 */
+  --color-secondary: #4f46e5; /* Indigo 600 */
+  --color-accent: #0ea5e9; /* Sky 500 */
+  --color-surface: #ffffff;
+  --color-background: #f8fafc;
+  
+  --font-display: "Inter", sans-serif;
+  --font-body: "Inter", sans-serif;
+  
+  --shadow-premium: 0 4px 20px rgba(0,0,0,0.05);
+}
+
+@layer base {
+  body {
+    margin: 0;
+    background-color: #f8fafc;
+    color: #1e293b;
+    overflow-x: hidden;
+  }
+  button, 
+  [type="button"], 
+  [type="reset"], 
+  [type="submit"] {
+    cursor: pointer;
+  }
+}
+
+@layer components {
+  .eraya-card {
+    @apply bg-white/80 backdrop-blur-xl border border-white/40 shadow-premium rounded-[2rem] hover:shadow-2xl hover:translate-y-[-5px] transition-all duration-500;
+  }
+  
+  .glass-button {
+    @apply bg-primary text-white px-8 py-4 rounded-2xl font-bold hover:bg-primary/90 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20;
+  }
+  
+  .glass-input {
+    @apply bg-white/50 backdrop-blur-md border border-slate-200 rounded-2xl py-4 px-6 outline-none focus:border-secondary focus:bg-white focus:ring-4 focus:ring-secondary/5 transition-all font-medium;
+  }
+
+  .nav-blur {
+    @apply bg-white/60 backdrop-blur-2xl border-b border-white/20;
+  }
+
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-secondary to-primary;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
+}
