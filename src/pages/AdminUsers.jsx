@@ -201,8 +201,9 @@ const SecureRoleModal = ({ isOpen, onClose, onConfirm, targetRole, targetIds, in
                 <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-2">
                   Verify Action
                 </h2>
-                <p className="text-slate-500 font-medium mb-6">
-                  Authorize this promotion with the security code and your admin password.
+                <p className="text-slate-500 font-medium mb-6 leading-relaxed">
+                  A 6-digit security code has been sent to <span className="text-slate-900 font-bold underline decoration-slate-200">{currentUser?.email}</span>. 
+                  Authorize this action with the code and your admin password.
                 </p>
                 
                 <div className="space-y-4">
@@ -226,7 +227,7 @@ const SecureRoleModal = ({ isOpen, onClose, onConfirm, targetRole, targetIds, in
                     <input
                       type="password"
                       name="admin-password"
-                      autoComplete="current-password"
+                      autoComplete="off"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"

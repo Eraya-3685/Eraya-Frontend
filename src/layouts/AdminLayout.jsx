@@ -1,6 +1,6 @@
 import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Package, ShoppingCart, LogOut, Settings, ExternalLink, Tags, Users, User } from 'lucide-react';
+import { NavLink, useNavigate, Link } from 'react-router-dom';
+import { LayoutDashboard, Package, ShoppingCart, LogOut, Settings, ExternalLink, Tags, Users, User, Star } from 'lucide-react';
 import { getImageUrl } from '../api/axios';
 import useAuthStore from '../store/useAuthStore';
 
@@ -20,8 +20,9 @@ const AdminLayout = ({ children }) => {
     { to: '/admin/categories', label: 'Categories', icon: Tags, roles: ['admin', 'moderator'], permission: 'categories' },
     { to: '/admin/users', label: 'Users', icon: Users, roles: ['admin'], permission: 'users' },
     { to: '/admin/orders', label: 'Orders', icon: ShoppingCart, roles: ['admin', 'moderator'], permission: 'orders' },
-    { to: '/admin/profile', label: 'Account Settings', icon: User, roles: ['admin', 'moderator'] },
-    { to: '/admin/settings', label: 'Store Settings', icon: Settings, roles: ['admin'], permission: 'settings' },
+    { to: '/admin/reviews', label: 'Product Reviews', icon: Star, roles: ['admin', 'moderator'], permission: 'reviews' },
+    { to: '/admin/profile', label: 'My Profile', icon: User, roles: ['admin', 'moderator'] },
+    { to: '/admin/settings', label: 'Store Settings', icon: Settings, roles: ['admin', 'moderator'], permission: 'settings' },
   ];
 
   const navItems = allNavItems.filter(item => {
@@ -55,14 +56,14 @@ const AdminLayout = ({ children }) => {
             // Special handling for external link to store home
             if (to === '/') {
               return (
-                <button
+                <Link
                   key={to}
-                  onClick={() => navigate('/')}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg font-medium text-xs text-white/50 hover:bg-secondary hover:text-white transition-all mb-4"
+                  to="/"
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg font-medium text-xs text-white/50 hover:bg-secondary hover:text-white transition-all mb-4"
                 >
                   <Icon className="w-4 h-4" />
                   {label}
-                </button>
+                </Link>
               );
             }
             return (

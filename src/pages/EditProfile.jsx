@@ -69,7 +69,7 @@ const OTPModal = ({ isOpen, onClose, onVerify, purpose, loading }) => {
               disabled={loading || otp.length !== 6}
               className="w-full py-5 bg-slate-900 text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition-all disabled:opacity-50"
             >
-              {loading ? <RefreshCcw className="w-5 h-5 animate-spin" /> : 'Verify & Update'}
+              {loading ? <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : 'Verify & Update'}
             </button>
           </div>
         </motion.div>
@@ -297,7 +297,7 @@ const EditProfile = () => {
                    </div>
 
                    <button type="submit" disabled={loading} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-primary transition-all shadow-lg disabled:opacity-50 mt-4">
-                      {loading ? <RefreshCcw className="w-4 h-4 animate-spin" /> : 'Save Personal Details'}
+                      {loading ? <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : 'Save Personal Details'}
                    </button>
                 </form>
              </motion.div>
@@ -357,6 +357,7 @@ const EditProfile = () => {
                         <input
                           type={showPassword ? "text" : "password"}
                           placeholder="New Password"
+                          autoComplete="new-password"
                           value={sensitiveData.password}
                           onChange={(e) => setSensitiveData({ ...sensitiveData, password: e.target.value })}
                           className="w-full bg-slate-50 border border-slate-100 rounded-xl py-3 pl-4 pr-10 text-xs font-bold text-slate-900 outline-none focus:border-amber-500"
@@ -368,6 +369,7 @@ const EditProfile = () => {
                       <input
                         type={showPassword ? "text" : "password"}
                         placeholder="Confirm Password"
+                        autoComplete="new-password"
                         value={sensitiveData.confirmPassword}
                         onChange={(e) => setSensitiveData({ ...sensitiveData, confirmPassword: e.target.value })}
                         className="w-full bg-slate-50 border border-slate-100 rounded-xl py-3 px-4 text-xs font-bold text-slate-900 outline-none focus:border-amber-500"

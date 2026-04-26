@@ -14,7 +14,7 @@
   --color-secondary: #4f46e5; /* Indigo 600 */
   --color-accent: #0ea5e9; /* Sky 500 */
   --color-surface: #ffffff;
-  --color-background: #f8fafc;
+  --color-background: #fafaf9;
   
   --font-display: "Inter", sans-serif;
   --font-body: "Inter", sans-serif;
@@ -25,7 +25,7 @@
 @layer base {
   body {
     margin: 0;
-    background-color: #f8fafc;
+    background-color: #fafaf9;
     color: #1e293b;
     overflow-x: hidden;
   }

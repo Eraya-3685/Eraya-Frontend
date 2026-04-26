@@ -125,8 +125,14 @@ return (
       className="w-full max-w-6xl z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center"
     >
       {/* Left Side: Brand & Welcome */}
-      <div className="lg:col-span-5 flex flex-col items-center lg:items-start text-center lg:text-left space-y-6 px-4">
-        <Logo className="w-24 h-24" showText={true} />
+      <div className="lg:col-span-5 flex flex-col items-center lg:items-start text-center lg:text-left space-y-8 px-4">
+        <div className="w-64 h-64 rounded-full bg-white shadow-2xl shadow-slate-200/50 border-8 border-white flex items-center justify-center overflow-hidden group ring-1 ring-slate-200/50">
+          <img 
+            src="/assets/logo.png" 
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+            alt="Eraya Brand" 
+          />
+        </div>
 
         <div className="space-y-3">
           <h1 className="text-4xl font-black tracking-tight text-slate-900 leading-tight">
@@ -242,6 +248,7 @@ return (
                         <input
                           type={showPassword ? "text" : "password"}
                           value={form.password}
+                          autoComplete="new-password"
                           onChange={(e) => setForm({ ...form, password: e.target.value })}
                           className="w-full bg-transparent border-b border-slate-100 py-2.5 pl-7 pr-8 text-[13px] font-semibold text-slate-900 outline-none transition-all focus:border-secondary"
                           placeholder="••••••••"
@@ -327,9 +334,10 @@ return (
                 <div className="w-16 h-16 bg-secondary/5 rounded-[24px] flex items-center justify-center mx-auto mb-6 border border-secondary/10">
                   <Mail className="w-8 h-8 text-secondary" />
                 </div>
-                <h2 className="text-2xl font-black text-slate-900">Check Email</h2>
+                <h2 className="text-2xl font-black text-slate-900">Verify Email</h2>
                 <p className="text-slate-500 text-xs mt-2 mb-10 leading-relaxed">
-                  Code sent to <span className="font-bold text-slate-900">{form.email}</span>
+                  A 6-digit verification code has been sent to <span className="font-bold text-slate-900 underline decoration-slate-200">{form.email}</span>. 
+                  Please enter it below to complete your registration.
                 </p>
 
                 <form onSubmit={handleVerifyOTP} className="space-y-8 max-w-[400px] mx-auto">

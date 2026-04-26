@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingBag, ArrowRight, Star, Truck, ShieldCheck, Globe, Tag } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import api, { getImageUrl } from '../api/axios';
@@ -7,15 +7,18 @@ import toast from 'react-hot-toast';
 import useCartStore from '../store/useCartStore';
 import useAuthStore from '../store/useAuthStore';
 import useDocumentTitle from '../hooks/useDocumentTitle';
+import Logo from '../components/Logo';
+import useSettingsStore from '../store/useSettingsStore';
 
 const Home = () => {
-  useDocumentTitle('');
+  useDocumentTitle('Premium Lifestyle & Aesthetics');
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const addToCart = useCartStore((state) => state.addItem);
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const { settings, fetchSettings } = useSettingsStore();
 
   const getPrimaryImage = (images) => {
     if (!images || images.length === 0) return null;
@@ -24,6 +27,7 @@ const Home = () => {
   };
 
   useEffect(() => {
+    fetchSettings();
     const fetchData = async () => {
       try {
         const [productsRes, categoriesRes] = await Promise.all([
@@ -39,69 +43,174 @@ const Home = () => {
       }
     };
     fetchData();
-  }, []);
+  }, [fetchSettings]);
+
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  useEffect(() => {
+    if (products.length > 0) {
+      const timer = setInterval(() => {
+        setCurrentSlide((prev) => (prev + 1) % Math.min(products.length, 5));
+      }, 5000);
+      return () => clearInterval(timer);
+    }
+  }, [products]);
+
+  const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
+
+  useEffect(() => {
+    if (categories.length > 0) {
+      const timer = setInterval(() => {
+        setCurrentCategoryIndex((prev) => (prev + 1) % Math.min(categories.length, 6));
+      }, 3000);
+      return () => clearInterval(timer);
+    }
+  }, [categories]);
 
   const handleAddToCart = (e, product) => {
     e.preventDefault();
     e.stopPropagation();
-    if (user?.role === 'admin') {
-      toast.error('Admins cannot add items to cart');
+    const role = user?.role?.toLowerCase();
+    if (role === 'admin' || role === 'moderator') {
+      toast.error('Management accounts cannot add items to cart');
       return;
     }
-    addToCart(product);
+    
+    // Normalize image_url for the cart
+    const cartProduct = {
+      ...product,
+      image_url: getPrimaryImage(product.images)
+    };
+    
+    addToCart(cartProduct);
     toast.success(`${product.name} added to cart`);
   };
 
   return (
-    <div className="bg-white">
-      {/* Classic Hero Banner */}
-      <section className="relative pt-16 pb-8 md:pt-24 md:pb-16 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="space-y-8"
-          >
-            <span className="inline-block px-4 py-1.5 bg-secondary/10 text-secondary rounded-full text-xs font-bold uppercase tracking-widest">
-              Summer Collection 2026
-            </span>
-            <h1 className="text-4xl md:text-5xl font-black text-slate-900 leading-tight">
-              Elevate Your <br /> 
-              <span className="text-secondary">Everyday Style.</span>
-            </h1>
-            <p className="text-base text-slate-600 max-w-lg leading-relaxed">
-              Discover a curated selection of premium electronics, fashion, and accessories designed for the modern lifestyle.
-            </p>
-            <div className="flex items-center gap-4">
-              <button 
-                onClick={() => navigate('/products')}
-                className="px-6 py-3 bg-secondary text-white rounded-xl font-bold shadow-lg shadow-secondary/20 hover:bg-secondary/90 transition-all flex items-center gap-2 group text-sm"
+    <div className="bg-transparent">
+      <section className="relative pt-12 pb-20 md:pt-20 md:pb-32 overflow-hidden bg-[#fdfbf9]">
+        {/* Decorative Background Elements */}
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-secondary/5 blur-[120px] rounded-full translate-x-1/2 -translate-y-1/2" />
+        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-primary/5 blur-[100px] rounded-full -translate-x-1/2 translate-y-1/2" />
+
+        <div className="max-w-7xl mx-auto px-4 md:px-6 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
+            
+            {/* Left Side: Content */}
+            <div className="lg:col-span-5 space-y-10">
+              <motion.div
+                initial={{ opacity: 0, x: -30 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="space-y-6"
               >
-                Shop Now
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </button>
-              <button className="px-6 py-3 bg-white text-slate-900 border border-slate-200 rounded-xl font-bold hover:bg-slate-50 transition-all text-sm">
-                Learn More
-              </button>
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full border border-slate-100 shadow-sm">
+                  <span className="w-2 h-2 bg-secondary rounded-full animate-pulse" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">New Arrivals 2026</span>
+                </div>
+                
+                <h1 className="text-5xl md:text-7xl font-black text-slate-900 leading-[1.1] tracking-tight">
+                  Eraya <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-secondary to-secondary/60">Aesthetics.</span>
+                </h1>
+                
+                <p className="text-lg text-slate-500 leading-relaxed max-w-md">
+                  Experience a new standard of premium lifestyle. Discover curated products that sparkle with confidence.
+                </p>
+
+                <div className="flex flex-wrap items-center gap-4 pt-4">
+                  <button 
+                    onClick={() => navigate('/products')}
+                    className="px-10 py-5 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-2xl hover:bg-secondary transition-all flex items-center gap-3 group active:scale-95"
+                  >
+                    Shop Collection
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </button>
+                </div>
+              </motion.div>
+
+              {/* Stats/Social Trust */}
+              <div className="flex items-center gap-8 pt-8 border-t border-slate-100">
+                <div>
+                  <p className="text-2xl font-black text-slate-900">12k+</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Buyers</p>
+                </div>
+                <div className="w-[1px] h-10 bg-slate-100" />
+                <div>
+                  <p className="text-2xl font-black text-slate-900">4.9/5</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">User Rating</p>
+                </div>
+              </div>
             </div>
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="relative"
-          >
-            <div className="absolute -inset-4 bg-secondary/5 rounded-3xl blur-3xl" />
-            <img 
-              src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1280&auto=format&fit=crop" 
-              className="relative w-full rounded-3xl shadow-2xl"
-              alt="Premium Product"
-            />
-          </motion.div>
+
+            {/* Right Side: Aesthetic Slider */}
+            <div className="lg:col-span-7 flex justify-center lg:justify-end">
+              <div className="relative w-full max-w-[500px] aspect-[4/5]">
+                {/* Decorative Frames */}
+                <div className="absolute inset-4 border border-slate-200 rounded-[3rem] rotate-3 z-0" />
+                <div className="absolute inset-4 border border-secondary/20 rounded-[3rem] -rotate-3 z-0" />
+                
+                <div className="relative w-full h-full bg-white rounded-[3.5rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.12)] border border-slate-50 overflow-hidden z-10 group">
+                  <AnimatePresence mode="wait">
+                    {loading ? (
+                      <motion.div 
+                        key="loading-hero"
+                        className="w-full h-full bg-[#fdfbf9] flex flex-col items-center justify-center gap-4"
+                      >
+                         <div className="relative">
+                            <div className="w-12 h-12 border-4 border-secondary/10 border-t-secondary rounded-full animate-spin" />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm">
+                                <span className="text-[6px] font-black text-secondary tracking-tighter">ERAYA</span>
+                              </div>
+                            </div>
+                         </div>
+                         <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest animate-pulse">Setting the stage...</p>
+                      </motion.div>
+                    ) : products.length > 0 ? (
+                      <motion.div
+                        key={products[currentSlide]?.id}
+                        initial={{ opacity: 0, scale: 1.1 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.8, ease: "circOut" }}
+                        className="relative w-full h-full"
+                      >
+                        <img 
+                          src={getImageUrl(getPrimaryImage(products[currentSlide]?.images))} 
+                          className="w-full h-full object-cover transition-transform duration-[3000ms] group-hover:scale-110" 
+                          alt={products[currentSlide]?.name} 
+                        />
+                        {/* Slide Info Overlay */}
+                        <div className="absolute bottom-10 left-10 right-10 bg-white/80 backdrop-blur-md p-6 rounded-3xl border border-white/50 shadow-xl">
+                           <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1">Featured Item</p>
+                           <h3 className="text-xl font-black text-slate-900 truncate">{products[currentSlide]?.name}</h3>
+                           <p className="text-sm font-bold text-slate-500 mt-1">Starting from ৳{products[currentSlide]?.base_price}</p>
+                        </div>
+                      </motion.div>
+                    ) : (
+                      <img src="/assets/hero.png" className="w-full h-full object-cover" alt="Hero" />
+                    )}
+                  </AnimatePresence>
+
+                  {/* Slider Dots */}
+                  <div className="absolute top-1/2 -right-6 -translate-y-1/2 flex flex-col gap-3 z-20">
+                    {[0, 1, 2, 3, 4].map((i) => (
+                      <div 
+                        key={i} 
+                        className={`w-1.5 h-10 rounded-full transition-all duration-500 ${currentSlide === i ? 'bg-secondary h-16' : 'bg-slate-200'}`} 
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
         </div>
       </section>
 
       {/* Feature Section */}
-      <section className="py-10 border-y border-slate-100 bg-white">
+      <section className="py-10 border-y border-slate-100 bg-transparent">
         <div className="max-w-7xl mx-auto px-4 md:px-6 grid grid-cols-1 md:grid-cols-3 gap-12">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-secondary">
@@ -109,7 +218,7 @@ const Home = () => {
             </div>
             <div>
               <h4 className="font-bold text-slate-900">Fast Shipping</h4>
-              <p className="text-sm text-slate-500">Free on orders over ৳100</p>
+              <p className="text-sm text-slate-500">Free on orders over ৳{settings.free_shipping_threshold}</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -134,7 +243,7 @@ const Home = () => {
       </section>
 
       {/* Shop by Category */}
-      <section className="py-12 bg-white">
+      <section className="py-12 bg-transparent">
         <div className="max-w-7xl mx-auto px-4 md:px-6">
           <div className="flex items-center justify-between mb-10">
             <div>
@@ -147,19 +256,43 @@ const Home = () => {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {/* All Products card */}
+            {/* All Products card with dynamic background slideshow */}
             <motion.div
               whileHover={{ y: -4, scale: 1.02 }}
               transition={{ type: 'spring', stiffness: 300 }}
+              className="relative group aspect-[4/5] overflow-hidden rounded-[32px] bg-slate-900 shadow-lg shadow-slate-900/10"
             >
               <Link
                 to="/products"
-                className="flex flex-col items-center justify-center gap-3 bg-slate-900 text-white rounded-2xl p-6 text-center hover:bg-secondary transition-all duration-300 shadow-lg shadow-slate-900/10 group h-full"
+                className="block w-full h-full relative"
               >
-                <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center">
-                  <Tag className="w-6 h-6" />
+                {/* Background Slideshow */}
+                <div className="absolute inset-0 bg-slate-900 transition-transform duration-1000 group-hover:scale-110">
+                   <AnimatePresence mode="wait">
+                    {categories.length > 0 && categories[currentCategoryIndex]?.image_url ? (
+                      <motion.img 
+                        key={categories[currentCategoryIndex].id}
+                        src={getImageUrl(categories[currentCategoryIndex].image_url)} 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 0.4 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 1 }}
+                        className="w-full h-full object-cover" 
+                        alt="All Products" 
+                      />
+                    ) : (
+                       <div className="w-full h-full bg-slate-900" />
+                    )}
+                   </AnimatePresence>
                 </div>
-                <p className="font-bold text-sm tracking-wide">All Products</p>
+                
+                {/* Content */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 z-10">
+                  <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/20 shadow-xl">
+                    <Tag className="w-6 h-6 text-white" />
+                  </div>
+                  <p className="font-black text-xs tracking-[0.2em] text-white uppercase">All Products</p>
+                </div>
               </Link>
             </motion.div>
 
@@ -200,7 +333,7 @@ const Home = () => {
                       
                       {/* Content */}
                       <div className="absolute inset-x-0 bottom-0 p-6 space-y-1">
-                        <p className="text-[10px] font-black text-secondary uppercase tracking-[0.2em]">Collection</p>
+                        <p className="text-[10px] font-black text-amber-200 uppercase tracking-[0.2em]">Collection</p>
                         <h3 className="text-white font-black text-lg leading-tight tracking-tight">{cat.name}</h3>
                         <p className="text-white/50 text-[10px] font-bold uppercase tracking-widest">{cat.product_count} Pieces</p>
                       </div>
@@ -218,7 +351,7 @@ const Home = () => {
       </section>
 
       {/* Featured Products */}
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-transparent">
         <div className="max-w-7xl mx-auto px-4 md:px-6">
           <div className="flex items-center justify-between mb-12">
             <div>
@@ -252,7 +385,7 @@ const Home = () => {
                       className="w-full h-full object-contain group-hover:scale-110 transition-all duration-500" 
                       alt={product.name}
                     />
-                    {user?.role !== 'admin' && (
+                    {!['admin', 'moderator'].includes(user?.role?.toLowerCase()) && (
                       <button 
                         onClick={(e) => handleAddToCart(e, product)}
                         className="absolute bottom-4 right-4 w-12 h-12 bg-white rounded-xl shadow-lg flex items-center justify-center text-slate-900 hover:bg-secondary hover:text-white transition-all transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100"

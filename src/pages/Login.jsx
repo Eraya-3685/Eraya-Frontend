@@ -156,9 +156,15 @@ const Login = () => {
       <motion.div
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="mb-8 z-10"
+        className="mb-6 z-10 text-center flex flex-col items-center"
       >
-        <Logo className="w-24 h-24" showText={true} />
+        <div className="w-56 h-56 rounded-full bg-white shadow-2xl shadow-slate-200/50 border-8 border-white flex items-center justify-center overflow-hidden group mb-4 ring-1 ring-slate-200/50">
+          <img 
+            src="/assets/logo.png" 
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+            alt="Eraya Brand" 
+          />
+        </div>
       </motion.div>
 
       <motion.div
@@ -194,7 +200,8 @@ const Login = () => {
                     <div className="text-center space-y-2 mb-8">
                       <h2 className="text-2xl font-bold text-slate-900">Verify Your Account</h2>
                       <p className="text-slate-500 text-sm leading-relaxed">
-                        We've sent a verification code to your email. Enter it below to activate your account.
+                        We've sent a 6-digit verification code to <span className="text-slate-900 font-bold">{identifier}</span>. 
+                        Please enter it below to activate your account.
                       </p>
                     </div>
 
@@ -213,8 +220,7 @@ const Login = () => {
                         disabled={loading}
                         className="w-full bg-secondary hover:bg-secondary-dark text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-secondary/20 flex items-center justify-center gap-2 disabled:opacity-50"
                       >
-                        {loading ? 'Verifying...' : 'Verify & Sign In'}
-                        {!loading && <ShieldCheck className="w-5 h-5" />}
+                        {loading ? <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <>Verify & Sign In <ShieldCheck className="w-5 h-5" /></>}
                       </button>
 
                       <div className="text-center">
@@ -326,7 +332,7 @@ const Login = () => {
                     disabled={loading}
                     className="w-full py-4 bg-slate-900 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition-all active:scale-[0.98] disabled:opacity-50"
                   >
-                    {loading ? <RefreshCcw className="w-5 h-5 animate-spin" /> : <>Sign In <ArrowRight className="w-4 h-4" /></>}
+                    {loading ? <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <>Sign In <ArrowRight className="w-4 h-4" /></>}
                   </button>
                 </form>
 
@@ -381,7 +387,9 @@ const Login = () => {
 
                 <h2 className="text-2xl font-bold text-slate-900 mb-2">Reset Password</h2>
                 <p className="text-slate-500 text-sm mb-8">
-                  {resetStep === 1 ? "Enter your email for reset code." : "Enter the 6-digit code and new password."}
+                  {resetStep === 1 
+                    ? "Enter your email for a 6-digit reset code." 
+                    : `A 6-digit code has been sent to ${resetEmail}. Enter it and your new password.`}
                 </p>
 
                 {resetStep === 1 ? (
@@ -404,7 +412,7 @@ const Login = () => {
                       <AnimatePresence>{errors.resetEmail && <ErrorMsg message={errors.resetEmail} />}</AnimatePresence>
                     </div>
                     <button type="submit" disabled={loading} className="w-full py-4 bg-slate-900 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition-all active:scale-[0.98] disabled:opacity-50">
-                      {loading ? <RefreshCcw className="w-5 h-5 animate-spin" /> : <>Send Reset Code <ArrowRight className="w-4 h-4" /></>}
+                      {loading ? <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <>Send Reset Code <ArrowRight className="w-4 h-4" /></>}
                     </button>
                   </form>
                 ) : (
@@ -468,8 +476,8 @@ const Login = () => {
                       <AnimatePresence>{errors.confirmPassword && <ErrorMsg message={errors.confirmPassword} />}</AnimatePresence>
                     </div>
 
-                    <button type="submit" disabled={loading} className="w-full py-4 bg-slate-900 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition-all active:scale-[0.98] disabled:opacity-50">
-                      {loading ? <RefreshCcw className="w-5 h-5 animate-spin" /> : <>Reset Password</>}
+                    <button type="submit" disabled={loading} className="w-full py-4 bg-slate-900 text-white rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-800 transition-all active:scale-[0.98] disabled:opacity-50 shadow-xl">
+                      {loading ? <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <>Reset Password</>}
                     </button>
                   </form>
                 )}

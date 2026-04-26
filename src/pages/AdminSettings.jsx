@@ -1,156 +1,185 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Save, Shield, Store, Globe, DollarSign, Bell, Truck, Percent } from 'lucide-react';
+import { Settings, Save, Truck, DollarSign, Percent, ChevronRight } from 'lucide-react';
+import useSettingsStore from '../store/useSettingsStore';
 import toast from 'react-hot-toast';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 
 const AdminSettings = () => {
-  const [loading, setLoading] = useState(false);
+  useDocumentTitle('Store Settings | Admin');
+  const { settings, fetchSettings, updateSettings, loading } = useSettingsStore();
   const [form, setForm] = useState({
-    store_name: 'Eraya Essential',
-    store_email: 'contact@eraya.com',
-    currency: 'BDT (৳)',
-    vat_percentage: '5',
-    delivery_charge: '60',
-    maintenance_mode: false,
+    free_shipping_threshold: 1999,
+    standard_delivery_fee: 85,
+    tax_percentage: 5,
   });
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    // Simulating API call for now
-    setTimeout(() => {
-      toast.success('Store configuration updated!');
-      setLoading(false);
-    }, 1000);
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
+
+  useEffect(() => {
+    if (settings && typeof settings === 'object') {
+      setForm({
+        free_shipping_threshold: settings.free_shipping_threshold ?? 1999,
+        standard_delivery_fee: settings.standard_delivery_fee ?? 85,
+        tax_percentage: settings.tax_percentage ?? 5,
+        id: settings.id
+      });
+    }
+  }, [settings]);
+
+  const handleSave = async (e) => {
+    if (e) e.preventDefault();
+    setIsSaving(true);
+    try {
+      const success = await updateSettings(form);
+      if (success) {
+        toast.success('Store settings updated successfully');
+      } else {
+        toast.error('Failed to update settings');
+      }
+    } catch (err) {
+      toast.error('An error occurred');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-4">
+           <div className="w-16 h-16 border-4 border-indigo-600/20 border-t-indigo-600 rounded-full animate-spin" />
+           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Loading Configuration</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-4 md:p-10 max-w-5xl mx-auto min-h-screen bg-slate-50">
-      <header className="mb-8">
-        <div className="flex items-center gap-2 mb-1.5">
-          <div className="p-1.5 bg-secondary/10 rounded-lg">
-            <Store className="w-4 h-4 text-secondary" />
-          </div>
-          <span className="text-[10px] font-bold text-secondary uppercase tracking-[0.2em]">Global Configuration</span>
-        </div>
-        <h1 className="text-2xl font-bold text-slate-900 font-display tracking-tight">Store Settings</h1>
-        <p className="text-slate-500 text-xs mt-0.5">Configure your shop-wide rules and branding</p>
-      </header>
-
-      <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
-        <div className="bg-slate-900 p-6 text-white flex items-center justify-between">
+    <div className="min-h-screen bg-slate-50 pt-32 pb-20 px-6">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
           <div>
-            <h3 className="text-base font-bold">General Settings</h3>
-            <p className="text-white/50 text-xs mt-0.5">These settings affect the entire storefront.</p>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 bg-indigo-600/10 rounded-2xl flex items-center justify-center">
+                <Settings className="w-5 h-5 text-indigo-600" />
+              </div>
+              <h1 className="text-3xl font-[1000] text-slate-900 tracking-tight">Store Settings</h1>
+            </div>
+            <p className="text-sm font-bold text-slate-400">Manage delivery fees, tax rates, and free shipping thresholds</p>
           </div>
-          <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${form.maintenance_mode ? 'bg-orange-500/20 text-orange-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
-             {form.maintenance_mode ? 'Maintenance Active' : 'Store Live'}
-          </div>
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="flex items-center gap-3 px-8 py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl hover:bg-indigo-600 transition-all active:scale-95 disabled:opacity-50"
+          >
+            {isSaving ? (
+              <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            Save Changes
+          </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-8 md:p-10 space-y-10">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Store Name */}
-            <div className="space-y-3">
-              <label className="text-sm font-bold text-slate-700 ml-1 flex items-center gap-2">
-                <Store className="w-4 h-4 text-slate-400" /> Store Name
-              </label>
-              <input
-                type="text"
-                value={form.store_name}
-                onChange={(e) => setForm({ ...form, store_name: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm text-slate-900 font-medium outline-none focus:border-secondary/30 focus:bg-white focus:ring-4 focus:ring-secondary/5 transition-all"
-              />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Shipping Threshold */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm group hover:border-indigo-600/30 transition-all"
+          >
+            <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110">
+              <Truck className="w-7 h-7 text-amber-500" />
             </div>
-
-            {/* Store Email */}
-            <div className="space-y-3">
-              <label className="text-sm font-bold text-slate-700 ml-1 flex items-center gap-2">
-                <Globe className="w-4 h-4 text-slate-400" /> Support Email
-              </label>
-              <input
-                type="email"
-                value={form.store_email}
-                onChange={(e) => setForm({ ...form, store_email: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm text-slate-900 font-medium outline-none focus:border-secondary/30 focus:bg-white focus:ring-4 focus:ring-secondary/5 transition-all"
-              />
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 px-1">Free Shipping Threshold</label>
+            <div className="relative">
+               <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 font-black">৳</div>
+               <input
+                 type="number"
+                 value={form.free_shipping_threshold || ''}
+                 onChange={(e) => setForm({ ...form, free_shipping_threshold: e.target.value === '' ? '' : parseFloat(e.target.value) })}
+                 className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-12 pr-6 text-sm font-black text-slate-900 outline-none focus:ring-4 focus:ring-indigo-600/5 focus:border-indigo-600 transition-all"
+               />
             </div>
+            <p className="mt-4 text-[10px] font-bold text-slate-400 px-1 leading-relaxed">Customers will get free delivery when their subtotal reaches this amount.</p>
+          </motion.div>
 
-            {/* Currency */}
-            <div className="space-y-3">
-              <label className="text-sm font-bold text-slate-700 ml-1 flex items-center gap-2">
-                <DollarSign className="w-4 h-4 text-slate-400" /> Default Currency
-              </label>
-              <select 
-                value={form.currency}
-                onChange={(e) => setForm({ ...form, currency: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm text-slate-900 font-medium outline-none focus:border-secondary/30 focus:bg-white focus:ring-4 focus:ring-secondary/5 transition-all appearance-none"
-              >
-                <option>BDT (৳)</option>
-                <option>USD ($)</option>
-              </select>
+          {/* Standard Delivery Fee */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm group hover:border-indigo-600/30 transition-all"
+          >
+            <div className="w-14 h-14 bg-indigo-600/10 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110">
+              <DollarSign className="w-7 h-7 text-indigo-600" />
             </div>
-
-            {/* VAT */}
-            <div className="space-y-3">
-              <label className="text-sm font-bold text-slate-700 ml-1 flex items-center gap-2">
-                <Percent className="w-4 h-4 text-slate-400" /> VAT / Tax (%)
-              </label>
-              <input
-                type="number"
-                value={form.vat_percentage}
-                onChange={(e) => setForm({ ...form, vat_percentage: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm text-slate-900 font-medium outline-none focus:border-secondary/30 focus:bg-white focus:ring-4 focus:ring-secondary/5 transition-all"
-              />
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 px-1">Standard Delivery Fee</label>
+            <div className="relative">
+               <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 font-black">৳</div>
+               <input
+                 type="number"
+                 value={form.standard_delivery_fee || ''}
+                 onChange={(e) => setForm({ ...form, standard_delivery_fee: e.target.value === '' ? '' : parseFloat(e.target.value) })}
+                 className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-12 pr-6 text-sm font-black text-slate-900 outline-none focus:ring-4 focus:ring-indigo-600/5 focus:border-indigo-600 transition-all"
+               />
             </div>
+            <p className="mt-4 text-[10px] font-bold text-slate-400 px-1 leading-relaxed">The base shipping cost applied to orders below the free shipping threshold.</p>
+          </motion.div>
 
-            {/* Delivery Charge */}
-            <div className="space-y-3">
-              <label className="text-sm font-bold text-slate-700 ml-1 flex items-center gap-2">
-                <Truck className="w-4 h-4 text-slate-400" /> Standard Delivery Fee
-              </label>
-              <input
-                type="number"
-                value={form.delivery_charge}
-                onChange={(e) => setForm({ ...form, delivery_charge: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm text-slate-900 font-medium outline-none focus:border-secondary/30 focus:bg-white focus:ring-4 focus:ring-secondary/5 transition-all"
-              />
+          {/* Tax Percentage */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm group hover:border-indigo-600/30 transition-all"
+          >
+            <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110">
+              <Percent className="w-7 h-7 text-emerald-500" />
             </div>
-
-            {/* Maintenance Toggle */}
-            <div className="space-y-3">
-              <label className="text-sm font-bold text-slate-700 ml-1 flex items-center gap-2">
-                <Bell className="w-4 h-4 text-slate-400" /> Maintenance Mode
-              </label>
-              <div 
-                onClick={() => setForm({ ...form, maintenance_mode: !form.maintenance_mode })}
-                className={`w-full h-11 rounded-xl flex items-center px-4 cursor-pointer transition-all ${form.maintenance_mode ? 'bg-orange-50 border border-orange-200' : 'bg-slate-50 border border-slate-200'}`}
-              >
-                <div className={`w-8 h-4 rounded-full relative transition-all ${form.maintenance_mode ? 'bg-orange-500' : 'bg-slate-300'}`}>
-                  <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${form.maintenance_mode ? 'left-4.5' : 'left-0.5'}`} />
-                </div>
-                <span className={`ml-3 text-xs font-bold ${form.maintenance_mode ? 'text-orange-600' : 'text-slate-500'}`}>
-                  {form.maintenance_mode ? 'Active' : 'Inactive'}
-                </span>
-              </div>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 px-1">Estimated Tax (%)</label>
+            <div className="relative">
+               <input
+                 type="number"
+                 value={form.tax_percentage || ''}
+                 onChange={(e) => setForm({ ...form, tax_percentage: e.target.value === '' ? '' : parseFloat(e.target.value) })}
+                 className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 px-6 text-sm font-black text-slate-900 outline-none focus:ring-4 focus:ring-indigo-600/5 focus:border-indigo-600 transition-all"
+               />
+               <div className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 font-black">%</div>
             </div>
-          </div>
+            <p className="mt-4 text-[10px] font-bold text-slate-400 px-1 leading-relaxed">Tax percentage automatically calculated and added to the order total.</p>
+          </motion.div>
 
-          <div className="pt-8 border-t border-slate-50 flex items-center justify-end gap-4">
-             <button
-              type="submit"
-              disabled={loading}
-              className="bg-secondary text-white px-8 py-2.5 rounded-xl font-bold hover:bg-secondary/90 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-xl shadow-secondary/20 disabled:opacity-50 text-sm"
-            >
-              {loading ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-              ) : (
-                <Save className="w-4 h-4" />
-              )}
-              Save Configuration
-            </button>
-          </div>
-        </form>
+          {/* Quick Help */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="bg-slate-900 p-8 rounded-[2.5rem] text-white shadow-xl shadow-slate-200"
+          >
+            <h4 className="text-lg font-black mb-4 tracking-tight">Need help?</h4>
+            <p className="text-xs font-bold text-slate-400 mb-8 leading-relaxed">These settings are applied globally and affect all customer orders in real-time. Make sure to double-check before saving.</p>
+            <div className="space-y-4">
+               {[
+                 'Ensure values are numeric',
+                 'Standard fee must be >= 0',
+                 'Changes apply immediately'
+               ].map((text, i) => (
+                 <div key={i} className="flex items-center gap-3">
+                   <div className="w-5 h-5 bg-white/10 rounded-lg flex items-center justify-center">
+                     <ChevronRight className="w-3 h-3 text-indigo-400" />
+                   </div>
+                   <span className="text-[10px] font-black uppercase tracking-widest">{text}</span>
+                 </div>
+               ))}
+            </div>
+          </motion.div>
+        </div>
       </div>
     </div>
   );

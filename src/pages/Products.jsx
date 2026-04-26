@@ -5,6 +5,7 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 import api, { getImageUrl } from '../api/axios';
 import useCartStore from '../store/useCartStore';
 import useAuthStore from '../store/useAuthStore';
+import useWishlistStore from '../store/useWishlistStore';
 import toast from 'react-hot-toast';
 import { useDebounce } from '../hooks/useDebounce';
 import useDocumentTitle from '../hooks/useDocumentTitle';
@@ -90,6 +91,7 @@ const Products = () => {
 
   const limit = 12;
   const addItem = useCartStore((state) => state.addItem);
+  const { toggleWishlist, isInWishlist } = useWishlistStore();
   const { user } = useAuthStore();
   const navigate = useNavigate();
   const { search } = useLocation();
@@ -157,8 +159,9 @@ const Products = () => {
   };
 
   const handleAddToCart = (product) => {
-    if (user?.role === 'admin') {
-      toast.error('Admins cannot add items to cart');
+    const role = user?.role?.toLowerCase();
+    if (role === 'admin' || role === 'moderator') {
+      toast.error('Management accounts cannot add items to cart');
       return;
     }
     addItem(product);
@@ -250,16 +253,16 @@ const Products = () => {
           </div>
 
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-8">
-              {[...Array(8)].map((_, i) => (
-                <div key={i} className="animate-pulse space-y-6">
-                  <div className="aspect-[4/5] bg-slate-50 rounded-[32px]" />
-                  <div className="space-y-2 px-4">
-                    <div className="h-4 bg-slate-50 rounded-full w-3/4" />
-                    <div className="h-3 bg-slate-50 rounded-full w-1/2" />
+            <div className="py-32 flex flex-col items-center justify-center bg-[#fdfbf9] rounded-[48px] gap-6 border border-slate-100/50">
+              <div className="relative">
+                <div className="w-16 h-16 border-4 border-secondary/10 border-t-secondary rounded-full animate-spin" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm">
+                    <span className="text-[8px] font-black text-secondary tracking-tighter">ERAYA</span>
                   </div>
                 </div>
-              ))}
+              </div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] animate-pulse">Curating your collection...</p>
             </div>
           ) : products.length === 0 ? (
             <div className="text-center py-32 bg-slate-50/30 rounded-[48px] border-2 border-dashed border-slate-100">
@@ -301,8 +304,23 @@ const Products = () => {
                         ) : <div />}
                         
                         {!['admin', 'moderator'].includes(user?.role?.toLowerCase()) && (
-                          <button className="bg-white/80 backdrop-blur-md p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-white transition-all shadow-sm">
-                             <Heart className="w-3 h-3" />
+                          <button 
+                            onClick={async (e) => {
+                              e.preventDefault();
+                              if (!user) {
+                                toast.error('Please login to add items to wishlist');
+                                navigate('/login');
+                                return;
+                              }
+                              const added = await toggleWishlist(product, !!user);
+                              if (added) toast.success('Added to Wishlist');
+                              else toast.success('Removed from Wishlist');
+                            }}
+                            className={`bg-white/80 backdrop-blur-md p-1.5 rounded-lg transition-all shadow-sm ${
+                              isInWishlist(product.id) ? 'text-amber-500 scale-110' : 'text-slate-400 hover:text-amber-500'
+                            }`}
+                          >
+                             <Star className={`w-3 h-3 ${isInWishlist(product.id) ? 'fill-amber-500 text-amber-500' : ''}`} />
                           </button>
                         )}
                       </div>

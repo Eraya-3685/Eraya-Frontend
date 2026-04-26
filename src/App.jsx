@@ -23,6 +23,7 @@ import Profile from './pages/Profile';
 import Sustainability from './pages/Sustainability';
 import CompleteProfile from './pages/CompleteProfile';
 import EditProfile from './pages/EditProfile';
+import Wishlist from './pages/Wishlist';
 
 // Admin pages
 import AdminDashboard from './pages/AdminDashboard';
@@ -32,8 +33,10 @@ import AdminOrders from './pages/AdminOrders';
 import AdminSettings from './pages/AdminSettings';
 import AdminProfile from './pages/AdminProfile';
 import AdminUsers from './pages/AdminUsers';
+import AdminReviews from './pages/AdminReviews';
 
 import useAuthStore from './store/useAuthStore';
+import useWishlistStore from './store/useWishlistStore';
 import { useNavigate } from 'react-router-dom';
 
 const RootAuthHandler = ({ children }) => {
@@ -45,14 +48,14 @@ const RootAuthHandler = ({ children }) => {
   // Sync function to be used in multiple places
   const syncWithBackend = React.useCallback(async (session) => {
     if (!session?.user || syncProcessedRef.current) return;
-    
+
     // Prevent double sync if already have backend user
     if (useAuthStore.getState().user) return;
 
     syncProcessedRef.current = true;
     setSyncing(true);
     console.log('Starting backend sync for social login...');
-    
+
     try {
       const { user: sUser } = session;
       const role = await socialLogin({
@@ -61,11 +64,11 @@ const RootAuthHandler = ({ children }) => {
         social_id: sUser.id,
         avatar_url: sUser.user_metadata?.avatar_url || sUser.user_metadata?.picture
       });
-      
+
       console.log('Backend sync successful, role:', role);
       const currentUser = useAuthStore.getState().user;
       const isAuthPage = window.location.pathname === '/login' || window.location.pathname === '/signup';
-      
+
       if (currentUser && (!currentUser.phone || !currentUser.address)) {
         navigate('/complete-profile');
       } else if (isAuthPage) {
@@ -88,6 +91,9 @@ const RootAuthHandler = ({ children }) => {
     if (token && !user && !syncing) {
       fetchProfile();
     }
+    if (token) {
+      useWishlistStore.getState().syncWishlist();
+    }
   }, [token, user, syncing, fetchProfile]);
 
   // 2. Handle Supabase Social Login Sync (Listener + Initial Check)
@@ -97,7 +103,7 @@ const RootAuthHandler = ({ children }) => {
     const initAuth = async () => {
       try {
         const { supabase } = await import('./supabase');
-        
+
         // Check current session immediately
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
@@ -158,17 +164,19 @@ function App() {
                 <Routes>
                   {/* Dashboard: Both Admin & Moderator */}
                   <Route path="/" element={<AdminGuard allowedRoles={['admin', 'moderator']}><AdminDashboard /></AdminGuard>} />
-                  
+
                   {/* Inventory: Both Admin & Moderator */}
                   <Route path="/products" element={<AdminGuard allowedRoles={['admin', 'moderator']}><AdminProducts /></AdminGuard>} />
                   <Route path="/categories" element={<AdminGuard allowedRoles={['admin', 'moderator']}><AdminCategories /></AdminGuard>} />
-                  
+
                   {/* Users: ONLY Admin */}
                   <Route path="/users" element={<AdminGuard allowedRoles={['admin']}><AdminUsers /></AdminGuard>} />
-                  
+
                   {/* Orders & Settings: ONLY Admin (Settings), Admin/Mod (Orders) */}
                   <Route path="/orders" element={<AdminGuard allowedRoles={['admin', 'moderator']}><AdminOrders /></AdminGuard>} />
-                  <Route path="/settings" element={<AdminGuard allowedRoles={['admin']}><AdminSettings /></AdminGuard>} />
+                  <Route path="/store-settings" element={<AdminGuard allowedRoles={['admin', 'moderator']}><AdminSettings /></AdminGuard>} />
+                  <Route path="/settings" element={<AdminGuard allowedRoles={['admin', 'moderator']}><AdminSettings /></AdminGuard>} />
+                  <Route path="/reviews" element={<AdminGuard allowedRoles={['admin', 'moderator']}><AdminReviews /></AdminGuard>} />
                   <Route path="/profile" element={<AdminGuard allowedRoles={['admin', 'moderator']}><AdminProfile /></AdminGuard>} />
                 </Routes>
               </AdminLayout>
@@ -188,6 +196,7 @@ function App() {
                   <Route path="/signup" element={<GuestGuard><Signup /></GuestGuard>} />
                   <Route path="/cart" element={<Cart />} />
                   <Route path="/checkout" element={<Checkout />} />
+                  <Route path="/wishlist" element={<Wishlist />} />
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/profile/edit" element={<EditProfile />} />
                   <Route path="/complete-profile" element={<CompleteProfile />} />

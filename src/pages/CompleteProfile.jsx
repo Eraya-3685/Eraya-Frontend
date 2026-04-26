@@ -125,10 +125,15 @@ const CompleteProfile = () => {
 
             <button
               type="submit"
-              className="w-full py-4 bg-secondary text-white rounded-xl font-bold text-lg flex items-center justify-center gap-2 hover:bg-secondary/90 transition-all shadow-lg shadow-secondary/20"
+              disabled={loading}
+              className="w-full py-4 bg-secondary text-white rounded-xl font-bold text-lg flex items-center justify-center gap-2 hover:bg-secondary/90 transition-all shadow-lg shadow-secondary/20 disabled:opacity-50"
             >
-              Complete Registration
-              <ArrowRight className="w-5 h-5" />
+              {loading ? <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : (
+                <>
+                  Complete Registration
+                  <ArrowRight className="w-5 h-5" />
+                </>
+              )}
             </button>
           </form>
         </div>
