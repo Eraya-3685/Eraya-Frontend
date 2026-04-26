@@ -41,13 +41,13 @@ const Cart = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 pt-32 pb-20 px-4 md:px-6">
+    <div className="min-h-screen bg-slate-50 pt-24 pb-12 px-4 md:px-6">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         {/* Left: Cart Items */}
-        <div className="lg:col-span-8 bg-white p-6 md:p-8 rounded-3xl border border-slate-100 shadow-sm">
-          <div className="flex justify-between items-center mb-8 border-b border-slate-100 pb-6">
-            <h1 className="text-2xl font-bold text-slate-900">Shopping Cart ({items.length} items)</h1>
+        <div className="lg:col-span-8 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+          <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+            <h1 className="text-xl font-black text-slate-900 tracking-tight">Shopping Cart ({items.length} items)</h1>
             <button onClick={clearCart} className="text-sm font-bold text-red-500 hover:underline">Clear All</button>
           </div>
 
@@ -61,14 +61,14 @@ const Cart = () => {
                   exit={{ opacity: 0, scale: 0.95 }}
                   className="flex flex-col md:flex-row gap-6 pb-6 border-b border-slate-50"
                 >
-                  <div className="w-full md:w-32 aspect-square bg-slate-50 rounded-xl overflow-hidden flex-shrink-0 border border-slate-100">
+                  <div className="w-full md:w-24 aspect-square bg-slate-50 rounded-xl overflow-hidden flex-shrink-0 border border-slate-100">
                     <img src={getImageUrl(item.image_url)} className="w-full h-full object-contain p-2" alt={item.name} />
                   </div>
 
                   <div className="flex-grow flex flex-col">
                     <div className="flex justify-between items-start mb-2">
-                      <Link to={`/products/${item.slug}`} className="text-lg font-bold text-slate-900 hover:text-secondary transition-colors line-clamp-1">{item.name}</Link>
-                      <p className="text-xl font-bold text-slate-900">৳{(item.base_price * item.quantity).toLocaleString()}</p>
+                      <Link to={`/products/${item.slug}`} className="text-base font-bold text-slate-900 hover:text-secondary transition-colors line-clamp-1">{item.name}</Link>
+                      <p className="text-lg font-black text-slate-900 tracking-tighter">৳{(item.base_price * item.quantity).toLocaleString()}</p>
                     </div>
                     
                     <p className="text-xs font-bold text-emerald-600 mb-4 uppercase tracking-widest">In Stock</p>
@@ -106,8 +106,8 @@ const Cart = () => {
 
         {/* Right: Order Summary */}
         <div className="lg:col-span-4 space-y-6">
-          <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
-            <h3 className="text-xl font-bold text-slate-900 mb-8">Order Summary</h3>
+          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+            <h3 className="text-lg font-black text-slate-900 mb-6 tracking-tight">Order Summary</h3>
 
             <div className="space-y-4 mb-8">
               <div className="flex justify-between text-slate-500 font-medium">
@@ -119,7 +119,7 @@ const Cart = () => {
                  <span className="font-bold text-emerald-600">{shipping === 0 ? 'FREE' : `৳${shipping}`}</span>
               </div>
               <div className="h-px bg-slate-100 my-4" />
-              <div className="flex justify-between text-2xl font-bold text-slate-900">
+              <div className="flex justify-between text-xl font-black text-slate-900 tracking-tighter">
                 <span>Total</span>
                  <span>৳{total.toLocaleString()}</span>
               </div>
@@ -127,14 +127,14 @@ const Cart = () => {
 
             <button 
               onClick={() => navigate('/checkout')}
-              className="w-full py-4 bg-secondary text-white rounded-xl font-bold text-lg hover:bg-secondary/90 transition-all shadow-lg shadow-secondary/10 flex items-center justify-center gap-2"
+              className="w-full py-3 bg-secondary text-white rounded-xl font-bold text-base hover:bg-secondary/90 transition-all shadow-lg shadow-secondary/10 flex items-center justify-center gap-2"
             >
               Checkout Now
-              <ArrowRight className="w-5 h-5" />
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
 
-          <div className="bg-slate-900 p-8 rounded-3xl text-white relative overflow-hidden">
+          <div className="bg-slate-900 p-6 rounded-3xl text-white relative overflow-hidden">
              <div className="relative z-10">
                <Truck className="w-8 h-8 text-secondary mb-4" />
                <h3 className="text-lg font-bold mb-2">Fast Delivery</h3>

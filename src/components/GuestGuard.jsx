@@ -7,9 +7,13 @@ import useAuthStore from '../store/useAuthStore';
  * authentication-related pages like Login and Signup.
  */
 const GuestGuard = ({ children }) => {
-  const { token } = useAuthStore();
+  const { token, user } = useAuthStore();
   
   if (token) {
+    const roleLower = user?.role?.toLowerCase();
+    if (roleLower === 'admin' || roleLower === 'moderator') {
+      return <Navigate to="/admin" replace />;
+    }
     return <Navigate to="/" replace />;
   }
 

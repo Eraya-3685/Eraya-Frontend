@@ -55,7 +55,7 @@ const Home = () => {
   return (
     <div className="bg-white">
       {/* Classic Hero Banner */}
-      <section className="relative pt-24 pb-12 md:pt-32 md:pb-24 bg-slate-50">
+      <section className="relative pt-16 pb-8 md:pt-24 md:pb-16 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 md:px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -65,22 +65,22 @@ const Home = () => {
             <span className="inline-block px-4 py-1.5 bg-secondary/10 text-secondary rounded-full text-xs font-bold uppercase tracking-widest">
               Summer Collection 2026
             </span>
-            <h1 className="text-5xl md:text-7xl font-bold text-slate-900 leading-tight">
+            <h1 className="text-4xl md:text-5xl font-black text-slate-900 leading-tight">
               Elevate Your <br /> 
               <span className="text-secondary">Everyday Style.</span>
             </h1>
-            <p className="text-lg text-slate-600 max-w-lg leading-relaxed">
+            <p className="text-base text-slate-600 max-w-lg leading-relaxed">
               Discover a curated selection of premium electronics, fashion, and accessories designed for the modern lifestyle.
             </p>
             <div className="flex items-center gap-4">
               <button 
                 onClick={() => navigate('/products')}
-                className="px-8 py-4 bg-secondary text-white rounded-xl font-bold shadow-lg shadow-secondary/20 hover:bg-secondary/90 transition-all flex items-center gap-2 group"
+                className="px-6 py-3 bg-secondary text-white rounded-xl font-bold shadow-lg shadow-secondary/20 hover:bg-secondary/90 transition-all flex items-center gap-2 group text-sm"
               >
                 Shop Now
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
-              <button className="px-8 py-4 bg-white text-slate-900 border border-slate-200 rounded-xl font-bold hover:bg-slate-50 transition-all">
+              <button className="px-6 py-3 bg-white text-slate-900 border border-slate-200 rounded-xl font-bold hover:bg-slate-50 transition-all text-sm">
                 Learn More
               </button>
             </div>
@@ -101,7 +101,7 @@ const Home = () => {
       </section>
 
       {/* Feature Section */}
-      <section className="py-16 border-y border-slate-100 bg-white">
+      <section className="py-10 border-y border-slate-100 bg-white">
         <div className="max-w-7xl mx-auto px-4 md:px-6 grid grid-cols-1 md:grid-cols-3 gap-12">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-secondary">
@@ -134,7 +134,7 @@ const Home = () => {
       </section>
 
       {/* Shop by Category */}
-      <section className="py-20 bg-white">
+      <section className="py-12 bg-white">
         <div className="max-w-7xl mx-auto px-4 md:px-6">
           <div className="flex items-center justify-between mb-10">
             <div>
@@ -218,7 +218,7 @@ const Home = () => {
       </section>
 
       {/* Featured Products */}
-      <section className="py-24 bg-white">
+      <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 md:px-6">
           <div className="flex items-center justify-between mb-12">
             <div>
@@ -230,7 +230,7 @@ const Home = () => {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-8 mb-10">
             {loading ? (
               [...Array(4)].map((_, i) => (
                 <div key={i} className="space-y-4">
@@ -287,68 +287,22 @@ const Home = () => {
            <img src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=2000&auto=format&fit=crop" className="w-full h-full object-cover" alt="Background" />
         </div>
         <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Join our newsletter</h2>
-          <p className="text-slate-400 text-lg mb-10 max-w-xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Join our newsletter</h2>
+          <p className="text-slate-400 text-base mb-8 max-w-xl mx-auto">
             Subscribe to receive updates, access to exclusive deals, and more.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
             <input 
               type="email"
-              placeholder="Enter your email"
-              className="flex-grow bg-white/10 border border-white/20 rounded-xl px-6 py-4 text-white placeholder:text-white/40 outline-none focus:ring-2 focus:ring-secondary transition-all"
+              placeholder="eraya@gmail.com"
+              className="flex-grow bg-white/10 border border-white/20 rounded-xl px-5 py-3 text-white text-sm placeholder:text-white/40 outline-none focus:ring-2 focus:ring-secondary transition-all"
             />
-            <button className="px-8 py-4 bg-secondary text-white rounded-xl font-bold hover:bg-secondary/90 transition-all shadow-lg shadow-secondary/20">
+            <button className="px-6 py-3 bg-secondary text-white rounded-xl font-bold hover:bg-secondary/90 transition-all shadow-lg shadow-secondary/20 text-sm">
               Subscribe
             </button>
           </div>
         </div>
       </section>
-
-      {/* Classic Footer */}
-      <footer className="bg-white pt-20 pb-10 border-t border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 md:px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-12 mb-16">
-            <div className="col-span-2 md:col-span-1 space-y-6">
-              <span className="text-2xl font-bold text-slate-900">ERAYA</span>
-              <p className="text-slate-500 text-sm leading-relaxed">
-                Premium e-commerce platform providing the best-in-class products for your daily needs.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-bold text-slate-900 mb-6">Shop</h4>
-              <ul className="space-y-4 text-sm text-slate-500 font-medium">
-                <li><Link to="/products" className="hover:text-secondary">All Products</Link></li>
-                <li><Link to="/products" className="hover:text-secondary">Best Sellers</Link></li>
-                <li><Link to="/products" className="hover:text-secondary">New Arrivals</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-bold text-slate-900 mb-6">Support</h4>
-              <ul className="space-y-4 text-sm text-slate-500 font-medium">
-                <li><Link to="/contact" className="hover:text-secondary">Contact Us</Link></li>
-                <li><Link to="/faq" className="hover:text-secondary">Shipping & Returns</Link></li>
-                <li><Link to="/privacy" className="hover:text-secondary">Privacy Policy</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-bold text-slate-900 mb-6">Contact</h4>
-              <ul className="space-y-4 text-sm text-slate-500 font-medium">
-                <li>support@eraya.com</li>
-                <li>+1 (555) 000-0000</li>
-                <li>Dhaka, Bangladesh</li>
-              </ul>
-            </div>
-          </div>
-          <div className="pt-8 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-slate-400 font-medium">© 2026 Eraya Inc. All rights reserved.</p>
-            <div className="flex gap-6 grayscale opacity-40">
-               <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" className="h-4" alt="PayPal" />
-               <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" className="h-4" alt="Visa" />
-               <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" className="h-4" alt="Mastercard" />
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 };

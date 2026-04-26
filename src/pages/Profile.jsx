@@ -22,21 +22,21 @@ const Profile = () => {
   const fileInputRef = useRef();
   const navigate = useNavigate();
 
+  const isStaff = ['admin', 'moderator'].includes(user?.role?.toLowerCase());
+
   useEffect(() => {
     if (!token) {
       navigate('/login');
       return;
     }
-    if (user?.role === 'admin') {
+    
+    if (isStaff) {
       navigate('/admin');
       return;
     }
-    if (user?.role !== 'admin') {
-      fetchOrders();
-    } else {
-      setLoadingOrders(false);
-    }
-  }, [token, user]);
+    
+    fetchOrders();
+  }, [token, user, isStaff]);
 
   const fetchOrders = async () => {
     try {
@@ -105,7 +105,11 @@ const Profile = () => {
           <div className="text-center md:text-left flex-grow">
             <div className="flex flex-col md:flex-row md:items-center gap-4 mb-4">
               <h1 className="text-4xl font-bold text-slate-900 tracking-tight">{user.full_name}</h1>
-              <span className="w-fit mx-auto md:mx-0 px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-emerald-100">Verified Member</span>
+              {isStaff ? (
+                <span className="w-fit mx-auto md:mx-0 px-3 py-1 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-full">Official Staff</span>
+              ) : (
+                <span className="w-fit mx-auto md:mx-0 px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-emerald-100">Verified Member</span>
+              )}
             </div>
             <div className="flex flex-wrap justify-center md:justify-start gap-6 text-slate-500 font-medium text-sm">
               <div className="flex items-center gap-2">
@@ -117,13 +121,11 @@ const Profile = () => {
                 </div>
               )}
               <div className="flex items-center gap-2">
+                <Shield className="w-4 h-4" /> {user.role?.toUpperCase()}
+              </div>
+              <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4" /> Joined {new Date(user.created_at).getFullYear()}
               </div>
-              {user.address && (
-                <div className="flex items-center gap-2 md:w-full mt-1">
-                  <MapPin className="w-4 h-4 shrink-0" /> <span className="truncate">{user.address}</span>
-                </div>
-              )}
             </div>
           </div>
 
@@ -136,67 +138,90 @@ const Profile = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           
-          {/* Left Column: Orders */}
+          {/* Main Content Area */}
           <div className="lg:col-span-8 space-y-10">
-            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 md:p-10">
-              <div className="flex justify-between items-center mb-10">
-                <h2 className="text-2xl font-bold text-slate-900">Recent Orders</h2>
-                <Link to="/products" className="text-sm font-bold text-secondary hover:underline">Continue Shopping</Link>
+            {isStaff ? (
+              <div className="bg-slate-900 text-white rounded-[2.5rem] p-10 relative overflow-hidden group">
+                 <div className="relative z-10">
+                    <Command className="w-12 h-12 text-secondary mb-6" />
+                    <h2 className="text-3xl font-black tracking-tighter mb-4">Management Console</h2>
+                    <p className="text-white/60 mb-8 max-w-md leading-relaxed">
+                      As a {user.role}, you have elevated permissions to manage products, categories, and store operations. Access your professional dashboard to monitor real-time stats.
+                    </p>
+                    <button 
+                      onClick={() => navigate('/admin')}
+                      className="px-8 py-4 bg-secondary text-white rounded-2xl font-bold flex items-center gap-3 hover:bg-white hover:text-slate-900 transition-all group-hover:scale-105"
+                    >
+                      Enter Admin Dashboard <ArrowRight className="w-5 h-5" />
+                    </button>
+                 </div>
+                 <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-32 -mt-32" />
+                 <div className="absolute bottom-0 left-0 w-64 h-64 bg-secondary/10 rounded-full blur-3xl -ml-32 -mb-32" />
               </div>
+            ) : (
+              <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 md:p-10">
+                <div className="flex justify-between items-center mb-10">
+                  <h2 className="text-2xl font-bold text-slate-900">Recent Orders</h2>
+                  <Link to="/products" className="text-sm font-bold text-secondary hover:underline">Continue Shopping</Link>
+                </div>
 
-              {loadingOrders ? (
-                <div className="space-y-4">
-                  {[...Array(3)].map((_, i) => <div key={i} className="h-24 bg-slate-50 animate-pulse rounded-2xl" />)}
-                </div>
-              ) : orders.length === 0 ? (
-                <div className="text-center py-20 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
-                  <ShoppingBag className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                  <p className="text-slate-400 font-bold text-sm">No orders found yet.</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {orders.map((order) => (
-                    <div key={order.id} className="p-6 bg-slate-50 border border-slate-100 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-6 group hover:bg-white hover:shadow-lg transition-all">
-                      <div className="flex items-center gap-6">
-                        <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center border border-slate-100 text-slate-300">
-                          <Package className="w-8 h-8" />
+                {loadingOrders ? (
+                  <div className="space-y-4">
+                    {[...Array(3)].map((_, i) => <div key={i} className="h-24 bg-slate-50 animate-pulse rounded-2xl" />)}
+                  </div>
+                ) : orders.length === 0 ? (
+                  <div className="text-center py-20 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                    <ShoppingBag className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                    <p className="text-slate-400 font-bold text-sm">No orders found yet.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {orders.map((order) => (
+                      <div key={order.id} className="p-6 bg-slate-50 border border-slate-100 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-6 group hover:bg-white hover:shadow-lg transition-all">
+                        <div className="flex items-center gap-6">
+                          <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center border border-slate-100 text-slate-300">
+                            <Package className="w-8 h-8" />
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-900 text-lg">Order #{order.id}</p>
+                            <p className="text-xs text-slate-400 font-medium">Placed on {new Date(order.created_at).toLocaleDateString()}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-bold text-slate-900 text-lg">Order #{order.id}</p>
-                          <p className="text-xs text-slate-400 font-medium">Placed on {new Date(order.created_at).toLocaleDateString()}</p>
+                        <div className="flex items-center gap-8">
+                          <div className="text-right">
+                            <p className="text-2xl font-bold text-slate-900">৳{order.total_price}</p>
+                            <span className={`text-[10px] font-black uppercase tracking-widest ${
+                              order.order_status === 'Delivered' ? 'text-emerald-500' : 'text-orange-500'
+                            }`}>
+                              {order.order_status}
+                            </span>
+                          </div>
+                          <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-secondary transition-colors" />
                         </div>
                       </div>
-                      <div className="flex items-center gap-8">
-                        <div className="text-right">
-                          <p className="text-2xl font-bold text-slate-900">৳{order.total_price}</p>
-                          <span className={`text-[10px] font-black uppercase tracking-widest ${
-                            order.order_status === 'Delivered' ? 'text-emerald-500' : 'text-orange-500'
-                          }`}>
-                            {order.order_status}
-                          </span>
-                        </div>
-                        <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-secondary transition-colors" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Right Column: Cards & Actions */}
+          {/* Right Column: Actions */}
           <div className="lg:col-span-4 space-y-8">
-
-            {/* Quick Links */}
             <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8">
-               <h3 className="text-lg font-bold text-slate-900 mb-6">Account Services</h3>
+               <h3 className="text-lg font-bold text-slate-900 mb-6">{isStaff ? 'Staff Actions' : 'Account Services'}</h3>
                <div className="space-y-3">
-                   {[
+                   {(isStaff ? [
+                    { label: 'Product Inventory', icon: Package, to: '/admin/products' },
+                    { label: 'Manage Categories', icon: Zap, to: '/admin/categories' },
+                    { label: 'Order Processing', icon: Truck, to: '/admin/orders' },
+                    { label: 'Account Security', icon: Shield, to: '/profile/edit' },
+                  ] : [
                     { label: 'Shipping Addresses', icon: MapPin, to: '/profile/edit' },
                     { label: 'Payment Methods', icon: CreditCard, to: '#' },
                     { label: 'Wishlist Items', icon: Heart, to: '#' },
                     { label: 'Account Security', icon: Shield, to: '#' },
-                  ].map((link) => (
+                  ]).map((link) => (
                     <button 
                       key={link.label} 
                       onClick={() => link.to !== '#' && navigate(link.to)}

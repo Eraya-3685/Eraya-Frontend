@@ -70,9 +70,9 @@ const ProductDetails = () => {
   );
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-12">
+    <div className="max-w-7xl mx-auto px-6 py-8">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-slate-400 mb-10">
+      <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-slate-400 mb-6">
         <Link to="/" className="hover:text-primary transition-colors">Home</Link>
         <span>/</span>
         <Link to="/products" className="hover:text-primary transition-colors">Collection</Link>
@@ -80,7 +80,7 @@ const ProductDetails = () => {
         <span className="text-primary-container font-medium">{product.name}</span>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 mb-24">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
         {/* Image Gallery */}
         <div className="space-y-4">
           <motion.div
@@ -117,29 +117,29 @@ const ProductDetails = () => {
             <span className="text-secondary font-bold uppercase tracking-widest text-xs mb-2 block">
               {product.category_id ? `Category #${product.category_id}` : 'Essential Edition'}
             </span>
-            <h1 className="text-4xl font-bold font-display text-primary-container mb-4">{product.name}</h1>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1 bg-slate-50 px-3 py-1.5 rounded-full">
-                <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                <span className="font-bold text-sm">
+            <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight mb-2">{product.name}</h1>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1 bg-slate-50 px-2.5 py-1 rounded-full">
+                <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
+                <span className="font-bold text-xs">
                   {product.average_rating > 0 ? product.average_rating.toFixed(1) : 'No ratings yet'}
                 </span>
               </div>
-              <span className="text-slate-400 text-sm">{product.total_reviews} reviews</span>
-              <span className={`text-xs font-bold px-2 py-1 rounded ${product.stock_count > 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'}`}>
+              <span className="text-slate-400 text-xs">{product.total_reviews} reviews</span>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${product.stock_count > 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'}`}>
                 {product.stock_count > 0 ? `${product.stock_count} in stock` : 'Out of stock'}
               </span>
             </div>
           </div>
-
-          <div className="mb-10">
-            <div className="flex items-end gap-3 mb-4">
-              <span className="text-4xl font-bold text-primary">৳{product.base_price}</span>
+ 
+          <div className="mb-6">
+            <div className="flex items-end gap-2.5 mb-2">
+              <span className="text-2xl font-black text-slate-900 tracking-tighter">৳{product.base_price}</span>
               {product.discount_price && (
                 <>
-                  <span className="text-slate-400 line-through text-lg">৳{product.discount_price}</span>
+                  <span className="text-slate-400 line-through text-base">৳{product.discount_price}</span>
                   {product.discount_percentage && (
-                    <span className="bg-red-50 text-red-500 text-xs font-bold px-2 py-1 rounded">
+                    <span className="bg-red-50 text-red-500 text-[10px] font-bold px-2 py-0.5 rounded">
                       -{product.discount_percentage}%
                     </span>
                   )}
@@ -147,37 +147,37 @@ const ProductDetails = () => {
               )}
             </div>
             {product.description && (
-              <p className="text-slate-500 leading-relaxed">{product.description}</p>
+              <p className="text-slate-500 text-sm leading-relaxed">{product.description}</p>
             )}
           </div>
-
-          <div className="space-y-6 mb-10">
-            {user?.role !== 'admin' && (
+ 
+          <div className="space-y-4 mb-8">
+            {!['admin', 'moderator'].includes(user?.role?.toLowerCase()) && (
               <>
                 <div className="flex items-center gap-6">
-                  <div className="flex items-center gap-2 bg-slate-50 rounded-2xl p-1 w-fit border border-slate-100">
+                  <div className="flex items-center gap-2 bg-slate-50 rounded-xl p-1 w-fit border border-slate-100">
                     <button
                       onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                      className="w-10 h-10 flex items-center justify-center hover:bg-white rounded-xl transition-all"
+                      className="w-9 h-9 flex items-center justify-center hover:bg-white rounded-lg transition-all"
                     >
-                      <Minus className="w-4 h-4" />
+                      <Minus className="w-3.5 h-3.5" />
                     </button>
-                    <span className="font-bold w-8 text-center">{quantity}</span>
+                    <span className="font-bold w-8 text-center text-sm">{quantity}</span>
                     <button
                       onClick={() => setQuantity((q) => Math.min(product.stock_count, q + 1))}
-                      className="w-10 h-10 flex items-center justify-center hover:bg-white rounded-xl transition-all"
+                      className="w-9 h-9 flex items-center justify-center hover:bg-white rounded-lg transition-all"
                     >
-                      <Plus className="w-4 h-4" />
+                      <Plus className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
-
+ 
                 <button
                   onClick={handleAddToCart}
                   disabled={product.stock_count === 0}
-                  className="w-full bg-primary text-white py-5 rounded-2xl font-bold hover:bg-primary-container transition-all flex items-center justify-center gap-3 shadow-lg shadow-primary/10 disabled:opacity-50"
+                  className="w-full bg-primary text-white py-4 rounded-xl font-bold hover:bg-primary-container transition-all flex items-center justify-center gap-2.5 shadow-lg shadow-primary/10 disabled:opacity-50 text-sm"
                 >
-                  <ShoppingCart className="w-5 h-5" />
+                  <ShoppingCart className="w-4 h-4" />
                   {product.stock_count > 0 ? 'Add to Bag' : 'Out of Stock'}
                 </button>
               </>
@@ -202,7 +202,7 @@ const ProductDetails = () => {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-slate-100 mb-12">
+      <div className="border-b border-slate-100 mb-8">
         <div className="flex gap-12">
           {['description', 'reviews'].map((tab) => (
             <button

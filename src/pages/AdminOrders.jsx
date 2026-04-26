@@ -76,21 +76,21 @@ const AdminOrders = () => {
   return (
     <div className="p-8">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold font-display text-slate-900">Orders</h1>
-        <p className="text-slate-500 mt-1">{orders.length} total orders</p>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold font-display text-slate-900">Orders</h1>
+        <p className="text-slate-500 text-xs mt-0.5">{orders.length} total orders</p>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 mb-6 flex flex-col md:flex-row gap-4">
-        <div className="relative flex-grow max-w-sm">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+      <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-3 mb-6 flex flex-col md:flex-row gap-3">
+        <div className="relative flex-grow max-w-xs">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by order ID or address..."
-            className="w-full bg-slate-50 border border-slate-100 rounded-xl py-3 pl-11 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary transition-all"
+            placeholder="Search orders..."
+            className="w-full bg-slate-50 border border-slate-100 rounded-lg py-2 pl-10 pr-4 text-xs outline-none focus:ring-2 focus:ring-primary transition-all"
           />
         </div>
         <div className="flex flex-wrap gap-2">
@@ -98,9 +98,9 @@ const AdminOrders = () => {
             <button
               key={s}
               onClick={() => setStatusFilter(s)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all border ${
+              className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all border ${
                 statusFilter === s
-                  ? 'bg-primary text-white border-primary'
+                  ? 'bg-primary text-white border-primary shadow-sm'
                   : 'bg-slate-50 text-slate-500 border-slate-100 hover:border-slate-200'
               }`}
             >
@@ -126,10 +126,10 @@ const AdminOrders = () => {
               key={order.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden"
+              className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden"
             >
               {/* Order Row */}
-              <div className="p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div className="p-3.5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div className="flex items-start gap-4">
                   <button
                     onClick={() => setExpandedId(expandedId === order.id ? null : order.id)}
@@ -159,7 +159,7 @@ const AdminOrders = () => {
                 </div>
 
                 <div className="flex items-center gap-4 ml-8 md:ml-0">
-                  <span className="text-xl font-bold text-primary">৳{order.total_price}</span>
+                  <span className="text-lg font-black text-primary">৳{order.total_price}</span>
                   <div className="flex items-center gap-2">
                     {order.order_status === 'Pending' && (
                       <button

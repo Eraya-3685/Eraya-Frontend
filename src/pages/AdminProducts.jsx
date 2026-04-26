@@ -585,6 +585,11 @@ const AdminProducts = () => {
   const filterDropdownRef = useRef();
   useClickOutside(filterDropdownRef, () => setIsFilterDropdownOpen(false));
 
+  const maxStock = useMemo(() => {
+    if (products.length === 0) return 0;
+    return Math.max(...products.map(p => p.stock_count), 1);
+  }, [products]);
+
   const fetchCategories = async () => {
     try {
       const res = await api.get('/categories');
@@ -667,81 +672,79 @@ const AdminProducts = () => {
   return (
     <div className="px-4 py-8 max-w-screen-2xl mx-auto min-h-screen">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
         <div>
-          <h1 className="text-5xl font-black font-display text-slate-900 tracking-tight mb-2">
+          <h1 className="text-3xl font-black font-display text-slate-900 tracking-tight mb-1">
             Inventory
           </h1>
-          <p className="text-slate-500 flex items-center gap-2 font-medium">
-            <span className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse shadow-[0_0_10px_rgba(var(--primary-rgb),0.5)]" />
+          <p className="text-slate-500 flex items-center gap-2 text-xs font-medium">
+            <span className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_10px_rgba(var(--primary-rgb),0.5)]" />
             Manage and monitor your product collection
           </p>
         </div>
         <button
           onClick={() => setModal('create')}
-          className="group bg-slate-900 text-white px-10 py-4 rounded-[24px] font-bold flex items-center gap-4 hover:bg-primary transition-all shadow-2xl shadow-slate-900/10 hover:shadow-primary/20 active:scale-95"
+          className="group bg-slate-900 text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-3 hover:bg-primary transition-all shadow-xl shadow-slate-900/10 hover:shadow-primary/20 active:scale-95"
         >
-          <div className="p-1.5 bg-white/10 rounded-xl group-hover:bg-white/20 transition-colors">
-            <Plus className="w-5 h-5" />
+          <div className="p-1 bg-white/10 rounded-lg group-hover:bg-white/20 transition-colors">
+            <Plus className="w-4 h-4" />
           </div>
-          <span className="tracking-wide">Add New Product</span>
+          <span className="tracking-wide text-xs">Add New Product</span>
         </button>
       </div>
 
-      {/* Stats Quick View */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-        <div className="bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500">
-          <p className="text-slate-400 text-xs font-black uppercase tracking-[0.2em] mb-3">Inventory Status</p>
-          <div className="flex items-end justify-between">
-            <div>
-              <h2 className="text-5xl font-black text-slate-900 leading-none mb-1">{filtered.length}</h2>
-              <p className="text-sm font-bold text-slate-400">
-                {search || selectedCategories.length > 0 ? 'Results Found' : 'Total Active Products'}
-              </p>
-            </div>
-            <div className={`p-4 rounded-2xl ${search || selectedCategories.length > 0 ? 'bg-blue-50 text-blue-500' : 'bg-primary/10 text-primary'}`}>
-              <Tags className="w-6 h-6" />
+      {/* Stats Quick View - Ultra Compact */}
+      <div className="flex flex-wrap gap-4 mb-6">
+        <div className="flex items-center gap-3 bg-white p-2 px-4 rounded-xl border border-slate-100 shadow-sm transition-all">
+          <div className={`p-2 rounded-lg ${search || selectedCategories.length > 0 ? 'bg-blue-50 text-blue-500' : 'bg-primary/10 text-primary'}`}>
+            <Tags className="w-4 h-4" />
+          </div>
+          <div>
+            <p className="text-slate-400 text-[8px] font-black uppercase tracking-widest leading-none mb-1">Stock</p>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-lg font-black text-slate-900 leading-none">{filtered.length}</span>
+              <span className="text-[9px] font-bold text-slate-400">Products</span>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500">
-          <p className="text-slate-400 text-xs font-black uppercase tracking-[0.2em] mb-3">Bulk Actions</p>
-          <div className="flex items-end justify-between">
-            <div>
-              <h2 className="text-5xl font-black text-slate-900 leading-none mb-1">{selectedIds.length}</h2>
-              <p className="text-sm font-bold text-slate-400">Products Selected</p>
-            </div>
-            <div className={`p-4 rounded-2xl ${selectedIds.length > 0 ? 'bg-amber-50 text-amber-500 animate-bounce' : 'bg-slate-50 text-slate-300'}`}>
-              <CheckCircle className="w-6 h-6" />
+        <div className="flex items-center gap-3 bg-white p-2 px-4 rounded-xl border border-slate-100 shadow-sm transition-all">
+          <div className={`p-2 rounded-lg ${selectedIds.length > 0 ? 'bg-amber-50 text-amber-500' : 'bg-slate-50 text-slate-300'}`}>
+            <CheckCircle className="w-4 h-4" />
+          </div>
+          <div>
+            <p className="text-slate-400 text-[8px] font-black uppercase tracking-widest leading-none mb-1">Selected</p>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-lg font-black text-slate-900 leading-none">{selectedIds.length}</span>
+              <span className="text-[9px] font-bold text-slate-400">Items</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Control Bar */}
-      <div className="bg-white/60 backdrop-blur-xl rounded-[40px] border border-slate-100 shadow-2xl shadow-slate-200/50 mb-10 sticky top-8 z-30">
-        <div className="p-6 flex flex-col lg:flex-row gap-6 justify-between items-center">
-          <div className="relative flex-grow max-w-xl w-full">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 w-5 h-5" />
+      <div className="bg-white/60 backdrop-blur-xl rounded-2xl border border-slate-100 shadow-xl shadow-slate-200/40 mb-8 sticky top-8 z-30">
+        <div className="p-4 flex flex-col lg:flex-row gap-4 justify-between items-center">
+          <div className="relative flex-grow max-w-lg w-full">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 w-4 h-4" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name or slug..."
-              className="w-full bg-white/80 border border-slate-200 rounded-[16px] py-3 pl-12 pr-6 text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all shadow-inner"
+              placeholder="Search products..."
+              className="w-full bg-white/80 border border-slate-200 rounded-xl py-2 pl-10 pr-5 text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all shadow-inner"
             />
           </div>
 
-          <div className="relative min-w-[300px] w-full lg:w-auto" ref={filterDropdownRef}>
+          <div className="relative min-w-[240px] w-full lg:w-auto" ref={filterDropdownRef}>
             <button
               onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
-              className={`w-full flex items-center justify-between bg-white border rounded-[16px] py-3 px-5 text-sm font-black transition-all active:scale-[0.98] shadow-sm ${selectedCategories.length > 0 ? 'border-primary text-primary ring-4 ring-primary/5' : 'border-slate-200 text-slate-700 hover:border-primary'
+              className={`w-full flex items-center justify-between bg-white border rounded-xl py-2 px-4 text-xs font-black transition-all active:scale-[0.98] shadow-sm ${selectedCategories.length > 0 ? 'border-primary text-primary ring-4 ring-primary/5' : 'border-slate-200 text-slate-700 hover:border-primary'
                 }`}
             >
-              <div className="flex items-center gap-4">
-                <Filter className={`w-5 h-5 ${selectedCategories.length > 0 ? 'text-primary' : 'text-slate-300'}`} />
-                <span className="truncate max-w-[150px] uppercase tracking-widest">
+              <div className="flex items-center gap-3">
+                <Filter className={`w-4 h-4 ${selectedCategories.length > 0 ? 'text-primary' : 'text-slate-300'}`} />
+                <span className="truncate max-w-[120px] uppercase tracking-widest">
                   {selectedCategories.length === 0
                     ? 'All Categories'
                     : selectedCategories.length === 1
@@ -749,7 +752,7 @@ const AdminProducts = () => {
                       : `${selectedCategories.length} Selected`}
                 </span>
               </div>
-              <ChevronDown className={`w-4 h-4 text-slate-300 transition-transform duration-300 ${isFilterDropdownOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-3.5 h-3.5 text-slate-300 transition-transform duration-300 ${isFilterDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
 
             <AnimatePresence>
@@ -888,7 +891,7 @@ const AdminProducts = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50/50 border-b border-slate-100">
-                  <th className="px-8 py-6 w-10 text-center">
+                  <th className="px-6 py-3 w-10 text-center">
                     <input
                       type="checkbox"
                       className="w-5 h-5 rounded-lg border-2 border-slate-200 text-primary focus:ring-4 focus:ring-primary/10 cursor-pointer transition-all"
@@ -896,13 +899,13 @@ const AdminProducts = () => {
                       onChange={handleSelectAll}
                     />
                   </th>
-                  <th className="px-4 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.25em]">Product</th>
-                  <th className="px-4 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.25em]">Categories</th>
-                  <th className="px-4 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.25em]">Price</th>
-                  <th className="px-4 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.25em]">Stock</th>
-                  <th className="px-4 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.25em]">Rating</th>
-                  <th className="px-4 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.25em]">Status</th>
-                  <th className="px-4 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] text-right">Actions</th>
+                  <th className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Product</th>
+                  <th className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Categories</th>
+                  <th className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Price</th>
+                  <th className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Stock</th>
+                  <th className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Rating</th>
+                  <th className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
+                  <th className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -911,7 +914,7 @@ const AdminProducts = () => {
                     key={product.id}
                     className={`group transition-all duration-300 hover:bg-slate-50/80 ${selectedIds.includes(product.id) ? 'bg-primary/5' : ''}`}
                   >
-                    <td className="px-4 py-8 text-center">
+                    <td className="px-4 py-2 text-center">
                       <input
                         type="checkbox"
                         className="w-4 h-4 rounded-lg border-2 border-slate-200 text-primary focus:ring-4 focus:ring-primary/10 cursor-pointer transition-all"
@@ -919,9 +922,9 @@ const AdminProducts = () => {
                         onChange={() => toggleSelect(product.id)}
                       />
                     </td>
-                    <td className="px-4 py-8">
-                      <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-[16px] bg-white border border-slate-100 overflow-hidden flex-shrink-0 shadow-lg group-hover:scale-110 transition-transform duration-700">
+                    <td className="px-4 py-2">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-white border border-slate-100 overflow-hidden flex-shrink-0 shadow-sm group-hover:scale-105 transition-transform duration-700">
                           {getPrimaryImage(product.images) ? (
                             <img
                               src={getImageUrl(getPrimaryImage(product.images))}
@@ -933,7 +936,7 @@ const AdminProducts = () => {
                           )}
                         </div>
                         <div className="min-w-0">
-                          <p className="font-semibold text-slate-900 truncate text-sm tracking-tight mb-0.5">{product.name}</p>
+                          <p className="font-bold text-slate-900 truncate text-xs tracking-tight mb-0.5">{product.name}</p>
                           <p className="text-[9px] font-bold text-slate-400 truncate uppercase tracking-widest opacity-60">ID: {product.slug}</p>
                         </div>
                       </div>
@@ -942,7 +945,7 @@ const AdminProducts = () => {
                       <div className="flex flex-wrap gap-1.5 max-w-[200px]">
                         {product.categories && product.categories.length > 0 ? (
                           product.categories.map(cat => (
-                            <span key={cat.id} className="bg-white border border-slate-100 text-slate-600 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-tight shadow-sm">
+                            <span key={cat.id} className="bg-white border border-slate-100 text-slate-600 px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-tight shadow-sm">
                               {cat.name}
                             </span>
                           ))
@@ -951,45 +954,45 @@ const AdminProducts = () => {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-8">
+                    <td className="px-4 py-2">
                       <div className="flex flex-col">
-                        <span className="font-black text-slate-900 text-base tracking-tighter">৳{product.base_price}</span>
+                        <span className="font-black text-slate-900 text-sm tracking-tighter">৳{product.base_price}</span>
                         {product.discount_price && (
                           <span className="text-[9px] font-black text-red-400 line-through opacity-60 uppercase tracking-widest mt-0.5">PROMO: ৳{product.discount_price}</span>
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-8">
-                      <div className="flex flex-col gap-2 min-w-[100px]">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className={`font-black text-base ${product.stock_count <= 5 ? 'text-red-500' : 'text-slate-900'}`}>
+                    <td className="px-4 py-2">
+                      <div className="flex flex-col gap-1.5 min-w-[80px]">
+                        <div className="flex justify-between items-center mb-0.5">
+                          <span className={`font-black text-sm ${product.stock_count <= 5 ? 'text-red-500' : 'text-slate-900'}`}>
                             {product.stock_count}
                           </span>
                           <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Units</span>
                         </div>
-                        <div className="w-full h-2 bg-slate-50 rounded-full overflow-hidden border border-slate-100">
+                        <div className="w-full h-1 bg-slate-50 rounded-full overflow-hidden border border-slate-100">
                           <motion.div
                             initial={{ width: 0 }}
-                            animate={{ width: `${Math.min(product.stock_count * 5, 100)}%` }}
+                            animate={{ width: `${(product.stock_count / maxStock) * 100}%` }}
                             transition={{ duration: 1, ease: "easeOut" }}
                             className={`h-full rounded-full shadow-[0_0_8px_rgba(0,0,0,0.1)] ${product.stock_count <= 5 ? 'bg-gradient-to-r from-red-400 to-red-600' : 'bg-gradient-to-r from-primary to-secondary'}`}
                           />
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-8">
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-1.5 bg-yellow-50 text-yellow-700 px-3 py-1.5 rounded-xl border border-yellow-100">
-                          <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                          <span className="text-sm font-black tracking-tight">
+                    <td className="px-4 py-2">
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 bg-yellow-50 text-yellow-700 px-2 py-1 rounded-lg border border-yellow-100">
+                          <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                          <span className="text-xs font-black tracking-tight">
                             {product.average_rating > 0 ? product.average_rating.toFixed(1) : 'NEW'}
                           </span>
                         </div>
-                        <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">({product.total_reviews})</span>
+                        <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">({product.total_reviews})</span>
                       </div>
                     </td>
-                    <td className="px-4 py-8">
-                      <span className={`inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.15em] px-4 py-2 rounded-full border-2 ${product.is_active
+                    <td className="px-4 py-2">
+                      <span className={`inline-flex items-center gap-1.5 text-[8px] font-black uppercase tracking-[0.1em] px-2.5 py-1 rounded-full border ${product.is_active
                         ? 'bg-green-50 text-green-600 border-green-100'
                         : 'bg-slate-50 text-slate-400 border-slate-100'
                         }`}>
@@ -997,21 +1000,21 @@ const AdminProducts = () => {
                         {product.is_active ? 'Online' : 'Offline'}
                       </span>
                     </td>
-                    <td className="px-4 py-8 text-right">
+                    <td className="px-4 py-2 text-right">
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0">
                         <button
                           onClick={() => setModal(product)}
-                          className="p-3 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-[12px] transition-all active:scale-90 shadow-sm"
+                          className="p-2 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-all active:scale-90"
                           title="Configuration"
                         >
-                          <Edit className="w-4 h-4" />
+                          <Edit className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => handleDelete(product)}
-                          className="p-3 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-[12px] transition-all active:scale-90 shadow-sm"
+                          className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all active:scale-90"
                           title="Delete"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </td>

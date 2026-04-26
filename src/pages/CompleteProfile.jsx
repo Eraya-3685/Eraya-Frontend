@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Phone, MapPin, ArrowRight, ShieldCheck, Command } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/useAuthStore';
+import ErrorMsg from '../components/ErrorMsg';
 import toast from 'react-hot-toast';
 
 const CompleteProfile = () => {
@@ -46,20 +47,18 @@ const CompleteProfile = () => {
       toast.success('Profile completed successfully');
       navigate('/');
     } catch (error) {
-      toast.error(error.response?.data || 'Failed to update profile');
+      const serverMsg = error.response?.data?.error || error.response?.data || 'Update failed';
+      const msgLower = serverMsg.toLowerCase();
+      
+      if (msgLower.includes('phone')) {
+        setErrors({ phone: serverMsg });
+      } else if (msgLower.includes('address')) {
+        setErrors({ address: serverMsg });
+      } else {
+        toast.error(serverMsg);
+      }
     }
   };
-
-  const ErrorMsg = ({ message }) => (
-    <motion.div
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: 'auto' }}
-      className="flex items-center gap-1 text-red-500 mt-1.5 ml-1"
-    >
-      <ShieldCheck className="w-3 h-3 text-red-500" />
-      <span className="text-[10px] font-bold uppercase tracking-wider">{message}</span>
-    </motion.div>
-  );
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-6 relative overflow-hidden">
@@ -118,7 +117,7 @@ const CompleteProfile = () => {
                   }}
                   rows="3"
                   className={`w-full bg-slate-50 border rounded-xl py-3.5 pl-12 pr-4 text-slate-900 font-medium outline-none transition-all resize-none ${errors.address ? 'border-red-200 bg-red-50/30' : 'border-slate-200 focus:border-secondary focus:bg-white'}`}
-                  placeholder="Your full delivery address"
+                  placeholder="e.g. Rupatoli, Barishal"
                 />
               </div>
               {errors.address && <ErrorMsg message={errors.address} />}

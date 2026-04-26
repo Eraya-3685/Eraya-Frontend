@@ -131,7 +131,7 @@ const Checkout = () => {
                       }}
                       className={`w-full bg-white border rounded-xl p-4 text-sm font-medium outline-none transition-all ${errors.shipping_address ? 'border-red-200 ring-2 ring-red-50' : 'border-slate-200 focus:ring-2 focus:ring-secondary'}`}
                       rows={3}
-                      placeholder="Enter your street address, city, and zip code..."
+                      placeholder="e.g. Rupatoli, Barishal"
                     />
                     <AnimatePresence>
                       {errors.shipping_address && (

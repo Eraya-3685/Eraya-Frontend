@@ -21,11 +21,43 @@ const useAuthStore = create((set, get) => ({
     }
   },
 
-  // POST /users/signup
-  signup: async (data) => {
+
+
+  // POST /users/signup (multipart/form-data) → { message, user }
+  signup: async (formData) => {
     set({ loading: true });
     try {
-      await api.post('/users/signup', data);
+      const response = await api.post('/users/signup', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const { user } = response.data;
+      set({ user, loading: false });
+      return user;
+    } catch (error) {
+      set({ loading: false });
+      throw error;
+    }
+  },
+
+  // POST /users/verify-signup → { token, user }
+  verifySignup: async (userId, otp) => {
+    set({ loading: true });
+    try {
+      const response = await api.post('/users/verify-signup', { user_id: userId, otp });
+      const { token, user } = response.data;
+      localStorage.setItem('token', token);
+      set({ token, user, loading: false });
+      return user?.role || 'buyer';
+    } catch (error) {
+      set({ loading: false });
+      throw error;
+    }
+  },
+  
+  resendActivationOTP: async (userId) => {
+    set({ loading: true });
+    try {
+      await api.post('/users/resend-activation', { user_id: userId });
       set({ loading: false });
     } catch (error) {
       set({ loading: false });
@@ -48,7 +80,7 @@ const useAuthStore = create((set, get) => ({
   fetchProfile: async () => {
     // Prevent redundant calls if already loading or user is already set
     if (get().loading || get().user) return;
-    
+
     set({ loading: true });
     try {
       const response = await api.get('/users/profile');
@@ -156,6 +188,46 @@ const useAuthStore = create((set, get) => ({
       throw error;
     }
   },
+
+  // Admin: List all users
+  listUsers: async () => {
+    set({ loading: true });
+    try {
+      const response = await api.get('/users');
+      set({ loading: false });
+      return response.data;
+    } catch (error) {
+      set({ loading: false });
+      throw error;
+    }
+  },
+
+  // Admin: Update user role
+  updateUserRole: async (userId, role) => {
+    set({ loading: true });
+    try {
+      await api.patch(`/users/${userId}/role`, { role });
+      set({ loading: false });
+    } catch (error) {
+      set({ loading: false });
+      throw error;
+    }
+  },
+
+  // Admin: Bulk update user roles
+  bulkUpdateUserRole: async (userIds, role, permissions, otp, password) => {
+    set({ loading: true });
+    try {
+      await api.post('/users/bulk-role', { ids: userIds, role, permissions, otp, password });
+      set({ loading: false });
+    } catch (error) {
+      set({ loading: false });
+      throw error;
+    }
+  },
+
+  // No longer needed separately as it's part of signup
+  // verifySignup: async (otp, tempToken) => { ... }
 }));
 
 export default useAuthStore;

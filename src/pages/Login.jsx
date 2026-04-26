@@ -1,23 +1,13 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Lock, ArrowRight, ShieldCheck, Eye, EyeOff, ChevronLeft, RefreshCcw, Key, AlertCircle } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, RefreshCcw, AlertCircle, ShieldCheck, ChevronLeft } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/useAuthStore';
+import SegmentedOTPInput from '../components/SegmentedOTPInput';
+import ErrorMsg from '../components/ErrorMsg';
+import Logo from '../components/Logo';
 import toast from 'react-hot-toast';
 import useDocumentTitle from '../hooks/useDocumentTitle';
-import SegmentedOTPInput from '../components/SegmentedOTPInput';
-
-const ErrorMsg = ({ message }) => (
-  <motion.div
-    initial={{ opacity: 0, height: 0 }}
-    animate={{ opacity: 1, height: 'auto' }}
-    exit={{ opacity: 0, height: 0 }}
-    className="flex items-center gap-1 text-red-500 mt-1.5 ml-1"
-  >
-    <AlertCircle className="w-3 h-3" />
-    <span className="text-[10px] font-bold uppercase tracking-wider">{message}</span>
-  </motion.div>
-);
 
 const Login = () => {
   useDocumentTitle('Login');
@@ -29,8 +19,11 @@ const Login = () => {
   const [resetEmail, setResetEmail] = useState('');
   const [resetData, setResetData] = useState({ otp: '', password: '', confirmPassword: '' });
   const [errors, setErrors] = useState({});
+  const [unverifiedUserId, setUnverifiedUserId] = useState(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [activationOtp, setActivationOtp] = useState('');
 
-  const { login, forgotPassword, resetPassword, loading } = useAuthStore();
+  const { login, verifySignup, resendActivationOTP, forgotPassword, resetPassword, loading } = useAuthStore();
   const navigate = useNavigate();
 
   const handleGoogleLogin = async () => {
@@ -54,11 +47,53 @@ const Login = () => {
     e.preventDefault();
     if (!validateLogin()) return;
     try {
-      await login(identifier, password);
+      const role = await login(identifier, password);
       toast.success('Welcome back!');
-      navigate('/');
+
+      const roleLower = role?.toLowerCase()?.trim();
+      if (roleLower === 'admin' || roleLower === 'moderator') {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
     } catch (error) {
-      toast.error('Login failed: Invalid credentials');
+      let serverMsg = error.response?.data?.error || error.response?.data || 'Login failed';
+      const msgLower = serverMsg.toLowerCase();
+
+      // Check for unverified account with ID
+      const idMatch = serverMsg.match(/\[ID:(\d+)\]/);
+      if (idMatch) {
+        setUnverifiedUserId(idMatch[1]);
+        serverMsg = serverMsg.replace(/\[ID:\d+\]/, '').trim();
+      }
+      
+      if (msgLower.includes('password') || msgLower.includes('incorrect')) {
+        setErrors({ password: serverMsg });
+      } else {
+        setErrors({ identifier: serverMsg });
+      }
+    }
+  };
+
+  const handleActivationVerify = async (e) => {
+    e.preventDefault();
+    if (activationOtp.length < 6) {
+      toast.error('Please enter 6-digit code');
+      return;
+    }
+
+    try {
+      const role = await verifySignup(Number(unverifiedUserId), activationOtp);
+      toast.success('Account verified successfully! You are now logged in.');
+      
+      const roleLower = role?.toLowerCase()?.trim();
+      if (roleLower === 'admin' || roleLower === 'moderator') {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.error || error.response?.data || 'Verification failed');
     }
   };
 
@@ -96,8 +131,9 @@ const Login = () => {
         otp: resetData.otp,
         password: resetData.password
       });
+      const roleLower = role?.toLowerCase()?.trim();
       toast.success('Password reset successful! Welcome back.');
-      navigate(role === 'admin' ? '/admin' : '/');
+      navigate((roleLower === 'admin' || roleLower === 'moderator') ? '/admin' : '/');
       setErrors({});
     } catch (error) {
       const msg = error.response?.data;
@@ -111,7 +147,7 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-6 relative overflow-hidden">
-      
+
       {/* Background Accents */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 blur-[120px] -translate-y-1/2 translate-x-1/2 rounded-full" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-secondary/5 blur-[100px] translate-y-1/2 -translate-x-1/2 rounded-full" />
@@ -120,12 +156,9 @@ const Login = () => {
       <motion.div
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="mb-8 flex flex-col items-center gap-2 z-10"
+        className="mb-8 z-10"
       >
-        <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center overflow-hidden shadow-xl shadow-slate-200/50 border border-slate-100 p-2">
-          <img src="/assets/logo.png" className="w-full h-full object-contain" alt="Eraya Logo" />
-        </div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">ERAYA</h1>
+        <Logo className="w-24 h-24" showText={true} />
       </motion.div>
 
       <motion.div
@@ -145,41 +178,136 @@ const Login = () => {
                 <h2 className="text-2xl font-bold text-slate-900 mb-2">Welcome back</h2>
                 <p className="text-slate-500 text-sm mb-8">Sign in to your account to continue.</p>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                {isVerifying ? (
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="space-y-6"
+                  >
+                    <button
+                      onClick={() => setIsVerifying(false)}
+                      className="flex items-center gap-2 text-slate-500 hover:text-secondary transition-colors text-sm font-bold mb-6"
+                    >
+                      <ChevronLeft className="w-4 h-4" /> Back to Sign In
+                    </button>
+                    
+                    <div className="text-center space-y-2 mb-8">
+                      <h2 className="text-2xl font-bold text-slate-900">Verify Your Account</h2>
+                      <p className="text-slate-500 text-sm leading-relaxed">
+                        We've sent a verification code to your email. Enter it below to activate your account.
+                      </p>
+                    </div>
+
+                    <form onSubmit={handleActivationVerify} className="space-y-6">
+                      <div className="space-y-4">
+                        <label className="text-xs font-bold text-slate-700 uppercase tracking-widest ml-1">Verification Code</label>
+                        <SegmentedOTPInput
+                          value={activationOtp}
+                          onChange={(val) => setActivationOtp(val)}
+                          disabled={loading}
+                        />
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full bg-secondary hover:bg-secondary-dark text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-secondary/20 flex items-center justify-center gap-2 disabled:opacity-50"
+                      >
+                        {loading ? 'Verifying...' : 'Verify & Sign In'}
+                        {!loading && <ShieldCheck className="w-5 h-5" />}
+                      </button>
+
+                      <div className="text-center">
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              await resendActivationOTP(Number(unverifiedUserId));
+                              toast.success('A new verification code has been sent!');
+                            } catch (error) {
+                              toast.error(error.response?.data?.error || 'Failed to resend code');
+                            }
+                          }}
+                          className="text-xs font-bold text-slate-400 hover:text-secondary transition-colors"
+                        >
+                          Didn't receive the code? Resend Code
+                        </button>
+                      </div>
+                    </form>
+                  </motion.div>
+                ) : (
+                  <>
+                    <form
+                  onSubmit={handleSubmit}
+                  method="POST"
+                  action="/login"
+                  className="space-y-6"
+                >
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-700 uppercase tracking-widest ml-1">Email or Phone</label>
+                    <label htmlFor="identifier" className="text-xs font-bold text-slate-700 uppercase tracking-widest ml-1">Email or Phone</label>
                     <div className="relative group">
                       <Mail className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors ${errors.identifier ? 'text-red-400' : 'text-slate-400 group-focus-within:text-secondary'}`} />
                       <input
+                        id="identifier"
                         type="text"
+                        name="email"
+                        autoComplete="username"
                         value={identifier}
                         onChange={(e) => {
                           setIdentifier(e.target.value);
-                          if (errors.identifier) setErrors({...errors, identifier: null});
+                          if (errors.identifier) setErrors({ ...errors, identifier: null });
                         }}
                         className={`w-full bg-slate-50 border rounded-xl py-3.5 pl-12 pr-4 text-slate-900 font-medium outline-none transition-all ${errors.identifier ? 'border-red-200 bg-red-50/30' : 'border-slate-200 focus:border-secondary focus:bg-white'}`}
                         placeholder="Email or phone number"
+                        required
                       />
                     </div>
-                    <AnimatePresence>{errors.identifier && <ErrorMsg message={errors.identifier} />}</AnimatePresence>
+                    <AnimatePresence>
+                      {errors.identifier && (
+                        <div className="flex flex-col gap-1">
+                          <ErrorMsg message={errors.identifier} />
+                          {unverifiedUserId && errors.identifier.toLowerCase().includes('verify') && (
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                try {
+                                  await resendActivationOTP(Number(unverifiedUserId));
+                                  toast.success('Verification code sent to your email');
+                                  setIsVerifying(true);
+                                } catch (error) {
+                                  toast.error(error.response?.data?.error || 'Failed to send code');
+                                }
+                              }}
+                              className="text-secondary hover:underline text-xs font-bold w-fit ml-1"
+                            >
+                              Verify Now →
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </AnimatePresence>
                   </div>
 
                   <div className="space-y-2">
                     <div className="flex justify-between items-center ml-1">
-                      <label className="text-xs font-bold text-slate-700 uppercase tracking-widest">Password</label>
+                      <label htmlFor="password" className="text-xs font-bold text-slate-700 uppercase tracking-widest">Password</label>
                       <button type="button" onClick={() => setIsResetMode(true)} className="text-xs font-bold text-secondary hover:underline">Forgot password?</button>
                     </div>
                     <div className="relative group">
                       <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors ${errors.password ? 'text-red-400' : 'text-slate-400 group-focus-within:text-secondary'}`} />
                       <input
+                        id="password"
                         type={showPassword ? "text" : "password"}
+                        name="password"
+                        autoComplete="current-password"
                         value={password}
                         onChange={(e) => {
                           setPassword(e.target.value);
-                          if (errors.password) setErrors({...errors, password: null});
+                          if (errors.password) setErrors({ ...errors, password: null });
                         }}
                         className={`w-full bg-slate-50 border rounded-xl py-3.5 pl-12 pr-12 text-slate-900 font-medium outline-none transition-all ${errors.password ? 'border-red-200 bg-red-50/30' : 'border-slate-200 focus:border-secondary focus:bg-white'}`}
                         placeholder="••••••••"
+                        required
                       />
                       <button
                         type="button"
@@ -194,6 +322,7 @@ const Login = () => {
 
                   <button
                     type="submit"
+                    id="submit-btn"
                     disabled={loading}
                     className="w-full py-4 bg-slate-900 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition-all active:scale-[0.98] disabled:opacity-50"
                   >
@@ -221,6 +350,8 @@ const Login = () => {
                   </div>
                   Continue with Google
                 </button>
+                </>
+                )}
               </motion.div>
             ) : (
               <motion.div
@@ -229,7 +360,7 @@ const Login = () => {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
               >
-                <button 
+                <button
                   onClick={() => {
                     if (resetStep === 2) {
                       setResetStep(1);
@@ -247,7 +378,7 @@ const Login = () => {
                 >
                   <ChevronLeft className="w-4 h-4" /> {resetStep === 2 ? 'Back to Email' : 'Back to Sign In'}
                 </button>
-                
+
                 <h2 className="text-2xl font-bold text-slate-900 mb-2">Reset Password</h2>
                 <p className="text-slate-500 text-sm mb-8">
                   {resetStep === 1 ? "Enter your email for reset code." : "Enter the 6-digit code and new password."}
@@ -264,10 +395,10 @@ const Login = () => {
                           value={resetEmail}
                           onChange={(e) => {
                             setResetEmail(e.target.value);
-                            if (errors.resetEmail) setErrors({...errors, resetEmail: null});
+                            if (errors.resetEmail) setErrors({ ...errors, resetEmail: null });
                           }}
                           className={`w-full bg-slate-50 border rounded-xl py-3.5 pl-12 pr-4 text-slate-900 font-medium outline-none transition-all ${errors.resetEmail ? 'border-red-200 bg-red-50/30' : 'border-slate-200 focus:border-secondary focus:bg-white'}`}
-                          placeholder="john@example.com"
+                          placeholder="eraya@gmail.com"
                         />
                       </div>
                       <AnimatePresence>{errors.resetEmail && <ErrorMsg message={errors.resetEmail} />}</AnimatePresence>
@@ -280,11 +411,11 @@ const Login = () => {
                   <form onSubmit={handleResetSubmit} className="space-y-5">
                     <div className="space-y-4">
                       <label className="text-xs font-bold text-slate-700 uppercase tracking-widest ml-1">Verification Code</label>
-                      <SegmentedOTPInput 
-                        value={resetData.otp} 
+                      <SegmentedOTPInput
+                        value={resetData.otp}
                         onChange={(val) => {
-                          setResetData({...resetData, otp: val});
-                          if (errors.otp) setErrors({...errors, otp: null});
+                          setResetData({ ...resetData, otp: val });
+                          if (errors.otp) setErrors({ ...errors, otp: null });
                         }}
                         disabled={loading}
                       />
@@ -297,10 +428,12 @@ const Login = () => {
                         <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors ${errors.password ? 'text-red-400' : 'text-slate-400 group-focus-within:text-secondary'}`} />
                         <input
                           type={showPassword ? "text" : "password"}
+                          name="new-password"
+                          autoComplete="new-password"
                           value={resetData.password}
                           onChange={(e) => {
-                            setResetData({...resetData, password: e.target.value});
-                            if (errors.password) setErrors({...errors, password: null});
+                            setResetData({ ...resetData, password: e.target.value });
+                            if (errors.password) setErrors({ ...errors, password: null });
                           }}
                           className={`w-full bg-slate-50 border rounded-xl py-3.5 pl-12 pr-12 text-slate-900 font-medium outline-none transition-all ${errors.password ? 'border-red-200 bg-red-50/30' : 'border-slate-200 focus:border-secondary focus:bg-white'}`}
                           placeholder="••••••••"
@@ -318,10 +451,12 @@ const Login = () => {
                         <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors ${errors.confirmPassword ? 'text-red-400' : 'text-slate-400 group-focus-within:text-secondary'}`} />
                         <input
                           type={showPassword ? "text" : "password"}
+                          name="confirm-password"
+                          autoComplete="new-password"
                           value={resetData.confirmPassword}
                           onChange={(e) => {
-                            setResetData({...resetData, confirmPassword: e.target.value});
-                            if (errors.confirmPassword) setErrors({...errors, confirmPassword: null});
+                            setResetData({ ...resetData, confirmPassword: e.target.value });
+                            if (errors.confirmPassword) setErrors({ ...errors, confirmPassword: null });
                           }}
                           className={`w-full bg-slate-50 border rounded-xl py-3.5 pl-12 pr-12 text-slate-900 font-medium outline-none transition-all ${errors.confirmPassword ? 'border-red-200 bg-red-50/30' : 'border-slate-200 focus:border-secondary focus:bg-white'}`}
                           placeholder="••••••••"
