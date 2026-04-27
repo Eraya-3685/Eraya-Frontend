@@ -1,62 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, Trash2, ShoppingCart, ArrowRight, ShoppingBag, AlertCircle, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import useWishlistStore from '../store/useWishlistStore';
 import useCartStore from '../store/useCartStore';
 import useAuthStore from '../store/useAuthStore';
-import { getImageUrl } from '../api/axios';
+import api, { getImageUrl } from '../api/axios';
 import toast from 'react-hot-toast';
 import useDocumentTitle from '../hooks/useDocumentTitle';
+import ConfirmModal from '../components/ConfirmModal';
 
-const Modal = ({ isOpen, onClose, onConfirm, title, message, loading }) => (
-  <AnimatePresence>
-    {isOpen && (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
-        />
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          className="relative bg-white w-full max-w-sm rounded-[2rem] p-8 shadow-2xl border border-slate-100"
-        >
-          <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mb-6">
-            <AlertCircle className="w-8 h-8 text-red-500" />
-          </div>
-          <h3 className="text-xl font-black text-slate-900 mb-2 tracking-tight">{title}</h3>
-          <p className="text-slate-500 text-sm font-medium leading-relaxed mb-8">{message}</p>
-          <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="flex-1 py-3 px-6 bg-slate-50 text-slate-500 rounded-xl font-bold text-xs hover:bg-slate-100 transition-all"
-            >
-              Keep Item
-            </button>
-            <button
-              onClick={onConfirm}
-              disabled={loading}
-              className="flex-1 py-3 px-6 bg-red-500 text-white rounded-xl font-bold text-xs hover:bg-red-600 transition-all shadow-lg shadow-red-200 flex items-center justify-center disabled:opacity-50"
-            >
-              {loading ? (
-                <div className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-              ) : 'Yes, Remove'}
-            </button>
-          </div>
-        </motion.div>
-      </div>
-    )}
-  </AnimatePresence>
-);
+
 
 const Wishlist = () => {
   useDocumentTitle('My Wishlist');
-  const { items, toggleWishlist, clearWishlist } = useWishlistStore();
+  const { items, toggleWishlist, clearWishlist, syncWishlist } = useWishlistStore();
   const { user } = useAuthStore();
   const addItem = useCartStore((state) => state.addItem);
   
@@ -64,6 +22,31 @@ const Wishlist = () => {
   const [isDeletingItem, setIsDeletingItem] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
   const [isClearingAll, setIsClearingAll] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  useEffect(() => {
+    refreshWishlistStock();
+  }, []);
+
+  const refreshWishlistStock = async () => {
+    if (items.length === 0) return;
+    setIsRefreshing(true);
+    try {
+      const updatedItems = await Promise.all(
+        items.map(async (item) => {
+          try {
+            const res = await api.get(`/products/${item.slug}`);
+            return { ...item, stock_count: res.data.stock_count };
+          } catch (err) {
+            return item;
+          }
+        })
+      );
+      if (syncWishlist) syncWishlist(updatedItems);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const handleAddToCart = (product) => {
     addItem(product);
@@ -133,21 +116,28 @@ const Wishlist = () => {
                 exit={{ opacity: 0, scale: 0.9 }}
                 className="group bg-white rounded-[2rem] border border-slate-100 overflow-hidden hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-500 flex flex-col"
               >
-                <div className="relative aspect-square bg-slate-50/50 overflow-hidden">
-                  <Link to={`/products/${product.slug}`}>
-                    <img 
-                      src={getImageUrl(getPrimaryImage(product.images))} 
-                      className="w-full h-full object-contain p-4 group-hover:scale-110 transition-transform duration-700"
-                      alt={product.name} 
-                    />
-                  </Link>
-                  <button 
-                    onClick={() => setItemToDelete(product)}
-                    className="absolute top-3 right-3 w-8 h-8 bg-white/80 backdrop-blur-md rounded-lg flex items-center justify-center text-red-500 shadow-sm hover:bg-white transition-all active:scale-90"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+                  <div className="relative aspect-square bg-slate-50/50 overflow-hidden">
+                    <Link to={`/products/${product.slug}`}>
+                      <img 
+                        src={getImageUrl(getPrimaryImage(product.images))} 
+                        className="w-full h-full object-contain p-4 group-hover:scale-110 transition-transform duration-700"
+                        alt={product.name} 
+                      />
+                    </Link>
+                    {product.stock_count <= 0 && (
+                      <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] flex items-center justify-center z-10 pointer-events-none">
+                        <div className="bg-slate-900 text-white px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-black/20 transform -rotate-12 border border-white/20">
+                          Stock Out
+                        </div>
+                      </div>
+                    )}
+                    <button 
+                      onClick={() => setItemToDelete(product)}
+                      className="absolute top-3 right-3 w-8 h-8 bg-white/80 backdrop-blur-md rounded-lg flex items-center justify-center text-red-500 shadow-sm hover:bg-white transition-all active:scale-90 z-20"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
 
                 <div className="p-4 flex flex-col flex-grow">
                   <Link to={`/products/${product.slug}`}>
@@ -160,9 +150,10 @@ const Wishlist = () => {
                   <div className="flex gap-2 mt-auto">
                     <button
                       onClick={() => handleAddToCart(product)}
-                      className="flex-grow py-2.5 bg-slate-900 text-white rounded-lg font-bold text-[9px] uppercase tracking-widest flex items-center justify-center gap-1.5 hover:bg-secondary transition-all active:scale-95 shadow-lg shadow-slate-100"
+                      disabled={product.stock_count <= 0}
+                      className="flex-grow py-2.5 bg-slate-900 text-white rounded-lg font-bold text-[9px] uppercase tracking-widest flex items-center justify-center gap-1.5 hover:bg-secondary transition-all active:scale-95 shadow-lg shadow-slate-100 disabled:opacity-50"
                     >
-                      <ShoppingBag className="w-2.5 h-2.5" /> Add
+                      <ShoppingBag className="w-2.5 h-2.5" /> {product.stock_count <= 0 ? 'Out of Stock' : 'Add'}
                     </button>
                     <Link
                       to={`/products/${product.slug}`}
@@ -178,7 +169,7 @@ const Wishlist = () => {
         </div>
       </div>
 
-      <Modal
+      <ConfirmModal
         isOpen={!!itemToDelete}
         onClose={() => setItemToDelete(null)}
         loading={isDeletingItem}
@@ -193,7 +184,7 @@ const Wishlist = () => {
         message={`Are you sure you want to remove "${itemToDelete?.name}" from your wishlist?`}
       />
 
-      <Modal
+      <ConfirmModal
         isOpen={isClearing}
         onClose={() => setIsClearing(false)}
         loading={isClearingAll}

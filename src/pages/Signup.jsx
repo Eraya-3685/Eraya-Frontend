@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Lock, User, MapPin, ArrowRight, ShieldCheck, Command, Eye, EyeOff, AlertCircle, Plus, Phone } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/useAuthStore';
-import SegmentedOTPInput from '../components/SegmentedOTPInput';
+import OTPModal from '../components/OTPModal';
+import ActionConfirmationModal from '../components/ActionConfirmationModal';
 import ErrorMsg from '../components/ErrorMsg';
 import Logo from '../components/Logo';
 import toast from 'react-hot-toast';
@@ -25,10 +26,10 @@ const Signup = () => {
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [step, setStep] = useState(1); // 1: Info, 2: OTP
-  const [otp, setOtp] = useState('');
 
-  const { signup, verifySignup, loading, user } = useAuthStore();
+  const { signup, verifySignup, resendActivationOTP, loading, user } = useAuthStore();
   const navigate = useNavigate();
 
   const validate = () => {
@@ -59,7 +60,11 @@ const Signup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
+    setShowConfirmModal(true);
+  };
 
+  const handleConfirmedSignup = async () => {
+    setShowConfirmModal(false);
     const formData = new FormData();
     Object.keys(form).forEach(key => {
       if (form[key]) formData.append(key, form[key]);
@@ -89,17 +94,10 @@ const Signup = () => {
     }
   };
 
-  const handleVerifyOTP = async (e) => {
-    e.preventDefault();
-    if (otp.length < 6) {
-      toast.error('Please enter 6-digit code');
-      return;
-    }
-
+  const handleVerifyOTP = async (otp) => {
     try {
       const role = await verifySignup(user.id, otp);
       toast.success('Account verified successfully!');
-
       const roleLower = role?.toLowerCase()?.trim();
       if (roleLower === 'admin' || roleLower === 'moderator') {
         navigate('/admin');
@@ -112,56 +110,64 @@ const Signup = () => {
     }
   };
 
-return (
-  <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center p-4 pt-12 md:pt-20 relative overflow-hidden font-inter">
+  const handleResendSignupOTP = async () => {
+    try {
+      await resendActivationOTP(user.id);
+      toast.success('Verification code resent!');
+    } catch (error) {
+      toast.error('Failed to resend code');
+    }
+  };
 
-    {/* Background Accents */}
-    <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-secondary/5 blur-[120px] rounded-full" />
-    <div className="absolute bottom-[-5%] right-[-5%] w-[400px] h-[400px] bg-primary/5 blur-[100px] rounded-full" />
+  return (
+    <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center p-4 pt-12 md:pt-20 relative overflow-hidden font-inter">
 
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="w-full max-w-6xl z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center"
-    >
-      {/* Left Side: Brand & Welcome */}
-      <div className="lg:col-span-5 flex flex-col items-center lg:items-start text-center lg:text-left space-y-8 px-4">
-        <div className="w-64 h-64 rounded-full bg-white shadow-2xl shadow-slate-200/50 border-8 border-white flex items-center justify-center overflow-hidden group ring-1 ring-slate-200/50">
-          <img 
-            src="/assets/logo.png" 
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
-            alt="Eraya Brand" 
-          />
-        </div>
+      {/* Background Accents */}
+      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-secondary/5 blur-[120px] rounded-full" />
+      <div className="absolute bottom-[-5%] right-[-5%] w-[400px] h-[400px] bg-primary/5 blur-[100px] rounded-full" />
 
-        <div className="space-y-3">
-          <h1 className="text-4xl font-black tracking-tight text-slate-900 leading-tight">
-            Welcome to <span className="text-secondary">Eraya.</span>
-          </h1>
-          <p className="text-slate-500 text-sm font-medium leading-relaxed max-w-sm">
-            Discover a curated collection of premium products designed for your lifestyle. Join us today and start your journey.
-          </p>
-        </div>
-
-        <div className="hidden lg:flex items-center gap-4 pt-4">
-          <div className="flex -space-x-3">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="w-10 h-10 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center overflow-hidden">
-                <img src={`https://i.pravatar.cc/150?u=${i + 10}`} alt="user" className="w-full h-full object-cover opacity-80" />
-              </div>
-            ))}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-6xl z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center"
+      >
+        {/* Left Side: Brand & Welcome */}
+        <div className="lg:col-span-5 flex flex-col items-center lg:items-start text-center lg:text-left space-y-8 px-4">
+          <div className="w-64 h-64 rounded-full bg-white shadow-2xl shadow-slate-200/50 border-8 border-white flex items-center justify-center overflow-hidden group ring-1 ring-slate-200/50">
+            <img
+              src="/assets/logo.png"
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+              alt="Eraya Brand"
+            />
           </div>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-            Trusted by 10k+ users
-          </p>
-        </div>
-      </div>
 
-      {/* Right Side: Form Container */}
-      <div className="lg:col-span-7">
-        <div className="bg-white p-8 md:p-14 rounded-[45px] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.06)] border border-slate-50 relative overflow-hidden">
-          <AnimatePresence mode="wait">
-            {step === 1 ? (
+          <div className="space-y-3">
+            <h1 className="text-4xl font-black tracking-tight text-slate-900 leading-tight">
+              Welcome to <span className="text-secondary">Eraya.</span>
+            </h1>
+            <p className="text-slate-500 text-sm font-medium leading-relaxed max-w-sm">
+              Discover a curated collection of premium products designed for your lifestyle. Join us today and start your journey.
+            </p>
+          </div>
+
+          <div className="hidden lg:flex items-center gap-4 pt-4">
+            <div className="flex -space-x-3">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="w-10 h-10 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center overflow-hidden">
+                  <img src={`https://i.pravatar.cc/150?u=${i + 10}`} alt="user" className="w-full h-full object-cover opacity-80" />
+                </div>
+              ))}
+            </div>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+              Trusted by 10k+ users
+            </p>
+          </div>
+        </div>
+
+        {/* Right Side: Form Container */}
+        <div className="lg:col-span-7">
+          <div className="bg-white p-8 md:p-14 rounded-[45px] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.06)] border border-slate-50 relative overflow-hidden">
+            <AnimatePresence mode="wait">
               <motion.div
                 key="signup-form"
                 initial={{ opacity: 0, x: 20 }}
@@ -324,53 +330,42 @@ return (
                   </div>
                 </form>
               </motion.div>
-            ) : (
-              <motion.div
-                key="otp-step"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="text-center py-6"
-              >
-                <div className="w-16 h-16 bg-secondary/5 rounded-[24px] flex items-center justify-center mx-auto mb-6 border border-secondary/10">
-                  <Mail className="w-8 h-8 text-secondary" />
-                </div>
-                <h2 className="text-2xl font-black text-slate-900">Verify Email</h2>
-                <p className="text-slate-500 text-xs mt-2 mb-10 leading-relaxed">
-                  A 6-digit verification code has been sent to <span className="font-bold text-slate-900 underline decoration-slate-200">{form.email}</span>. 
-                  Please enter it below to complete your registration.
-                </p>
-
-                <form onSubmit={handleVerifyOTP} className="space-y-8 max-w-[400px] mx-auto">
-                  <SegmentedOTPInput
-                    value={otp}
-                    onChange={setOtp}
-                    disabled={loading}
-                  />
-
-                  <button
-                    type="submit"
-                    disabled={loading || otp.length !== 6}
-                    className="w-full py-4 bg-secondary text-white rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-secondary/90 transition-all shadow-xl disabled:opacity-50"
-                  >
-                    {loading ? <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <>Verify & Complete <ShieldCheck className="w-4 h-4" /></>}
-                  </button>
-                </form>
-
-                <button onClick={() => toast.error('Resending...')} className="mt-8 text-secondary text-[10px] font-black uppercase tracking-widest hover:underline">
-                  Resend Code
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
+            </AnimatePresence>
+          </div>
         </div>
-      </div>
-    </motion.div>
 
-    <div className="mt-12 text-slate-300 font-black text-[8px] uppercase tracking-[0.5em] flex items-center gap-2 opacity-50">
-      <ShieldCheck className="w-3 h-3" /> Secure Eraya Portal
+        <ActionConfirmationModal 
+          isOpen={showConfirmModal}
+          onClose={() => setShowConfirmModal(false)}
+          onConfirm={handleConfirmedSignup}
+          title="Create Account?"
+          description={`We will send a 6-digit verification code to ${form.email} to activate your account.`}
+          confirmText="Proceed & Send OTP"
+          type="info"
+          icon={Mail}
+        />
+
+        <AnimatePresence>
+          {step === 2 && (
+            <OTPModal 
+              isOpen={step === 2}
+              onClose={() => setStep(1)}
+              onConfirm={handleVerifyOTP}
+              onResend={handleResendSignupOTP}
+              email={form.email}
+              loading={loading}
+              title="Verify Email"
+              description="Please enter the verification code sent to your email to complete your registration."
+            />
+          )}
+        </AnimatePresence>
+      </motion.div>
+
+      <div className="mt-12 text-slate-300 font-black text-[8px] uppercase tracking-[0.5em] flex items-center gap-2 opacity-50">
+        <ShieldCheck className="w-3 h-3" /> Secure Eraya Portal
+      </div>
     </div>
-  </div>
-);
+  );
 };
 
 export default Signup;

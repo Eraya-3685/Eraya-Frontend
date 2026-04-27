@@ -15,6 +15,7 @@ const Home = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingItemId, setLoadingItemId] = useState(null);
   const addToCart = useCartStore((state) => state.addItem);
   const navigate = useNavigate();
   const { user } = useAuthStore();
@@ -67,7 +68,7 @@ const Home = () => {
     }
   }, [categories]);
 
-  const handleAddToCart = (e, product) => {
+  const handleAddToCart = async (e, product) => {
     e.preventDefault();
     e.stopPropagation();
     const role = user?.role?.toLowerCase();
@@ -76,6 +77,9 @@ const Home = () => {
       return;
     }
     
+    setLoadingItemId(product.id);
+    await new Promise(resolve => setTimeout(resolve, 600));
+    
     // Normalize image_url for the cart
     const cartProduct = {
       ...product,
@@ -83,6 +87,7 @@ const Home = () => {
     };
     
     addToCart(cartProduct);
+    setLoadingItemId(null);
     toast.success(`${product.name} added to cart`);
   };
 
@@ -180,6 +185,13 @@ const Home = () => {
                           className="w-full h-full object-cover transition-transform duration-[3000ms] group-hover:scale-110" 
                           alt={products[currentSlide]?.name} 
                         />
+                        {products[currentSlide]?.stock_count <= 0 && (
+                          <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] flex items-center justify-center z-10 pointer-events-none">
+                            <div className="bg-slate-900 text-white px-8 py-4 rounded-full text-xs font-black uppercase tracking-[0.3em] shadow-2xl shadow-black/20 transform -rotate-12 border border-white/20">
+                              Stock Out
+                            </div>
+                          </div>
+                        )}
                         {/* Slide Info Overlay */}
                         <div className="absolute bottom-10 left-10 right-10 bg-white/80 backdrop-blur-md p-6 rounded-3xl border border-white/50 shadow-xl">
                            <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1">Featured Item</p>
@@ -385,12 +397,24 @@ const Home = () => {
                       className="w-full h-full object-contain group-hover:scale-110 transition-all duration-500" 
                       alt={product.name}
                     />
+                    {product.stock_count <= 0 && (
+                      <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] flex items-center justify-center z-10 pointer-events-none">
+                        <div className="bg-slate-900 text-white px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-black/20 transform -rotate-12 border border-white/20">
+                          Stock Out
+                        </div>
+                      </div>
+                    )}
                     {!['admin', 'moderator'].includes(user?.role?.toLowerCase()) && (
                       <button 
                         onClick={(e) => handleAddToCart(e, product)}
-                        className="absolute bottom-4 right-4 w-12 h-12 bg-white rounded-xl shadow-lg flex items-center justify-center text-slate-900 hover:bg-secondary hover:text-white transition-all transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100"
+                        disabled={loadingItemId === product.id || product.stock_count <= 0}
+                        className="absolute bottom-4 right-4 w-12 h-12 bg-white rounded-xl shadow-lg flex items-center justify-center text-slate-900 hover:bg-secondary hover:text-white transition-all transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 disabled:opacity-50"
                       >
-                        <ShoppingBag className="w-5 h-5" />
+                        {loadingItemId === product.id ? (
+                          <RefreshCcw className="w-5 h-5 animate-spin" />
+                        ) : (
+                          <ShoppingBag className="w-5 h-5" />
+                        )}
                       </button>
                     )}
                   </div>
@@ -404,7 +428,9 @@ const Home = () => {
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-xl font-bold text-slate-900">৳{product.base_price}</span>
-                      <span className="text-xs text-secondary font-bold uppercase tracking-widest">In Stock</span>
+                      <span className={`text-[10px] font-black uppercase tracking-widest ${product.stock_count > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                        {product.stock_count > 0 ? 'In Stock' : 'Stock Out'}
+                      </span>
                     </div>
                   </div>
                 </Link>

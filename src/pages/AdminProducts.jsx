@@ -5,6 +5,9 @@ import { useSearchParams } from 'react-router-dom';
 import api, { getImageUrl } from '../api/axios';
 import toast from 'react-hot-toast';
 import useClickOutside from '../hooks/useClickOutside';
+import ConfirmModal from '../components/ConfirmModal';
+import AdminDropdown from '../components/AdminDropdown';
+import { Clock, Zap, CheckCircle2, AlertCircle } from 'lucide-react';
 
 /* ── Product Form Modal ─────────────────────────────── */
 const ProductModal = ({ product, onClose, onSaved, onCategoryAdded }) => {
@@ -92,9 +95,9 @@ const ProductModal = ({ product, onClose, onSaved, onCategoryAdded }) => {
         imageUrl = uploadRes.data.url;
       }
 
-      const res = await api.post('/categories', { 
+      const res = await api.post('/categories', {
         name: newCategoryName,
-        image_url: imageUrl 
+        image_url: imageUrl
       });
       toast.success('Category added!');
       setCategories([...categories, res.data]);
@@ -117,7 +120,7 @@ const ProductModal = ({ product, onClose, onSaved, onCategoryAdded }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
-    
+
     setLoading(true);
     try {
       if (isEdit) {
@@ -274,7 +277,7 @@ const ProductModal = ({ product, onClose, onSaved, onCategoryAdded }) => {
                 <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
                   <div className="flex gap-3">
                     {/* Category Image Quick Upload */}
-                    <div 
+                    <div
                       onClick={() => {
                         const input = document.createElement('input');
                         input.type = 'file';
@@ -335,106 +338,62 @@ const ProductModal = ({ product, onClose, onSaved, onCategoryAdded }) => {
                   </div>
                 </div>
               ) : (
-                <div className="relative" ref={dropdownRef}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsDropdownOpen(!isDropdownOpen);
+                <>
+                  <AdminDropdown
+                    multiple
+                    searchable
+                    value={form.category_ids}
+                    options={categories}
+                    onChange={(selected) => {
+                      setForm({ ...form, category_ids: selected.map(c => typeof c === 'object' ? c.id : c) });
                       if (errors.category_ids) setErrors({ ...errors, category_ids: null });
                     }}
-                    className={`w-full border rounded-xl py-2.5 px-4 outline-none transition-all bg-slate-50 flex flex-wrap gap-2 items-center text-sm min-h-[50px] ${errors.category_ids ? 'border-red-300 ring-2 ring-red-50' : 'border-slate-200 focus:ring-2 focus:ring-primary'}`}
-                  >
-                    {form.category_ids.length > 0 ? (
-                      form.category_ids.map(id => {
-                        const cat = categories.find(c => c.id === id);
-                        return (
-                          <span key={id} className="bg-primary/10 text-primary px-2 py-1 rounded-md text-xs font-bold flex items-center gap-1">
-                            {cat?.name || 'Loading...'}
-                            <X
-                              className="w-3 h-3 cursor-pointer hover:text-red-500"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setForm({ ...form, category_ids: form.category_ids.filter(cid => cid !== id) });
-                              }}
-                            />
-                          </span>
-                        );
-                      })
-                    ) : (
-                      <span className="text-slate-400">Select Categories</span>
+                    placeholder="Select Categories"
+                    className="min-h-[50px]"
+                    renderValue={(selectedIds) => (
+                      <div className="flex flex-wrap gap-2 py-1">
+                        {selectedIds.length > 0 ? (
+                          selectedIds.map(id => {
+                            const cat = categories.find(c => c.id === id);
+                            return (
+                              <span key={id} className="bg-primary/10 text-primary px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5">
+                                {cat?.name || '...'}
+                                <X
+                                  className="w-3 h-3 cursor-pointer hover:text-red-500"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setForm({ ...form, category_ids: selectedIds.filter(cid => cid !== id) });
+                                  }}
+                                />
+                              </span>
+                            );
+                          })
+                        ) : (
+                          <span className="text-slate-400 text-xs font-medium">Select Categories</span>
+                        )}
+                      </div>
                     )}
-                    <ChevronDown className={`w-4 h-4 text-slate-400 ml-auto transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                  </button>
+                    renderOption={(cat, isSelected) => (
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center">
+                            {cat.image_url ? (
+                               <img src={getImageUrl(cat.image_url)} className="w-full h-full object-cover rounded-lg" alt="" />
+                            ) : (
+                               <Tags className="w-4 h-4 text-slate-300" />
+                            )}
+                          </div>
+                          <div>
+                            <p className={`text-[10px] font-black uppercase tracking-widest ${isSelected ? 'text-primary' : 'text-slate-900'}`}>{cat.name}</p>
+                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{cat.product_count} Products</p>
+                          </div>
+                        </div>
+                        {isSelected && <CheckCircle2 className="w-4 h-4 text-primary" />}
+                      </div>
+                    )}
+                  />
                   {errors.category_ids && <p className="text-red-500 text-[10px] font-bold uppercase tracking-widest mt-1.5 ml-1">{errors.category_ids}</p>}
-
-                  <AnimatePresence>
-                    {isDropdownOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 10 }}
-                        className="absolute z-20 left-0 right-0 mt-2 bg-white border border-slate-100 rounded-xl shadow-2xl overflow-hidden flex flex-col"
-                      >
-                        <div className="p-2 border-b border-slate-100">
-                          <input
-                            type="text"
-                            autoFocus
-                            placeholder="Search category..."
-                            value={categorySearchTerm}
-                            onChange={(e) => setCategorySearchTerm(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-sm outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </div>
-                        <div className="p-1 max-h-48 overflow-y-auto">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setForm({ ...form, category_ids: [] });
-                              setIsDropdownOpen(false);
-                            }}
-                            className="w-full text-left px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-red-500 transition-colors"
-                          >
-                            Clear All Selections
-                          </button>
-                          {categories
-                            .filter(c => c.name.toLowerCase().includes(categorySearchTerm.toLowerCase()))
-                            .map((cat) => (
-                              <button
-                                key={cat.id}
-                                type="button"
-                                onClick={() => {
-                                  const exists = form.category_ids.includes(cat.id);
-                                  if (exists) {
-                                    setForm({ ...form, category_ids: form.category_ids.filter(id => id !== cat.id) });
-                                  } else {
-                                    setForm({ ...form, category_ids: [...form.category_ids, cat.id] });
-                                  }
-                                  setIsDropdownOpen(false);
-                                  setCategorySearchTerm('');
-                                }}
-                                className={`w-full text-left px-4 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center justify-between mt-1 ${form.category_ids.includes(cat.id)
-                                  ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                                  : 'text-slate-600 hover:bg-slate-100'
-                                  }`}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <span>{cat.name}</span>
-                                  <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${form.category_ids.includes(cat.id) ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-400'
-                                    }`}>
-                                    {cat.product_count}
-                                  </span>
-                                </div>
-                                {form.category_ids.includes(cat.id) && (
-                                  <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                                )}
-                              </button>
-                            ))}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
+                </>
               )}
             </div>
           </div>
@@ -575,15 +534,12 @@ const AdminProducts = () => {
     [searchParams]
   );
   const [modal, setModal] = useState(null); // null | 'create' | product object (edit)
-  const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
-  const [filterSearchTerm, setFilterSearchTerm] = useState('');
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: null, data: null });
+  const [deleting, setDeleting] = useState(false);
   const page = parseInt(searchParams.get('page')) || 1;
   const [totalProducts, setTotalProducts] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const limit = 10;
-
-  const filterDropdownRef = useRef();
-  useClickOutside(filterDropdownRef, () => setIsFilterDropdownOpen(false));
 
   const maxStock = useMemo(() => {
     if (products.length === 0) return 0;
@@ -620,15 +576,18 @@ const AdminProducts = () => {
     fetchCategories();
   }, []);
 
-  const handleDelete = async (product) => {
-    if (!window.confirm(`Delete "${product.name}"? This cannot be undone.`)) return;
+  const handleDelete = async () => {
+    const product = confirmModal.data;
+    setDeleting(true);
     try {
-      // Backend: DELETE /products/{id} (admin only)
       await api.delete(`/products/${product.id}`);
       toast.success('Product deleted');
       setProducts((prev) => prev.filter((p) => p.id !== product.id));
+      setConfirmModal({ isOpen: false, type: null, data: null });
     } catch (error) {
       toast.error(error.response?.data || 'Failed to delete');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -652,14 +611,17 @@ const AdminProducts = () => {
   };
 
   const handleBulkDelete = async () => {
-    if (!window.confirm(`Delete ${selectedIds.length} products? This cannot be undone.`)) return;
+    setDeleting(true);
     try {
       await api.post('/products/bulk-delete', { ids: selectedIds });
       toast.success(`${selectedIds.length} products deleted`);
       setProducts(prev => prev.filter(p => !selectedIds.includes(p.id)));
       setSelectedIds([]);
+      setConfirmModal({ isOpen: false, type: null, data: null });
     } catch {
       toast.error('Bulk delete failed');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -670,7 +632,7 @@ const AdminProducts = () => {
   });
 
   return (
-    <div className="px-4 py-8 max-w-screen-2xl mx-auto min-h-screen">
+    <div className="px-4 py-8 max-w-6xl mx-auto min-h-screen">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
         <div>
@@ -736,97 +698,43 @@ const AdminProducts = () => {
             />
           </div>
 
-          <div className="relative min-w-[240px] w-full lg:w-auto" ref={filterDropdownRef}>
-            <button
-              onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
-              className={`w-full flex items-center justify-between bg-white border rounded-xl py-2 px-4 text-xs font-black transition-all active:scale-[0.98] shadow-sm ${selectedCategories.length > 0 ? 'border-primary text-primary ring-4 ring-primary/5' : 'border-slate-200 text-slate-700 hover:border-primary'
-                }`}
-            >
+          <AdminDropdown
+            multiple
+            searchable
+            value={selectedCategories}
+            options={categories}
+            onChange={(selected) => {
+              const ids = selected.map(c => typeof c === 'object' ? c.id : c);
+              searchParams.delete('category');
+              ids.forEach(id => searchParams.append('category', id));
+              setSearchParams(searchParams);
+            }}
+            placeholder="All Categories"
+            className="min-w-[240px] w-full lg:w-auto"
+            renderValue={(selectedIds) => (
               <div className="flex items-center gap-3">
-                <Filter className={`w-4 h-4 ${selectedCategories.length > 0 ? 'text-primary' : 'text-slate-300'}`} />
+                <Filter className={`w-4 h-4 ${selectedIds.length > 0 ? 'text-primary' : 'text-slate-300'}`} />
                 <span className="truncate max-w-[120px] uppercase tracking-widest">
-                  {selectedCategories.length === 0
+                  {selectedIds.length === 0
                     ? 'All Categories'
-                    : selectedCategories.length === 1
-                      ? categories.find(c => c.id === selectedCategories[0])?.name
-                      : `${selectedCategories.length} Selected`}
+                    : selectedIds.length === 1
+                      ? categories.find(c => c.id === selectedIds[0])?.name
+                      : `${selectedIds.length} Selected`}
                 </span>
               </div>
-              <ChevronDown className={`w-3.5 h-3.5 text-slate-300 transition-transform duration-300 ${isFilterDropdownOpen ? 'rotate-180' : ''}`} />
-            </button>
-
-            <AnimatePresence>
-              {isFilterDropdownOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: 15, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 15, scale: 0.95 }}
-                  className="absolute top-full right-0 w-full md:w-[360px] mt-4 bg-white rounded-[32px] shadow-[0_30px_100px_rgba(0,0,0,0.15)] border border-slate-100 z-[70] overflow-hidden"
-                >
-                  <div className="p-2 border-b border-slate-50 flex items-center gap-2 bg-slate-50/30">
-                    <Search className="w-3 h-3 text-slate-300" />
-                    <input
-                      type="text"
-                      placeholder="Search categories..."
-                      value={filterSearchTerm}
-                      onChange={(e) => setFilterSearchTerm(e.target.value)}
-                      className="flex-1 bg-transparent border-none py-0.5 text-[10px] font-bold outline-none placeholder:text-slate-200"
-                      onClick={(e) => e.stopPropagation()}
-                    />
+            )}
+            renderOption={(cat, isSelected) => (
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-lg bg-slate-50 flex items-center justify-center">
+                    <Tags className={`w-3.5 h-3.5 ${isSelected ? 'text-primary' : 'text-slate-300'}`} />
                   </div>
-                  <div className="max-h-[400px] overflow-y-auto p-2 scrollbar-hide">
-                    <button
-                      onClick={() => {
-                        searchParams.delete('category');
-                        setSearchParams(searchParams);
-                        setFilterSearchTerm('');
-                      }}
-                      className={`w-full text-left px-5 py-3.5 text-xs font-black uppercase tracking-widest rounded-2xl transition-all flex items-center justify-between mb-2 ${selectedCategories.length === 0 ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-slate-400 hover:bg-slate-50'
-                        }`}
-                    >
-                      <span>Clear All Filters</span>
-                      {selectedCategories.length === 0 && <CheckCircle className="w-4 h-4" />}
-                    </button>
-
-                    <div className="h-px bg-slate-100 my-2 mx-4" />
-
-                    {categories
-                      .filter(c => c.name.toLowerCase().includes(filterSearchTerm.toLowerCase()))
-                      .map(cat => {
-                        const isSelected = selectedCategories.includes(cat.id);
-                        return (
-                          <button
-                            key={cat.id}
-                            onClick={() => {
-                              let newCats = isSelected
-                                ? selectedCategories.filter(id => id !== cat.id)
-                                : [...selectedCategories, cat.id];
-                              searchParams.delete('category');
-                              newCats.forEach(id => searchParams.append('category', id));
-                              setSearchParams(searchParams);
-                            }}
-                            className={`w-full text-left px-5 py-4 text-xs font-bold rounded-2xl transition-all flex items-center justify-between mb-1 group ${isSelected ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-50'
-                              }`}
-                          >
-                            <div className="flex items-center gap-4">
-                              <div className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-primary border-primary' : 'border-slate-200 group-hover:border-primary'
-                                }`}>
-                                {isSelected && <CheckCircle className="w-3 h-3 text-white" />}
-                              </div>
-                              <span className="uppercase tracking-wide">{cat.name}</span>
-                            </div>
-                            <span className={`text-[10px] font-black px-2 py-1 rounded-lg ${isSelected ? 'bg-primary text-white' : 'bg-slate-100 text-slate-400'
-                              }`}>
-                              {cat.product_count}
-                            </span>
-                          </button>
-                        );
-                      })}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+                  <span className={`text-[10px] font-black uppercase tracking-widest ${isSelected ? 'text-primary' : 'text-slate-600'}`}>{cat.name}</span>
+                </div>
+                {isSelected && <CheckCircle2 className="w-4 h-4 text-primary" />}
+              </div>
+            )}
+          />
         </div>
 
         {/* Filter Tags */}
@@ -888,188 +796,188 @@ const AdminProducts = () => {
         ) : (
           <>
             <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50/50 border-b border-slate-100">
-                  <th className="px-6 py-3 w-10 text-center">
-                    <input
-                      type="checkbox"
-                      className="w-5 h-5 rounded-lg border-2 border-slate-200 text-primary focus:ring-4 focus:ring-primary/10 cursor-pointer transition-all"
-                      checked={filtered.length > 0 && selectedIds.length === filtered.length}
-                      onChange={handleSelectAll}
-                    />
-                  </th>
-                  <th className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Product</th>
-                  <th className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Categories</th>
-                  <th className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Price</th>
-                  <th className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Stock</th>
-                  <th className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Rating</th>
-                  <th className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
-                  <th className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {filtered.map((product) => (
-                  <tr
-                    key={product.id}
-                    className={`group transition-all duration-300 hover:bg-slate-50/80 ${selectedIds.includes(product.id) ? 'bg-primary/5' : ''}`}
-                  >
-                    <td className="px-4 py-2 text-center">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/50 border-b border-slate-100">
+                    <th className="px-6 py-3 w-10 text-center">
                       <input
                         type="checkbox"
-                        className="w-4 h-4 rounded-lg border-2 border-slate-200 text-primary focus:ring-4 focus:ring-primary/10 cursor-pointer transition-all"
-                        checked={selectedIds.includes(product.id)}
-                        onChange={() => toggleSelect(product.id)}
+                        className="w-5 h-5 rounded-lg border-2 border-slate-200 text-primary focus:ring-4 focus:ring-primary/10 cursor-pointer transition-all"
+                        checked={filtered.length > 0 && selectedIds.length === filtered.length}
+                        onChange={handleSelectAll}
                       />
-                    </td>
-                    <td className="px-4 py-2">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-white border border-slate-100 overflow-hidden flex-shrink-0 shadow-sm group-hover:scale-105 transition-transform duration-700">
-                          {getPrimaryImage(product.images) ? (
-                            <img
-                              src={getImageUrl(getPrimaryImage(product.images))}
-                              className="w-full h-full object-cover"
-                              alt={product.name}
-                            />
+                    </th>
+                    <th className="px-4 py-3 text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">Product</th>
+                    <th className="px-4 py-3 text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">Categories</th>
+                    <th className="px-4 py-3 text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">Price</th>
+                    <th className="px-4 py-3 text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">Stock</th>
+                    <th className="px-4 py-3 text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">Rating</th>
+                    <th className="px-4 py-3 text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">Status</th>
+                    <th className="px-4 py-3 text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {filtered.map((product) => (
+                    <tr
+                      key={product.id}
+                      className={`group transition-all duration-300 hover:bg-slate-50/80 ${selectedIds.includes(product.id) ? 'bg-primary/5' : ''}`}
+                    >
+                      <td className="px-4 py-2 text-center">
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 rounded-lg border-2 border-slate-200 text-primary focus:ring-4 focus:ring-primary/10 cursor-pointer transition-all"
+                          checked={selectedIds.includes(product.id)}
+                          onChange={() => toggleSelect(product.id)}
+                        />
+                      </td>
+                      <td className="px-4 py-2">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-white border border-slate-100 overflow-hidden flex-shrink-0 shadow-sm group-hover:scale-105 transition-transform duration-700">
+                            {getPrimaryImage(product.images) ? (
+                              <img
+                                src={getImageUrl(getPrimaryImage(product.images))}
+                                className="w-full h-full object-cover"
+                                alt={product.name}
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-200"><Tags className="w-6 h-6" /></div>
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-bold text-slate-900 truncate text-xs tracking-tight mb-0.5">{product.name}</p>
+                            <p className="text-[9px] font-bold text-slate-600 truncate uppercase tracking-widest opacity-60">ID: {product.slug}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex flex-wrap gap-1.5 max-w-[200px]">
+                          {product.categories && product.categories.length > 0 ? (
+                            product.categories.map(cat => (
+                              <span key={cat.id} className="bg-white border border-slate-100 text-slate-600 px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-tight shadow-sm">
+                                {cat.name}
+                              </span>
+                            ))
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-200"><Tags className="w-6 h-6" /></div>
+                            <span className="text-slate-300 text-[10px] font-bold uppercase tracking-widest opacity-30 italic">Unassigned</span>
                           )}
                         </div>
-                        <div className="min-w-0">
-                          <p className="font-bold text-slate-900 truncate text-xs tracking-tight mb-0.5">{product.name}</p>
-                          <p className="text-[9px] font-bold text-slate-400 truncate uppercase tracking-widest opacity-60">ID: {product.slug}</p>
+                      </td>
+                      <td className="px-4 py-2">
+                        <div className="flex flex-col">
+                          <span className="font-black text-slate-900 text-sm tracking-tighter">৳{product.base_price}</span>
+                          {product.discount_price && (
+                            <span className="text-[9px] font-black text-red-400 line-through opacity-60 uppercase tracking-widest mt-0.5">PROMO: ৳{product.discount_price}</span>
+                          )}
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex flex-wrap gap-1.5 max-w-[200px]">
-                        {product.categories && product.categories.length > 0 ? (
-                          product.categories.map(cat => (
-                            <span key={cat.id} className="bg-white border border-slate-100 text-slate-600 px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-tight shadow-sm">
-                              {cat.name}
+                      </td>
+                      <td className="px-4 py-2">
+                        <div className="flex flex-col gap-1.5 min-w-[80px]">
+                          <div className="flex justify-between items-center mb-0.5">
+                            <span className={`font-black text-sm ${product.stock_count <= 5 ? 'text-red-500' : 'text-slate-900'}`}>
+                              {product.stock_count}
                             </span>
-                          ))
-                        ) : (
-                          <span className="text-slate-300 text-[10px] font-bold uppercase tracking-widest opacity-30 italic">Unassigned</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-2">
-                      <div className="flex flex-col">
-                        <span className="font-black text-slate-900 text-sm tracking-tighter">৳{product.base_price}</span>
-                        {product.discount_price && (
-                          <span className="text-[9px] font-black text-red-400 line-through opacity-60 uppercase tracking-widest mt-0.5">PROMO: ৳{product.discount_price}</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-2">
-                      <div className="flex flex-col gap-1.5 min-w-[80px]">
-                        <div className="flex justify-between items-center mb-0.5">
-                          <span className={`font-black text-sm ${product.stock_count <= 5 ? 'text-red-500' : 'text-slate-900'}`}>
-                            {product.stock_count}
-                          </span>
-                          <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Units</span>
+                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Units</span>
+                          </div>
+                          <div className="w-full h-1 bg-slate-50 rounded-full overflow-hidden border border-slate-100">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${(product.stock_count / maxStock) * 100}%` }}
+                              transition={{ duration: 1, ease: "easeOut" }}
+                              className={`h-full rounded-full shadow-[0_0_8px_rgba(0,0,0,0.1)] ${product.stock_count <= 5 ? 'bg-gradient-to-r from-red-400 to-red-600' : 'bg-gradient-to-r from-primary to-secondary'}`}
+                            />
+                          </div>
                         </div>
-                        <div className="w-full h-1 bg-slate-50 rounded-full overflow-hidden border border-slate-100">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${(product.stock_count / maxStock) * 100}%` }}
-                            transition={{ duration: 1, ease: "easeOut" }}
-                            className={`h-full rounded-full shadow-[0_0_8px_rgba(0,0,0,0.1)] ${product.stock_count <= 5 ? 'bg-gradient-to-r from-red-400 to-red-600' : 'bg-gradient-to-r from-primary to-secondary'}`}
-                          />
+                      </td>
+                      <td className="px-4 py-2">
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5 bg-yellow-50 text-yellow-700 px-2 py-1 rounded-lg border border-yellow-100">
+                            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                            <span className="text-xs font-black tracking-tight">
+                              {product.average_rating > 0 ? product.average_rating.toFixed(1) : 'NEW'}
+                            </span>
+                          </div>
+                          <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">({product.total_reviews})</span>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-2">
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1.5 bg-yellow-50 text-yellow-700 px-2 py-1 rounded-lg border border-yellow-100">
-                          <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                          <span className="text-xs font-black tracking-tight">
-                            {product.average_rating > 0 ? product.average_rating.toFixed(1) : 'NEW'}
-                          </span>
+                      </td>
+                      <td className="px-4 py-2">
+                        <span className={`inline-flex items-center gap-1.5 text-[8px] font-black uppercase tracking-[0.1em] px-2.5 py-1 rounded-full border ${product.is_active
+                          ? 'bg-green-50 text-green-600 border-green-100'
+                          : 'bg-slate-50 text-slate-400 border-slate-100'
+                          }`}>
+                          <div className={`w-2 h-2 rounded-full ${product.is_active ? 'bg-green-500 animate-pulse' : 'bg-slate-300'}`} />
+                          {product.is_active ? 'Online' : 'Offline'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2 text-right">
+                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0">
+                          <button
+                            onClick={() => setModal(product)}
+                            className="p-2 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-all active:scale-90"
+                            title="Configuration"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => setConfirmModal({ isOpen: true, type: 'single', data: product })}
+                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all active:scale-90"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
-                        <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">({product.total_reviews})</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-2">
-                      <span className={`inline-flex items-center gap-1.5 text-[8px] font-black uppercase tracking-[0.1em] px-2.5 py-1 rounded-full border ${product.is_active
-                        ? 'bg-green-50 text-green-600 border-green-100'
-                        : 'bg-slate-50 text-slate-400 border-slate-100'
-                        }`}>
-                        <div className={`w-2 h-2 rounded-full ${product.is_active ? 'bg-green-500 animate-pulse' : 'bg-slate-300'}`} />
-                        {product.is_active ? 'Online' : 'Offline'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2 text-right">
-                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0">
-                        <button
-                          onClick={() => setModal(product)}
-                          className="p-2 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-all active:scale-90"
-                          title="Configuration"
-                        >
-                          <Edit className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(product)}
-                          className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all active:scale-90"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {/* Pagination */}
-        {!loading && totalPages > 1 && (
-          <div className="px-8 py-6 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              Showing {products.length} of {totalProducts} items
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                disabled={page === 1}
-                onClick={() => {
-                  searchParams.set('page', page - 1);
-                  setSearchParams(searchParams);
-                }}
-                className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-600 disabled:opacity-30 hover:border-primary hover:text-primary transition-all active:scale-95 shadow-sm"
-              >
-                Previous
-              </button>
-              <div className="flex items-center gap-1">
-                {[...Array(totalPages)].map((_, i) => (
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {/* Pagination */}
+            {!loading && totalPages > 1 && (
+              <div className="px-8 py-6 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
+                <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">
+                  Showing {products.length} of {totalProducts} items
+                </p>
+                <div className="flex items-center gap-2">
                   <button
-                    key={i + 1}
+                    disabled={page === 1}
                     onClick={() => {
-                      searchParams.set('page', i + 1);
+                      searchParams.set('page', page - 1);
                       setSearchParams(searchParams);
                     }}
-                    className={`w-10 h-10 rounded-xl text-[10px] font-black transition-all active:scale-90 shadow-sm ${page === i + 1
-                        ? 'bg-slate-900 text-white shadow-xl shadow-slate-900/20'
-                        : 'bg-white border border-slate-200 text-slate-600 hover:border-primary'
-                      }`}
+                    className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-600 disabled:opacity-30 hover:border-primary hover:text-primary transition-all active:scale-95 shadow-sm"
                   >
-                    {i + 1}
+                    Previous
                   </button>
-                ))}
+                  <div className="flex items-center gap-1">
+                    {[...Array(totalPages)].map((_, i) => (
+                      <button
+                        key={i + 1}
+                        onClick={() => {
+                          searchParams.set('page', i + 1);
+                          setSearchParams(searchParams);
+                        }}
+                        className={`w-10 h-10 rounded-xl text-[10px] font-black transition-all active:scale-90 shadow-sm ${page === i + 1
+                          ? 'bg-slate-900 text-white shadow-xl shadow-slate-900/20'
+                          : 'bg-white border border-slate-200 text-slate-600 hover:border-primary'
+                          }`}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    disabled={page === totalPages}
+                    onClick={() => {
+                      searchParams.set('page', page + 1);
+                      setSearchParams(searchParams);
+                    }}
+                    className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-600 disabled:opacity-30 hover:border-primary hover:text-primary transition-all active:scale-95 shadow-sm"
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
-              <button
-                disabled={page === totalPages}
-                onClick={() => {
-                  searchParams.set('page', page + 1);
-                  setSearchParams(searchParams);
-                }}
-                className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-600 disabled:opacity-30 hover:border-primary hover:text-primary transition-all active:scale-95 shadow-sm"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-          )}
+            )}
           </>
         )}
       </div>
@@ -1101,7 +1009,7 @@ const AdminProducts = () => {
                 Reset
               </button>
               <button
-                onClick={handleBulkDelete}
+                onClick={() => setConfirmModal({ isOpen: true, type: 'bulk', data: null })}
                 className="bg-red-500 hover:bg-red-600 text-white px-10 py-4 rounded-[20px] font-black text-sm uppercase tracking-widest transition-all flex items-center gap-4 shadow-2xl shadow-red-500/40 active:scale-95 group"
               >
                 <Trash2 className="w-5 h-5 group-hover:rotate-12 transition-transform" />
@@ -1126,6 +1034,18 @@ const AdminProducts = () => {
           />
         )}
       </AnimatePresence>
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, type: null, data: null })}
+        onConfirm={confirmModal.type === 'bulk' ? handleBulkDelete : handleDelete}
+        loading={deleting}
+        title={confirmModal.type === 'bulk' ? `Delete ${selectedIds.length} Products?` : "Delete Product?"}
+        message={confirmModal.type === 'bulk'
+          ? "All selected products will be permanently removed. This action cannot be undone."
+          : `Are you sure you want to delete "${confirmModal.data?.name}"? This action is permanent.`
+        }
+      />
     </div>
   );
 };

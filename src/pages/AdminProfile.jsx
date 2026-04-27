@@ -108,7 +108,7 @@ const AdminProfile = () => {
               <div className="space-y-3 pt-6 border-t border-slate-50 text-left">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-slate-400 font-bold uppercase tracking-wider">Access Level</span>
-                  <span className="text-emerald-500 font-black">{user?.role?.toUpperCase()}</span>
+                  <span className="text-emerald-500 font-black">{user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase() : ''}</span>
                 </div>
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-slate-400 font-bold uppercase tracking-wider">Status</span>

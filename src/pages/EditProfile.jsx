@@ -9,74 +9,11 @@ import useAuthStore from '../store/useAuthStore';
 import api from '../api/axios';
 import { getImageUrl } from '../api/axios';
 import toast from 'react-hot-toast';
-import SegmentedOTPInput from '../components/SegmentedOTPInput';
+import OTPModal from '../components/OTPModal';
+import ActionConfirmationModal from '../components/ActionConfirmationModal';
 import ErrorMsg from '../components/ErrorMsg';
 
-const OTPModal = ({ isOpen, onClose, onVerify, purpose, loading }) => {
-  const [otp, setOtp] = useState('');
-  const [error, setError] = useState('');
 
-  if (!isOpen) return null;
-
-  const handleVerify = () => {
-    if (otp.length < 6) {
-      setError('Please enter 6-digit code');
-      return;
-    }
-    onVerify(otp);
-  };
-
-  return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-        <motion.div
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          onClick={onClose} className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-        />
-        <motion.div
-          initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
-          className="relative w-full max-w-md bg-white rounded-[2.5rem] p-8 md:p-10 shadow-2xl"
-        >
-          <button onClick={onClose} className="absolute top-6 right-6 p-2 hover:bg-slate-50 rounded-full transition-colors">
-            <X className="w-5 h-5 text-slate-400" />
-          </button>
-
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <ShieldCheck className="w-8 h-8" />
-            </div>
-            <h3 className="text-2xl font-bold text-slate-900 mb-2">Verify it's you</h3>
-            <p className="text-slate-500 text-sm leading-relaxed">
-              We've sent a code for <span className="font-bold text-slate-900 uppercase">{purpose}</span> update.
-            </p>
-          </div>
-
-          <div className="space-y-6">
-            <div>
-              <SegmentedOTPInput
-                value={otp}
-                onChange={(val) => {
-                  setOtp(val);
-                  setError('');
-                }}
-                disabled={loading}
-              />
-              <AnimatePresence>{error && <ErrorMsg message={error} />}</AnimatePresence>
-            </div>
-
-            <button
-              onClick={handleVerify}
-              disabled={loading || otp.length !== 6}
-              className="w-full py-5 bg-slate-900 text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition-all disabled:opacity-50"
-            >
-              {loading ? <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : 'Verify & Update'}
-            </button>
-          </div>
-        </motion.div>
-      </div>
-    </AnimatePresence>
-  );
-};
 
 const EditProfile = () => {
   const { user, updateProfile, requestOTP, secureUpdate, uploadAvatar, loading } = useAuthStore();
@@ -88,7 +25,8 @@ const EditProfile = () => {
   const [errors, setErrors] = useState({});
   const [avatarLoading, setAvatarLoading] = useState(false);
 
-  const [otpModal, setOtpModal] = useState({ isOpen: false, purpose: '', targetData: null });
+   const [otpModal, setOtpModal] = useState({ isOpen: false, purpose: '', targetData: null });
+   const [confirmModal, setConfirmModal] = useState({ isOpen: false, purpose: '', targetData: null });
 
   useEffect(() => {
     if (user) {
@@ -159,16 +97,29 @@ const EditProfile = () => {
       return;
     }
 
+    const targetData = purpose === 'password' ? { password: sensitiveData.password } :
+      purpose === 'email' ? { email: sensitiveData.email } :
+        { phone: sensitiveData.phone };
+
+    setConfirmModal({
+      isOpen: true,
+      purpose,
+      targetData
+    });
+    setErrors({});
+  };
+
+  const handleConfirmedSecureUpdate = async () => {
+    const { purpose, targetData } = confirmModal;
+    setConfirmModal({ isOpen: false, purpose: '', targetData: null });
+    
     try {
       await requestOTP(purpose);
       setOtpModal({
         isOpen: true,
         purpose: purpose,
-        targetData: purpose === 'password' ? { password: sensitiveData.password } :
-          purpose === 'email' ? { email: sensitiveData.email } :
-            { phone: sensitiveData.phone }
+        targetData: targetData
       });
-      setErrors({});
     } catch (error) {
       toast.error(error.response?.data || 'Failed to send OTP');
     }
@@ -386,12 +337,26 @@ const EditProfile = () => {
         </div>
       </div>
 
+      <ActionConfirmationModal 
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, purpose: '', targetData: null })}
+        onConfirm={handleConfirmedSecureUpdate}
+        title={`Update ${confirmModal.purpose.charAt(0).toUpperCase() + confirmModal.purpose.slice(1)}?`}
+        description={`To change your ${confirmModal.purpose}, we need to send a verification code to your current email. Would you like to proceed?`}
+        confirmText="Confirm & Send OTP"
+        type="warning"
+        icon={confirmModal.purpose === 'password' ? Lock : confirmModal.purpose === 'email' ? Mail : Phone}
+      />
+
       <OTPModal
         isOpen={otpModal.isOpen}
         onClose={() => setOtpModal({ isOpen: false, purpose: '', targetData: null })}
-        onVerify={handleOTPVerify}
-        purpose={otpModal.purpose}
+        onConfirm={handleOTPVerify}
+        onResend={() => requestOTP(otpModal.purpose)}
+        email={user?.email}
         loading={loading}
+        title={`Verify ${otpModal.purpose === 'password' ? 'Password' : otpModal.purpose === 'email' ? 'Email' : 'Phone'} Update`}
+        description={`A 6-digit verification code has been sent to your email to confirm the changes.`}
       />
     </div>
   );

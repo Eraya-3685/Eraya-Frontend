@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, RefreshCcw, AlertCircle, ShieldCheck, ChevronLeft } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/useAuthStore';
-import SegmentedOTPInput from '../components/SegmentedOTPInput';
+import OTPModal from '../components/OTPModal';
+import ActionConfirmationModal from '../components/ActionConfirmationModal';
 import ErrorMsg from '../components/ErrorMsg';
 import Logo from '../components/Logo';
 import toast from 'react-hot-toast';
@@ -21,7 +22,8 @@ const Login = () => {
   const [errors, setErrors] = useState({});
   const [unverifiedUserId, setUnverifiedUserId] = useState(null);
   const [isVerifying, setIsVerifying] = useState(false);
-  const [activationOtp, setActivationOtp] = useState('');
+  const [showActivationConfirm, setShowActivationConfirm] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const { login, verifySignup, resendActivationOTP, forgotPassword, resetPassword, loading } = useAuthStore();
   const navigate = useNavigate();
@@ -64,6 +66,7 @@ const Login = () => {
       const idMatch = serverMsg.match(/\[ID:(\d+)\]/);
       if (idMatch) {
         setUnverifiedUserId(idMatch[1]);
+        setShowActivationConfirm(true);
         serverMsg = serverMsg.replace(/\[ID:\d+\]/, '').trim();
       }
       
@@ -75,15 +78,9 @@ const Login = () => {
     }
   };
 
-  const handleActivationVerify = async (e) => {
-    e.preventDefault();
-    if (activationOtp.length < 6) {
-      toast.error('Please enter 6-digit code');
-      return;
-    }
-
+  const handleActivationVerify = async (otp) => {
     try {
-      const role = await verifySignup(Number(unverifiedUserId), activationOtp);
+      const role = await verifySignup(Number(unverifiedUserId), otp);
       toast.success('Account verified successfully! You are now logged in.');
       
       const roleLower = role?.toLowerCase()?.trim();
@@ -97,12 +94,26 @@ const Login = () => {
     }
   };
 
+  const handleResendActivation = async () => {
+    try {
+      await resendActivationOTP(Number(unverifiedUserId));
+      toast.success('Verification code resent!');
+    } catch (error) {
+      toast.error('Failed to resend code');
+    }
+  };
+
   const handleForgotRequest = async (e) => {
     e.preventDefault();
     if (!resetEmail) {
       setErrors({ resetEmail: 'Email address is required' });
       return;
     }
+    setShowResetConfirm(true);
+  };
+
+  const handleConfirmedReset = async () => {
+    setShowResetConfirm(false);
     try {
       await forgotPassword(resetEmail);
       toast.success('Reset code sent!');
@@ -113,22 +124,35 @@ const Login = () => {
     }
   };
 
-  const validateReset = () => {
-    const newErrors = {};
-    if (!resetData.otp || resetData.otp.length < 6) newErrors.otp = '6-digit code required';
-    if (resetData.password.length < 6) newErrors.password = 'Min 6 characters required';
-    if (resetData.password !== resetData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const handleConfirmedActivation = async () => {
+    setShowActivationConfirm(false);
+    try {
+      await resendActivationOTP(Number(unverifiedUserId));
+      setIsVerifying(true);
+      toast.success('Verification code sent!');
+    } catch (error) {
+      toast.error('Failed to send code');
+    }
   };
 
   const handleResetSubmit = async (e) => {
     e.preventDefault();
-    if (!validateReset()) return;
+    if (!resetData.password || resetData.password.length < 6) {
+      setErrors({ password: 'Password must be at least 6 characters' });
+      return;
+    }
+    if (resetData.password !== resetData.confirmPassword) {
+      setErrors({ confirmPassword: 'Passwords do not match' });
+      return;
+    }
+    setResetStep(3); // Show OTP Modal
+  };
+
+  const handleFinalReset = async (otp) => {
     try {
       const role = await resetPassword({
         email: resetEmail,
-        otp: resetData.otp,
+        otp: otp,
         password: resetData.password
       });
       const roleLower = role?.toLowerCase()?.trim();
@@ -139,6 +163,7 @@ const Login = () => {
       const msg = error.response?.data;
       if (typeof msg === 'string' && msg.includes('same as the old one')) {
         setErrors({ password: 'New password cannot be the same as your old one' });
+        setResetStep(2);
       } else {
         toast.error(msg || 'Reset failed');
       }
@@ -184,66 +209,30 @@ const Login = () => {
                 <h2 className="text-2xl font-bold text-slate-900 mb-2">Welcome back</h2>
                 <p className="text-slate-500 text-sm mb-8">Sign in to your account to continue.</p>
 
-                {isVerifying ? (
-                  <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="space-y-6"
-                  >
-                    <button
-                      onClick={() => setIsVerifying(false)}
-                      className="flex items-center gap-2 text-slate-500 hover:text-secondary transition-colors text-sm font-bold mb-6"
-                    >
-                      <ChevronLeft className="w-4 h-4" /> Back to Sign In
-                    </button>
-                    
-                    <div className="text-center space-y-2 mb-8">
-                      <h2 className="text-2xl font-bold text-slate-900">Verify Your Account</h2>
-                      <p className="text-slate-500 text-sm leading-relaxed">
-                        We've sent a 6-digit verification code to <span className="text-slate-900 font-bold">{identifier}</span>. 
-                        Please enter it below to activate your account.
-                      </p>
-                    </div>
+                {/* Activation OTP Modal */}
+                <ActionConfirmationModal 
+                  isOpen={showActivationConfirm}
+                  onClose={() => setShowActivationConfirm(false)}
+                  onConfirm={handleConfirmedActivation}
+                  title="Activate Account?"
+                  description="Your account is not activated. We need to send a verification code to your email to proceed. Would you like to send it now?"
+                  confirmText="Send OTP"
+                  type="info"
+                  icon={Mail}
+                />
 
-                    <form onSubmit={handleActivationVerify} className="space-y-6">
-                      <div className="space-y-4">
-                        <label className="text-xs font-bold text-slate-700 uppercase tracking-widest ml-1">Verification Code</label>
-                        <SegmentedOTPInput
-                          value={activationOtp}
-                          onChange={(val) => setActivationOtp(val)}
-                          disabled={loading}
-                        />
-                      </div>
+                <OTPModal 
+                  isOpen={isVerifying}
+                  onClose={() => setIsVerifying(false)}
+                  onConfirm={handleActivationVerify}
+                  onResend={handleResendActivation}
+                  email={identifier}
+                  loading={loading}
+                  title="Activate Account"
+                  description="Your account is not activated. Please enter the verification code sent to your email."
+                />
 
-                      <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full bg-secondary hover:bg-secondary-dark text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-secondary/20 flex items-center justify-center gap-2 disabled:opacity-50"
-                      >
-                        {loading ? <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <>Verify & Sign In <ShieldCheck className="w-5 h-5" /></>}
-                      </button>
-
-                      <div className="text-center">
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            try {
-                              await resendActivationOTP(Number(unverifiedUserId));
-                              toast.success('A new verification code has been sent!');
-                            } catch (error) {
-                              toast.error(error.response?.data?.error || 'Failed to resend code');
-                            }
-                          }}
-                          className="text-xs font-bold text-slate-400 hover:text-secondary transition-colors"
-                        >
-                          Didn't receive the code? Resend Code
-                        </button>
-                      </div>
-                    </form>
-                  </motion.div>
-                ) : (
-                  <>
-                    <form
+                <form
                   onSubmit={handleSubmit}
                   method="POST"
                   action="/login"
@@ -356,8 +345,6 @@ const Login = () => {
                   </div>
                   Continue with Google
                 </button>
-                </>
-                )}
               </motion.div>
             ) : (
               <motion.div
@@ -417,19 +404,6 @@ const Login = () => {
                   </form>
                 ) : (
                   <form onSubmit={handleResetSubmit} className="space-y-5">
-                    <div className="space-y-4">
-                      <label className="text-xs font-bold text-slate-700 uppercase tracking-widest ml-1">Verification Code</label>
-                      <SegmentedOTPInput
-                        value={resetData.otp}
-                        onChange={(val) => {
-                          setResetData({ ...resetData, otp: val });
-                          if (errors.otp) setErrors({ ...errors, otp: null });
-                        }}
-                        disabled={loading}
-                      />
-                      <AnimatePresence>{errors.otp && <ErrorMsg message={errors.otp} />}</AnimatePresence>
-                    </div>
-
                     <div className="space-y-2 pt-2">
                       <label className="text-xs font-bold text-slate-700 uppercase tracking-widest ml-1">New Password</label>
                       <div className="relative group">
@@ -452,7 +426,7 @@ const Login = () => {
                       </div>
                       <AnimatePresence>{errors.password && <ErrorMsg message={errors.password} />}</AnimatePresence>
                     </div>
-
+ 
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-slate-700 uppercase tracking-widest ml-1">Confirm Password</label>
                       <div className="relative group">
@@ -475,12 +449,34 @@ const Login = () => {
                       </div>
                       <AnimatePresence>{errors.confirmPassword && <ErrorMsg message={errors.confirmPassword} />}</AnimatePresence>
                     </div>
-
+ 
                     <button type="submit" disabled={loading} className="w-full py-4 bg-slate-900 text-white rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-800 transition-all active:scale-[0.98] disabled:opacity-50 shadow-xl">
-                      {loading ? <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <>Reset Password</>}
+                      {loading ? <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <>Continue to Verification</>}
                     </button>
                   </form>
                 )}
+                
+                <ActionConfirmationModal 
+                  isOpen={showResetConfirm}
+                  onClose={() => setShowResetConfirm(false)}
+                  onConfirm={handleConfirmedReset}
+                  title="Reset Password?"
+                  description={`We will send a password reset code to ${resetEmail}. Would you like to proceed?`}
+                  confirmText="Send Reset OTP"
+                  type="info"
+                  icon={Lock}
+                />
+
+                <OTPModal 
+                  isOpen={resetStep === 3}
+                  onClose={() => setResetStep(2)}
+                  onConfirm={handleFinalReset}
+                  onResend={() => forgotPassword(resetEmail)}
+                  email={resetEmail}
+                  loading={loading}
+                  title="Verify Reset Code"
+                  description="Please enter the 6-digit code sent to your email to verify your identity and reset your password."
+                />
               </motion.div>
             )}
           </AnimatePresence>

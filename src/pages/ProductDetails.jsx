@@ -153,13 +153,20 @@ const ProductDetails = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="aspect-square bg-white rounded-[2.5rem] overflow-hidden border border-slate-100 shadow-sm"
+            className="aspect-square bg-white rounded-[2.5rem] overflow-hidden border border-slate-100 shadow-sm relative"
           >
             <img
               src={getImageUrl(selectedImage)}
               className="w-full h-full object-cover hover:scale-110 transition-transform duration-700"
               alt={product.name}
             />
+            {product.stock_count <= 0 && (
+              <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] flex items-center justify-center z-10 pointer-events-none">
+                <div className="bg-slate-900 text-white px-8 py-4 rounded-full text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-black/20 transform -rotate-12 border border-white/20">
+                  Stock Out
+                </div>
+              </div>
+            )}
           </motion.div>
           {product.images?.length > 1 && (
             <div className="grid grid-cols-4 gap-4">
@@ -233,24 +240,30 @@ const ProductDetails = () => {
               <>
                 <div className="flex items-center gap-10">
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] w-16">Quantity</span>
-                  <div className="flex items-center gap-5">
-                    <div className="flex items-center gap-3 bg-white rounded-2xl p-1.5 w-fit border border-slate-100 shadow-sm">
-                      <button
-                        onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                        className="w-10 h-10 flex items-center justify-center hover:bg-slate-50 rounded-xl transition-all"
-                      >
-                        <Minus className="w-4 h-4 text-slate-600" />
-                      </button>
-                      <span className="font-black w-8 text-center text-sm">{quantity}</span>
-                      <button
-                        onClick={() => setQuantity((q) => Math.min(product.stock_count, q + 1))}
-                        className="w-10 h-10 flex items-center justify-center hover:bg-slate-50 rounded-xl transition-all"
-                      >
-                        <Plus className="w-4 h-4 text-slate-600" />
-                      </button>
-                    </div>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{product.stock_count} Available</span>
-                  </div>
+                   <div className="flex items-center gap-5">
+                     <div className={`flex items-center gap-3 bg-white rounded-2xl p-1.5 w-fit border border-slate-100 shadow-sm ${product.stock_count <= 0 ? 'opacity-30 pointer-events-none' : ''}`}>
+                       <button
+                         onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                         disabled={product.stock_count <= 0}
+                         className="w-10 h-10 flex items-center justify-center hover:bg-slate-50 rounded-xl transition-all"
+                       >
+                         <Minus className="w-4 h-4 text-slate-600" />
+                       </button>
+                       <span className="font-black w-8 text-center text-sm">{quantity}</span>
+                       <button
+                         onClick={() => setQuantity((q) => Math.min(product.stock_count, q + 1))}
+                         disabled={product.stock_count <= 0}
+                         className="w-10 h-10 flex items-center justify-center hover:bg-slate-50 rounded-xl transition-all"
+                       >
+                         <Plus className="w-4 h-4 text-slate-600" />
+                       </button>
+                     </div>
+                     {product.stock_count > 0 ? (
+                       <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">{product.stock_count} Available</span>
+                     ) : (
+                       <span className="text-[10px] font-black text-red-500 uppercase tracking-widest">Out of Stock</span>
+                     )}
+                   </div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-4">
@@ -266,21 +279,21 @@ const ProductDetails = () => {
                       addItem(product, quantity);
                       navigate('/checkout');
                     }}
-                    disabled={product.stock_count === 0 || buyingNow}
+                    disabled={product.stock_count <= 0 || buyingNow}
                     className="flex-grow bg-secondary text-white py-5 rounded-2xl font-black hover:bg-secondary/90 transition-all flex items-center justify-center gap-3 shadow-2xl shadow-secondary/20 disabled:opacity-50 text-[11px] uppercase tracking-[0.2em]"
                   >
                     {buyingNow ? (
                       <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                    ) : 'Buy Now'}
+                    ) : product.stock_count <= 0 ? 'Out of Stock' : 'Buy Now'}
                   </button>
                   <button
                     onClick={handleAddToCart}
-                    disabled={product.stock_count === 0 || addingToCart}
+                    disabled={product.stock_count <= 0 || addingToCart}
                     className="flex-grow bg-slate-900 text-white py-5 rounded-2xl font-black hover:bg-slate-800 transition-all flex items-center justify-center gap-3 shadow-2xl shadow-slate-200 disabled:opacity-50 text-[11px] uppercase tracking-[0.2em]"
                   >
                     {addingToCart ? (
                       <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                    ) : (
+                    ) : product.stock_count <= 0 ? 'Sold Out' : (
                       <>
                         <ShoppingCart className="w-4 h-4" />
                         Add to Cart

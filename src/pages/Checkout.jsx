@@ -30,18 +30,25 @@ const Checkout = () => {
   }, [user, navigate, fetchSettings]);
 
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(parseInt(localStorage.getItem('checkout_step')) || 1);
   const [errors, setErrors] = useState({});
 
   const [form, setForm] = useState({
     shipping_address: localStorage.getItem('checkout_shipping_address') || user?.address || '',
-    payment_method: 'COD',
+    payment_method: localStorage.getItem('checkout_payment_method') || 'COD',
+    trx_id: localStorage.getItem('checkout_trx_id') || '',
+    sender_number: localStorage.getItem('checkout_sender_number') || '',
+    paid_amount: localStorage.getItem('checkout_paid_amount') || '',
   });
 
-  // Persist address to localStorage as user types
   React.useEffect(() => {
+    localStorage.setItem('checkout_step', step.toString());
     localStorage.setItem('checkout_shipping_address', form.shipping_address);
-  }, [form.shipping_address]);
+    localStorage.setItem('checkout_payment_method', form.payment_method);
+    localStorage.setItem('checkout_trx_id', form.trx_id);
+    localStorage.setItem('checkout_sender_number', form.sender_number);
+    localStorage.setItem('checkout_paid_amount', form.paid_amount);
+  }, [form, step]);
 
   const subtotal = items.reduce((sum, item) => sum + item.base_price * item.quantity, 0);
   const shipping = subtotal >= settings.free_shipping_threshold ? 0 : settings.standard_delivery_fee;
@@ -58,6 +65,9 @@ const Checkout = () => {
         })),
         shipping_address: form.shipping_address,
         payment_method: form.payment_method,
+        trx_id: form.payment_method === 'bKash' ? form.trx_id : null,
+        sender_number: form.payment_method === 'bKash' ? form.sender_number : null,
+        paid_amount: form.payment_method === 'bKash' ? parseFloat(form.paid_amount) : null,
       };
 
       await api.post('/orders/checkout', orderData);
@@ -235,7 +245,75 @@ const Checkout = () => {
                        {form.payment_method === 'COD' && <div className="absolute top-4 right-4 w-4 h-4 bg-secondary rounded-full border-2 border-white shadow-sm" />}
                     </button>
                  </div>
-                 <button onClick={() => setStep(3)} className="w-full sm:w-auto px-12 py-5 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl hover:bg-secondary transition-all active:scale-95">Continue to Review</button>
+
+                 <AnimatePresence>
+                    {form.payment_method === 'bKash' && (
+                      <motion.div 
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="p-8 bg-[#D12053]/5 rounded-[2rem] border border-[#D12053]/10 space-y-6">
+                           <div className="flex items-center gap-3 mb-2">
+                              <div className="w-8 h-8 bg-[#D12053] rounded-xl flex items-center justify-center text-white">
+                                 <ShieldCheck className="w-4 h-4" />
+                              </div>
+                              <h4 className="text-[10px] font-black text-[#D12053] uppercase tracking-[0.2em]">Verify your bKash Transaction</h4>
+                           </div>
+                           
+                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              <div className="space-y-2">
+                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">bKash Number</label>
+                                <input 
+                                  type="text"
+                                  value={form.sender_number}
+                                  onChange={(e) => setForm({...form, sender_number: e.target.value})}
+                                  placeholder="017XXXXXXXX"
+                                  className="w-full bg-white border border-slate-100 rounded-2xl p-4 text-sm font-bold outline-none focus:ring-4 focus:ring-[#D12053]/5 focus:border-[#D12053]/30 transition-all"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Transaction ID (TrxID)</label>
+                                <input 
+                                  type="text"
+                                  value={form.trx_id}
+                                  onChange={(e) => setForm({...form, trx_id: e.target.value})}
+                                  placeholder="8N7X6W5V4U"
+                                  className="w-full bg-white border border-slate-100 rounded-2xl p-4 text-sm font-bold outline-none focus:ring-4 focus:ring-[#D12053]/5 focus:border-[#D12053]/30 transition-all uppercase"
+                                />
+                              </div>
+                           </div>
+                           <div className="space-y-2">
+                              <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Amount Sent (৳)</label>
+                              <input 
+                                type="number"
+                                value={form.paid_amount}
+                                onChange={(e) => setForm({...form, paid_amount: e.target.value})}
+                                placeholder={`Expected: ৳${total}`}
+                                className="w-full bg-white border border-slate-100 rounded-2xl p-4 text-sm font-bold outline-none focus:ring-4 focus:ring-[#D12053]/5 focus:border-[#D12053]/30 transition-all"
+                              />
+                           </div>
+                           <p className="text-[9px] text-[#D12053]/60 italic px-1 font-medium">Please send the money to our official bKash merchant number first, then provide the details above for verification.</p>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                 <button 
+                    onClick={() => {
+                      if (form.payment_method === 'bKash') {
+                        if (!form.sender_number || !form.trx_id || !form.paid_amount) {
+                          toast.error('Please provide all bKash payment details');
+                          return;
+                        }
+                      }
+                      setStep(3);
+                    }} 
+                    className="w-full sm:w-auto px-12 py-5 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl hover:bg-secondary transition-all active:scale-95"
+                 >
+                   Continue to Review
+                 </button>
                </div>
              )}
              {step > 2 && (
@@ -308,8 +386,13 @@ const Checkout = () => {
                     const itemImageUrl = item.image_url || (item.images?.length > 0 ? (item.images.find(img => img.is_primary)?.image_url || item.images[0].image_url) : null);
                     return (
                       <div key={item.id} className="flex items-center gap-5 group/mini transition-all hover:translate-x-1">
-                        <div className="w-12 h-12 bg-white rounded-xl overflow-hidden flex-shrink-0 border border-slate-100 shadow-sm transition-all group-hover/mini:shadow-md">
+                        <div className="w-12 h-12 bg-white rounded-xl overflow-hidden flex-shrink-0 border border-slate-100 shadow-sm transition-all group-hover/mini:shadow-md relative">
                           <img src={getImageUrl(itemImageUrl)} className="w-full h-full object-contain p-1.5" alt={item.name} />
+                          {item.stock_count <= 0 && (
+                            <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center z-10 pointer-events-none">
+                               <span className="bg-slate-900 text-white text-[4px] font-black uppercase px-1 py-0.5 rounded-full transform -rotate-12">Stock Out</span>
+                            </div>
+                          )}
                         </div>
                         <div className="flex-grow min-w-0">
                           <p className="text-[11px] font-black text-slate-900 truncate leading-tight tracking-tight">{item.name}</p>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Settings, Save, Truck, DollarSign, Percent, ChevronRight } from 'lucide-react';
+import { Settings, Save, Truck, DollarSign, Percent, ChevronRight, Mail, Phone, MapPin } from 'lucide-react';
 import useSettingsStore from '../store/useSettingsStore';
 import toast from 'react-hot-toast';
 import useDocumentTitle from '../hooks/useDocumentTitle';
@@ -12,6 +12,9 @@ const AdminSettings = () => {
     free_shipping_threshold: 1999,
     standard_delivery_fee: 85,
     tax_percentage: 5,
+    store_email: '',
+    store_phone: '',
+    store_address: '',
   });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -25,6 +28,9 @@ const AdminSettings = () => {
         free_shipping_threshold: settings.free_shipping_threshold ?? 1999,
         standard_delivery_fee: settings.standard_delivery_fee ?? 85,
         tax_percentage: settings.tax_percentage ?? 5,
+        store_email: settings.store_email || '',
+        store_phone: settings.store_phone || '',
+        store_address: settings.store_address || '',
         id: settings.id
       });
     }
@@ -60,7 +66,7 @@ const AdminSettings = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 pt-32 pb-20 px-6">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
           <div>
@@ -70,7 +76,7 @@ const AdminSettings = () => {
               </div>
               <h1 className="text-3xl font-[1000] text-slate-900 tracking-tight">Store Settings</h1>
             </div>
-            <p className="text-sm font-bold text-slate-400">Manage delivery fees, tax rates, and free shipping thresholds</p>
+            <p className="text-sm font-bold text-slate-400">Manage delivery fees, tax rates, and official store contact information</p>
           </div>
           <button
             onClick={handleSave}
@@ -86,7 +92,7 @@ const AdminSettings = () => {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {/* Shipping Threshold */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -106,7 +112,6 @@ const AdminSettings = () => {
                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-12 pr-6 text-sm font-black text-slate-900 outline-none focus:ring-4 focus:ring-indigo-600/5 focus:border-indigo-600 transition-all"
                />
             </div>
-            <p className="mt-4 text-[10px] font-bold text-slate-400 px-1 leading-relaxed">Customers will get free delivery when their subtotal reaches this amount.</p>
           </motion.div>
 
           {/* Standard Delivery Fee */}
@@ -129,7 +134,6 @@ const AdminSettings = () => {
                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-12 pr-6 text-sm font-black text-slate-900 outline-none focus:ring-4 focus:ring-indigo-600/5 focus:border-indigo-600 transition-all"
                />
             </div>
-            <p className="mt-4 text-[10px] font-bold text-slate-400 px-1 leading-relaxed">The base shipping cost applied to orders below the free shipping threshold.</p>
           </motion.div>
 
           {/* Tax Percentage */}
@@ -152,32 +156,63 @@ const AdminSettings = () => {
                />
                <div className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 font-black">%</div>
             </div>
-            <p className="mt-4 text-[10px] font-bold text-slate-400 px-1 leading-relaxed">Tax percentage automatically calculated and added to the order total.</p>
           </motion.div>
 
-          {/* Quick Help */}
+          {/* Store Email */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="bg-slate-900 p-8 rounded-[2.5rem] text-white shadow-xl shadow-slate-200"
+            className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm group hover:border-indigo-600/30 transition-all"
           >
-            <h4 className="text-lg font-black mb-4 tracking-tight">Need help?</h4>
-            <p className="text-xs font-bold text-slate-400 mb-8 leading-relaxed">These settings are applied globally and affect all customer orders in real-time. Make sure to double-check before saving.</p>
-            <div className="space-y-4">
-               {[
-                 'Ensure values are numeric',
-                 'Standard fee must be >= 0',
-                 'Changes apply immediately'
-               ].map((text, i) => (
-                 <div key={i} className="flex items-center gap-3">
-                   <div className="w-5 h-5 bg-white/10 rounded-lg flex items-center justify-center">
-                     <ChevronRight className="w-3 h-3 text-indigo-400" />
-                   </div>
-                   <span className="text-[10px] font-black uppercase tracking-widest">{text}</span>
-                 </div>
-               ))}
+            <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110">
+              <Mail className="w-7 h-7 text-blue-500" />
             </div>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 px-1">Store Official Email</label>
+            <input
+              type="email"
+              value={form.store_email}
+              onChange={(e) => setForm({ ...form, store_email: e.target.value })}
+              className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 px-6 text-sm font-black text-slate-900 outline-none focus:ring-4 focus:ring-indigo-600/5 focus:border-indigo-600 transition-all"
+            />
+          </motion.div>
+
+          {/* Store Phone */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm group hover:border-indigo-600/30 transition-all"
+          >
+            <div className="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110">
+              <Phone className="w-7 h-7 text-rose-500" />
+            </div>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 px-1">Store Contact Phone</label>
+            <input
+              type="text"
+              value={form.store_phone}
+              onChange={(e) => setForm({ ...form, store_phone: e.target.value })}
+              className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 px-6 text-sm font-black text-slate-900 outline-none focus:ring-4 focus:ring-indigo-600/5 focus:border-indigo-600 transition-all"
+            />
+          </motion.div>
+
+          {/* Store Address */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm group hover:border-indigo-600/30 transition-all"
+          >
+            <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110">
+              <MapPin className="w-7 h-7 text-slate-600" />
+            </div>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 px-1">Store Physical Address</label>
+            <textarea
+              rows={2}
+              value={form.store_address}
+              onChange={(e) => setForm({ ...form, store_address: e.target.value })}
+              className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 px-6 text-sm font-black text-slate-900 outline-none focus:ring-4 focus:ring-indigo-600/5 focus:border-indigo-600 transition-all resize-none"
+            />
           </motion.div>
         </div>
       </div>

@@ -88,6 +88,10 @@ const useWishlistStore = create(
           }
         }
       },
+      
+      syncItems: (updatedItems) => {
+        set({ items: updatedItems });
+      },
     }),
     {
       name: 'eraya-wishlist-storage',

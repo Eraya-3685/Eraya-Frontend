@@ -83,6 +83,7 @@ const Products = () => {
   const [total, setTotal] = useState(0);
   const [sortBy, setSortBy] = useState('newest');
   const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(false);
+  const [loadingItemId, setLoadingItemId] = useState(null); // stores productId for Cart/Wishlist async actions
   
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
@@ -158,13 +159,16 @@ const Products = () => {
     setPage(1);
   };
 
-  const handleAddToCart = (product) => {
+  const handleAddToCart = async (product) => {
     const role = user?.role?.toLowerCase();
     if (role === 'admin' || role === 'moderator') {
       toast.error('Management accounts cannot add items to cart');
       return;
     }
+    setLoadingItemId(product.id);
+    await new Promise(resolve => setTimeout(resolve, 500));
     addItem(product);
+    setLoadingItemId(null);
     toast.success(`${product.name} added to cart`);
   };
 
@@ -293,6 +297,15 @@ const Products = () => {
                         />
                         {/* Overlay Gradient */}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        
+                        {/* Stock Out Overlay */}
+                        {product.stock_count <= 0 && (
+                          <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] flex items-center justify-center z-10 pointer-events-none">
+                            <div className="bg-slate-900 text-white px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-black/20 transform -rotate-12 border border-white/20">
+                              Stock Out
+                            </div>
+                          </div>
+                        )}
                       </Link>
 
                       {/* Top Badges */}
@@ -312,15 +325,22 @@ const Products = () => {
                                 navigate('/login');
                                 return;
                               }
+                              setLoadingItemId(`wishlist-${product.id}`);
                               const added = await toggleWishlist(product, !!user);
+                              setLoadingItemId(null);
                               if (added) toast.success('Added to Wishlist');
                               else toast.success('Removed from Wishlist');
                             }}
-                            className={`bg-white/80 backdrop-blur-md p-1.5 rounded-lg transition-all shadow-sm ${
+                            disabled={loadingItemId === `wishlist-${product.id}`}
+                            className={`bg-white/80 backdrop-blur-md p-1.5 rounded-lg transition-all shadow-sm flex items-center justify-center min-w-[28px] min-h-[28px] ${
                               isInWishlist(product.id) ? 'text-amber-500 scale-110' : 'text-slate-400 hover:text-amber-500'
                             }`}
                           >
-                             <Star className={`w-3 h-3 ${isInWishlist(product.id) ? 'fill-amber-500 text-amber-500' : ''}`} />
+                             {loadingItemId === `wishlist-${product.id}` ? (
+                               <RefreshCcw className="w-2.5 h-2.5 animate-spin" />
+                             ) : (
+                               <Star className={`w-3 h-3 ${isInWishlist(product.id) ? 'fill-amber-500 text-amber-500' : ''}`} />
+                             )}
                           </button>
                         )}
                       </div>
@@ -330,10 +350,15 @@ const Products = () => {
                         {!['admin', 'moderator'].includes(user?.role?.toLowerCase()) && (
                           <button
                             onClick={() => handleAddToCart(product)}
-                            className="flex-grow bg-slate-900 text-white h-10 rounded-xl flex items-center justify-center gap-2 font-black text-[8px] uppercase tracking-widest hover:bg-primary transition-all shadow-xl active:scale-95"
+                            disabled={loadingItemId === product.id}
+                            className="flex-grow bg-slate-900 text-white h-10 rounded-xl flex items-center justify-center gap-2 font-black text-[8px] uppercase tracking-widest hover:bg-primary transition-all shadow-xl active:scale-95 disabled:opacity-50"
                           >
-                            <ShoppingCart className="w-3.5 h-3.5" />
-                            Add To Bag
+                            {loadingItemId === product.id ? (
+                              <RefreshCcw className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <ShoppingCart className="w-3.5 h-3.5" />
+                            )}
+                            {loadingItemId === product.id ? 'Adding...' : 'Add To Bag'}
                           </button>
                         )}
                         <Link

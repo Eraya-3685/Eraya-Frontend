@@ -1,8 +1,15 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Globe, Share2, Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import useSettingsStore from '../store/useSettingsStore';
 
 const Footer = () => {
+  const { settings, fetchSettings } = useSettingsStore();
+
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
+
   return (
     <footer className="bg-slate-50 border-t border-slate-200">
       <div className="max-w-7xl mx-auto px-6 py-12">
@@ -55,9 +62,9 @@ const Footer = () => {
           <div>
             <h4 className="font-bold text-slate-900 mb-4 text-xs uppercase tracking-widest">Contact</h4>
             <ul className="space-y-3 text-slate-500 text-xs font-bold">
-              <li>support@eraya.com</li>
-              <li>+880 1700-000000</li>
-              <li>Dhaka, BD</li>
+              <li>{settings?.store_email || 'support@eraya.com'}</li>
+              <li>{settings?.store_phone || '+880 1700-000000'}</li>
+              <li>{settings?.store_address || 'Dhaka, BD'}</li>
             </ul>
           </div>
         </div>

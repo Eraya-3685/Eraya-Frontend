@@ -18,6 +18,7 @@ import {
 import api, { getImageUrl } from '../api/axios';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
+import ConfirmModal from '../components/ConfirmModal';
 
 const AdminCategories = () => {
   const [categories, setCategories] = useState([]);
@@ -31,6 +32,8 @@ const AdminCategories = () => {
   const [saving, setSaving] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
   const [errors, setErrors] = useState({});
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: null, data: null });
+  const [deleting, setDeleting] = useState(false);
   
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
@@ -126,26 +129,33 @@ const AdminCategories = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Delete this category? All product associations will be removed.')) return;
+  const handleDelete = async () => {
+    const id = confirmModal.data;
+    setDeleting(true);
     try {
       await api.delete(`/categories/${id}`);
       toast.success('Category removed');
       fetchCategories();
+      setConfirmModal({ isOpen: false, type: null, data: null });
     } catch (err) {
       toast.error('Failed to delete');
+    } finally {
+      setDeleting(false);
     }
   };
 
   const handleBulkDelete = async () => {
-    if (!window.confirm(`Delete ${selectedIds.length} categories?`)) return;
+    setDeleting(true);
     try {
       await api.post('/categories/bulk-delete', { ids: selectedIds });
       toast.success('Categories deleted');
       setSelectedIds([]);
       fetchCategories();
+      setConfirmModal({ isOpen: false, type: null, data: null });
     } catch (err) {
       toast.error('Bulk deletion failed');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -253,7 +263,10 @@ const AdminCategories = () => {
                       <Edit2 className="w-3 h-3" />
                     </button>
                     <button
-                      onClick={(e) => { e.stopPropagation(); handleDelete(cat.id); }}
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        setConfirmModal({ isOpen: true, type: 'single', data: cat.id });
+                      }}
                       className="p-2.5 bg-red-50 text-red-400 rounded-lg hover:bg-red-500 hover:text-white transition-all active:scale-90 shadow-sm"
                       title="Delete"
                     >
@@ -312,7 +325,7 @@ const AdminCategories = () => {
                 Clear
               </button>
               <button
-                onClick={handleBulkDelete}
+                onClick={() => setConfirmModal({ isOpen: true, type: 'bulk', data: null })}
                 className="bg-red-500 hover:bg-red-600 text-white px-8 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-3 shadow-xl shadow-red-500/20 active:scale-95 group"
               >
                 <Trash2 className="w-5 h-5 group-hover:rotate-12 transition-transform" />
@@ -445,6 +458,18 @@ const AdminCategories = () => {
           </div>
         )}
       </AnimatePresence>
+
+      <ConfirmModal 
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, type: null, data: null })}
+        onConfirm={confirmModal.type === 'bulk' ? handleBulkDelete : handleDelete}
+        loading={deleting}
+        title={confirmModal.type === 'bulk' ? `Delete ${selectedIds.length} Categories?` : "Delete Category?"}
+        message={confirmModal.type === 'bulk' 
+          ? "All selected categories and their product associations will be removed. This cannot be undone." 
+          : "All product associations for this category will be removed. This action is permanent."
+        }
+      />
     </div>
   );
 };

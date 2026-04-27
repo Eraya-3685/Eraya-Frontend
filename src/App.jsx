@@ -24,6 +24,7 @@ import Sustainability from './pages/Sustainability';
 import CompleteProfile from './pages/CompleteProfile';
 import EditProfile from './pages/EditProfile';
 import Wishlist from './pages/Wishlist';
+import OrderTracking from './pages/OrderTracking';
 
 // Admin pages
 import AdminDashboard from './pages/AdminDashboard';
@@ -34,7 +35,6 @@ import AdminSettings from './pages/AdminSettings';
 import AdminProfile from './pages/AdminProfile';
 import AdminUsers from './pages/AdminUsers';
 import AdminReviews from './pages/AdminReviews';
-
 import useAuthStore from './store/useAuthStore';
 import useWishlistStore from './store/useWishlistStore';
 import { useNavigate } from 'react-router-dom';
@@ -198,6 +198,7 @@ function App() {
                   <Route path="/checkout" element={<Checkout />} />
                   <Route path="/wishlist" element={<Wishlist />} />
                   <Route path="/profile" element={<Profile />} />
+                  <Route path="/orders/:id" element={<OrderTracking />} />
                   <Route path="/profile/edit" element={<EditProfile />} />
                   <Route path="/complete-profile" element={<CompleteProfile />} />
                   <Route path="/sustainability" element={<Sustainability />} />

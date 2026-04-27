@@ -7,12 +7,16 @@ import {
 } from 'lucide-react';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
+import ConfirmModal from '../components/ConfirmModal';
 
 const AdminReviews = () => {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('All'); // All, Pending, Approved
   const [search, setSearch] = useState('');
+  const [approvingId, setApprovingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+  const [reviewToDelete, setReviewToDelete] = useState(null);
 
   useEffect(() => {
     fetchReviews();
@@ -31,23 +35,30 @@ const AdminReviews = () => {
   };
 
   const handleApprove = async (id) => {
+    setApprovingId(id);
     try {
       await api.post(`/admin/reviews/${id}/approve`);
       toast.success('Review approved and published');
       setReviews(prev => prev.map(r => r.id === id ? { ...r, is_approved: true } : r));
     } catch (error) {
       toast.error(error.response?.data || 'Failed to approve review');
+    } finally {
+      setApprovingId(null);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this review?')) return;
+  const confirmDelete = async () => {
+    if (!reviewToDelete) return;
+    setDeletingId(reviewToDelete.id);
     try {
-      await api.delete(`/reviews/${id}`);
+      await api.delete(`/reviews/${reviewToDelete.id}`);
       toast.success('Review deleted');
-      setReviews(prev => prev.filter(r => r.id !== id));
+      setReviews(prev => prev.filter(r => r.id !== reviewToDelete.id));
+      setReviewToDelete(null);
     } catch (error) {
       toast.error(error.response?.data || 'Failed to delete review');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -190,20 +201,28 @@ const AdminReviews = () => {
                    {!rev.is_approved && (
                      <button
                        onClick={() => handleApprove(rev.id)}
-                       className="flex-grow py-3 bg-slate-900 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-secondary transition-all shadow-lg shadow-slate-200"
+                       disabled={approvingId === rev.id}
+                       className="flex-grow py-3 bg-slate-900 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-secondary transition-all shadow-lg shadow-slate-200 disabled:opacity-50 flex items-center justify-center gap-2"
                      >
-                       Approve Review
+                       {approvingId === rev.id ? <RefreshCcw className="w-3 h-3 animate-spin" /> : 'Approve Review'}
                      </button>
                    )}
                    <button
-                     onClick={() => handleDelete(rev.id)}
-                     className={`py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all ${
+                     onClick={() => setReviewToDelete(rev)}
+                     disabled={deletingId === rev.id}
+                     className={`py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center ${
                        rev.is_approved 
                          ? 'flex-grow border border-slate-100 text-slate-400 hover:text-red-500 hover:border-red-100 hover:bg-red-50'
                          : 'px-6 border border-slate-100 text-slate-300 hover:text-red-500 hover:bg-red-50'
-                     }`}
+                     } disabled:opacity-50`}
                    >
-                     {rev.is_approved ? 'Delete Review' : <Trash2 className="w-4 h-4 mx-auto" />}
+                     {deletingId === rev.id ? (
+                       <RefreshCcw className="w-3 h-3 animate-spin" />
+                     ) : rev.is_approved ? (
+                       'Delete Review'
+                     ) : (
+                       <Trash2 className="w-4 h-4" />
+                     )}
                    </button>
                 </div>
               </motion.div>
@@ -211,6 +230,15 @@ const AdminReviews = () => {
           </div>
         )}
       </AnimatePresence>
+
+      <ConfirmModal 
+        isOpen={!!reviewToDelete}
+        onClose={() => setReviewToDelete(null)}
+        onConfirm={confirmDelete}
+        loading={!!deletingId}
+        title="Delete Review?"
+        message="Are you sure you want to delete this review? This action cannot be undone."
+      />
     </div>
   );
 };
