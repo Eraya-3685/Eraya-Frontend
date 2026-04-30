@@ -15,7 +15,7 @@ import {
 
 import useAuthStore from '../store/useAuthStore';
 import api, { getImageUrl } from '../api/axios';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 
@@ -104,8 +104,23 @@ const Profile = () => {
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const fileInputRef = useRef();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const isStaff = ['admin', 'moderator'].includes(user?.role?.toLowerCase());
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const paymentStatus = params.get('payment');
+    
+    if (paymentStatus === 'success') {
+      toast.success('Payment completed successfully!');
+      // remove param without reloading
+      window.history.replaceState({}, document.title, location.pathname);
+    } else if (paymentStatus === 'failed') {
+      toast.error('Payment failed or cancelled.');
+      window.history.replaceState({}, document.title, location.pathname);
+    }
+  }, [location]);
 
   useEffect(() => {
     if (!token) {
@@ -221,6 +236,11 @@ const Profile = () => {
               {user.phone && (
                 <div className="flex items-center gap-2">
                   <Phone className="w-4 h-4" /> {user.phone}
+                </div>
+              )}
+              {user.address && (
+                <div className="flex items-center gap-2 max-w-[200px] md:max-w-xs truncate" title={user.address}>
+                  <MapPin className="w-4 h-4 flex-shrink-0" /> <span className="truncate">{user.address}</span>
                 </div>
               )}
               <div className="flex items-center gap-2">

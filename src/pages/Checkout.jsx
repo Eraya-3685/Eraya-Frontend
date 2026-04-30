@@ -5,7 +5,7 @@ import {
   MapPin, ChevronRight, CheckCircle, ArrowLeft,
   ShoppingBag
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import useCartStore from '../store/useCartStore';
 import useAuthStore from '../store/useAuthStore';
 import api, { getImageUrl } from '../api/axios';
@@ -19,6 +19,13 @@ const Checkout = () => {
   const { user } = useAuthStore();
   const { settings, fetchSettings } = useSettingsStore();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  const isBkashSuccess = searchParams.get('bkash_success') === 'true';
+  const bkashTrxID = searchParams.get('trxID');
+  const bkashAmount = searchParams.get('amount');
+  const bkashSenderNumber = searchParams.get('senderNumber');
+  const isBkashError = searchParams.get('bkash_error') === 'true';
 
   // Guard: Must have phone and address to checkout
   React.useEffect(() => {
@@ -30,32 +37,61 @@ const Checkout = () => {
   }, [user, navigate, fetchSettings]);
 
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState(parseInt(localStorage.getItem('checkout_step')) || 1);
+  const [step, setStep] = useState(parseInt(sessionStorage.getItem('checkout_step')) || 1);
   const [errors, setErrors] = useState({});
 
   const [form, setForm] = useState({
-    shipping_address: localStorage.getItem('checkout_shipping_address') || user?.address || '',
-    payment_method: localStorage.getItem('checkout_payment_method') || 'COD',
-    trx_id: localStorage.getItem('checkout_trx_id') || '',
-    sender_number: localStorage.getItem('checkout_sender_number') || '',
-    paid_amount: localStorage.getItem('checkout_paid_amount') || '',
+    shipping_address: sessionStorage.getItem('checkout_shipping_address') || user?.address || '',
+    payment_method: sessionStorage.getItem('checkout_payment_method') || 'COD',
   });
 
   React.useEffect(() => {
-    localStorage.setItem('checkout_step', step.toString());
-    localStorage.setItem('checkout_shipping_address', form.shipping_address);
-    localStorage.setItem('checkout_payment_method', form.payment_method);
-    localStorage.setItem('checkout_trx_id', form.trx_id);
-    localStorage.setItem('checkout_sender_number', form.sender_number);
-    localStorage.setItem('checkout_paid_amount', form.paid_amount);
-  }, [form, step]);
+    sessionStorage.setItem('checkout_step', step.toString());
+    sessionStorage.setItem('checkout_shipping_address', form.shipping_address);
+    sessionStorage.setItem('checkout_payment_method', form.payment_method);
+  }, [step, form]);
+
+  React.useEffect(() => {
+    if (user?.address && !form.shipping_address) {
+      setForm(prev => ({ ...prev, shipping_address: user.address }));
+    }
+  }, [user]);
+
+  React.useEffect(() => {
+    if (isBkashSuccess && bkashTrxID && step !== 3) {
+      setStep(3);
+      setForm(prev => ({ ...prev, payment_method: 'bKash' }));
+    }
+    if (isBkashError) {
+      toast.error('bKash payment failed or was cancelled');
+    }
+  }, [isBkashSuccess, bkashTrxID, isBkashError]);
 
   const subtotal = items.reduce((sum, item) => sum + item.base_price * item.quantity, 0);
   const shipping = subtotal >= settings.free_shipping_threshold ? 0 : settings.standard_delivery_fee;
   const tax = subtotal * (settings.tax_percentage / 100);
   const total = subtotal + shipping + tax;
 
+  const handleBkashInit = async () => {
+    setLoading(true);
+    try {
+      const res = await api.post('/orders/bkash/init', { amount: total });
+      if (res.data.bkashURL) {
+        window.location.href = res.data.bkashURL;
+      }
+    } catch (error) {
+      console.error('bKash init failed:', error);
+      toast.error('Failed to initialize bKash payment');
+      setLoading(false);
+    }
+  };
+
   const handlePlaceOrder = async () => {
+    if (form.payment_method === 'bKash' && !isBkashSuccess) {
+      handleBkashInit();
+      return;
+    }
+
     setLoading(true);
     try {
       const orderData = {
@@ -65,15 +101,22 @@ const Checkout = () => {
         })),
         shipping_address: form.shipping_address,
         payment_method: form.payment_method,
-        trx_id: form.payment_method === 'bKash' ? form.trx_id : null,
-        sender_number: form.payment_method === 'bKash' ? form.sender_number : null,
-        paid_amount: form.payment_method === 'bKash' ? parseFloat(form.paid_amount) : null,
       };
 
-      await api.post('/orders/checkout', orderData);
-      toast.success('Order placed successfully!');
-      localStorage.removeItem('checkout_shipping_address'); // Clear on success
+      if (isBkashSuccess) {
+        orderData.trx_id = bkashTrxID;
+        orderData.paid_amount = parseFloat(bkashAmount);
+        orderData.sender_number = bkashSenderNumber;
+      }
+
+      const res = await api.post('/orders/checkout', orderData);
+      
+      sessionStorage.removeItem('checkout_step');
+      sessionStorage.removeItem('checkout_shipping_address');
+      sessionStorage.removeItem('checkout_payment_method');
       clearCart();
+
+      toast.success('Order placed successfully!');
       
       // Artificial delay for premium feel
       await new Promise(resolve => setTimeout(resolve, 1200));
@@ -111,8 +154,8 @@ const Checkout = () => {
            <div className="hidden md:flex items-center gap-8">
               {[
                 { s: 1, label: 'Shipping' },
-                { s: 2, label: 'Payment' },
-                { s: 3, label: 'Review' }
+                { s: 2, label: 'Review' },
+                { s: 3, label: 'Payment' }
               ].map((item) => (
                 <div key={item.s} className="flex items-center gap-3">
                   <div className={`w-8 h-8 rounded-2xl flex items-center justify-center text-[10px] font-black transition-all border-2 ${
@@ -189,7 +232,7 @@ const Checkout = () => {
                    }} 
                    className="w-full sm:w-auto px-12 py-5 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl hover:bg-secondary transition-all active:scale-95"
                  >
-                   Continue to Payment
+                   Continue to Review
                  </button>
                </div>
              ) : (
@@ -199,141 +242,23 @@ const Checkout = () => {
              )}
           </section>
 
-          {/* Payment Section */}
+          {/* Review Section */}
           <section className={`bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm transition-all duration-500 ${step < 2 ? 'opacity-30 pointer-events-none grayscale' : step > 2 ? 'opacity-40 scale-[0.98]' : ''}`}>
              <div className="flex justify-between items-center mb-10">
-                <h3 className="text-xl font-black flex items-center gap-4 text-slate-900 tracking-tight">
-                   <div className="w-12 h-12 bg-secondary/10 rounded-2xl flex items-center justify-center">
-                      <Wallet className="w-6 h-6 text-secondary" />
-                   </div>
-                   2. Payment Method
-                </h3>
-                {step > 2 && (
-                  <button onClick={() => setStep(2)} className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-secondary hover:bg-secondary/10 transition-all border border-slate-100">
-                     <ChevronRight className="w-5 h-5 rotate-180" />
-                  </button>
-                )}
+                 <h3 className="text-xl font-black flex items-center gap-4 text-slate-900 tracking-tight">
+                    <div className="w-12 h-12 bg-secondary/10 rounded-2xl flex items-center justify-center">
+                       <CheckCircle className="w-6 h-6 text-secondary" />
+                    </div>
+                    2. Review Order
+                 </h3>
+                 {step > 2 && (
+                   <button onClick={() => setStep(2)} className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-secondary hover:bg-secondary/10 transition-all border border-slate-100">
+                      <ChevronRight className="w-5 h-5 rotate-180" />
+                   </button>
+                 )}
              </div>
-
-             {step === 2 && (
-               <div className="space-y-8">
-                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <button 
-                      onClick={() => setForm({...form, payment_method: 'bKash'})}
-                      className={`relative p-8 border-2 rounded-[2rem] flex flex-col items-center gap-4 transition-all text-center group ${form.payment_method === 'bKash' ? 'border-[#D12053] bg-[#D12053]/5' : 'border-slate-50 bg-slate-50/50 hover:bg-slate-50'}`}
-                    >
-                       <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all ${form.payment_method === 'bKash' ? 'bg-white shadow-xl shadow-[#D12053]/20 scale-105' : 'bg-white text-slate-400 group-hover:text-[#D12053]'}`}>
-                          <img src="https://www.logo.wine/a/logo/BKash/BKash-bKash-Logo.wine.svg" className="w-full h-full object-contain p-1" alt="bKash" />
-                       </div>
-                       <div>
-                          <p className="font-black text-sm text-slate-900 mb-1">bKash Payment</p>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Fast & Secure Mobile Pay</p>
-                       </div>
-                       {form.payment_method === 'bKash' && <div className="absolute top-4 right-4 w-4 h-4 bg-[#D12053] rounded-full border-2 border-white shadow-sm" />}
-                    </button>
-                    <button 
-                      onClick={() => setForm({...form, payment_method: 'COD'})}
-                      className={`relative p-8 border-2 rounded-[2rem] flex flex-col items-center gap-4 transition-all text-center group ${form.payment_method === 'COD' ? 'border-secondary bg-secondary/5' : 'border-slate-50 bg-slate-50/50 hover:bg-slate-50'}`}
-                    >
-                       <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all ${form.payment_method === 'COD' ? 'bg-secondary text-white shadow-xl shadow-secondary/20 scale-105' : 'bg-white text-slate-400 group-hover:text-slate-600'}`}>
-                          <Truck className="w-8 h-8" />
-                       </div>
-                       <div>
-                          <p className="font-black text-sm text-slate-900 mb-1">Cash on Delivery</p>
-                          <p className="text-[10px] font-bold text-green-500 uppercase tracking-widest">Pay at your doorstep</p>
-                       </div>
-                       {form.payment_method === 'COD' && <div className="absolute top-4 right-4 w-4 h-4 bg-secondary rounded-full border-2 border-white shadow-sm" />}
-                    </button>
-                 </div>
-
-                 <AnimatePresence>
-                    {form.payment_method === 'bKash' && (
-                      <motion.div 
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="p-8 bg-[#D12053]/5 rounded-[2rem] border border-[#D12053]/10 space-y-6">
-                           <div className="flex items-center gap-3 mb-2">
-                              <div className="w-8 h-8 bg-[#D12053] rounded-xl flex items-center justify-center text-white">
-                                 <ShieldCheck className="w-4 h-4" />
-                              </div>
-                              <h4 className="text-[10px] font-black text-[#D12053] uppercase tracking-[0.2em]">Verify your bKash Transaction</h4>
-                           </div>
-                           
-                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                              <div className="space-y-2">
-                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">bKash Number</label>
-                                <input 
-                                  type="text"
-                                  value={form.sender_number}
-                                  onChange={(e) => setForm({...form, sender_number: e.target.value})}
-                                  placeholder="017XXXXXXXX"
-                                  className="w-full bg-white border border-slate-100 rounded-2xl p-4 text-sm font-bold outline-none focus:ring-4 focus:ring-[#D12053]/5 focus:border-[#D12053]/30 transition-all"
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Transaction ID (TrxID)</label>
-                                <input 
-                                  type="text"
-                                  value={form.trx_id}
-                                  onChange={(e) => setForm({...form, trx_id: e.target.value})}
-                                  placeholder="8N7X6W5V4U"
-                                  className="w-full bg-white border border-slate-100 rounded-2xl p-4 text-sm font-bold outline-none focus:ring-4 focus:ring-[#D12053]/5 focus:border-[#D12053]/30 transition-all uppercase"
-                                />
-                              </div>
-                           </div>
-                           <div className="space-y-2">
-                              <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Amount Sent (৳)</label>
-                              <input 
-                                type="number"
-                                value={form.paid_amount}
-                                onChange={(e) => setForm({...form, paid_amount: e.target.value})}
-                                placeholder={`Expected: ৳${total}`}
-                                className="w-full bg-white border border-slate-100 rounded-2xl p-4 text-sm font-bold outline-none focus:ring-4 focus:ring-[#D12053]/5 focus:border-[#D12053]/30 transition-all"
-                              />
-                           </div>
-                           <p className="text-[9px] text-[#D12053]/60 italic px-1 font-medium">Please send the money to our official bKash merchant number first, then provide the details above for verification.</p>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                 <button 
-                    onClick={() => {
-                      if (form.payment_method === 'bKash') {
-                        if (!form.sender_number || !form.trx_id || !form.paid_amount) {
-                          toast.error('Please provide all bKash payment details');
-                          return;
-                        }
-                      }
-                      setStep(3);
-                    }} 
-                    className="w-full sm:w-auto px-12 py-5 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl hover:bg-secondary transition-all active:scale-95"
-                 >
-                   Continue to Review
-                 </button>
-               </div>
-             )}
-             {step > 2 && (
-               <div className="ml-16 flex items-center gap-4">
-                  <div className="px-5 py-2.5 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest">{form.payment_method}</div>
-                  <span className="text-slate-400 text-xs font-bold">Selected</span>
-               </div>
-             )}
-          </section>
-
-          {/* Review Section */}
-          <section className={`bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm transition-all duration-500 ${step < 3 ? 'opacity-30' : ''}`}>
-             <h3 className="text-xl font-black flex items-center gap-4 mb-10 text-slate-900 tracking-tight">
-                <div className="w-12 h-12 bg-secondary/10 rounded-2xl flex items-center justify-center">
-                   <CheckCircle className="w-6 h-6 text-secondary" />
-                </div>
-                3. Review Order
-             </h3>
  
-             {step === 3 && (
+             {step === 2 && (
                <div className="space-y-8">
                  <div className="bg-slate-50 rounded-[2rem] border border-slate-100 overflow-hidden">
                      <div className="p-6 space-y-3">
@@ -361,6 +286,95 @@ const Checkout = () => {
                         })}
                     </div>
                  </div>
+                 <button 
+                    onClick={() => {
+                      setStep(3);
+                    }} 
+                    className="w-full sm:w-auto px-12 py-5 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl hover:bg-secondary transition-all active:scale-95"
+                 >
+                   Continue to Payment
+                 </button>
+               </div>
+             )}
+             {step > 2 && (
+                <div className="ml-16 flex items-center gap-4">
+                   <div className="px-5 py-2.5 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest">{items.length} Items</div>
+                   <span className="text-slate-400 text-xs font-bold">Reviewed</span>
+                </div>
+             )}
+          </section>
+
+          {/* Payment Section */}
+          <section className={`bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm transition-all duration-500 ${step < 3 ? 'opacity-30 pointer-events-none grayscale' : ''}`}>
+             <h3 className="text-xl font-black flex items-center gap-4 mb-10 text-slate-900 tracking-tight">
+                <div className="w-12 h-12 bg-secondary/10 rounded-2xl flex items-center justify-center">
+                   <Wallet className="w-6 h-6 text-secondary" />
+                </div>
+                3. Payment Method
+             </h3>
+
+             {step === 3 && (
+               <div className="space-y-8">
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <button 
+                      onClick={() => !isBkashSuccess && setForm({...form, payment_method: 'bKash'})}
+                      disabled={isBkashSuccess}
+                      className={`relative p-8 border-2 rounded-[2rem] flex flex-col items-center gap-4 transition-all text-center group ${form.payment_method === 'bKash' ? 'border-[#D12053] bg-[#D12053]/5' : 'border-slate-50 bg-slate-50/50 hover:bg-slate-50'} ${isBkashSuccess ? 'cursor-default' : ''}`}
+                    >
+                       <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all ${form.payment_method === 'bKash' ? 'bg-white shadow-xl shadow-[#D12053]/20 scale-105' : 'bg-white text-slate-400 group-hover:text-[#D12053]'}`}>
+                          <img src="https://www.logo.wine/a/logo/BKash/BKash-bKash-Logo.wine.svg" className="w-full h-full object-contain p-1" alt="bKash" />
+                       </div>
+                       <div>
+                          <p className="font-black text-sm text-slate-900 mb-1">bKash Payment</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Fast & Secure Mobile Pay</p>
+                       </div>
+                       {form.payment_method === 'bKash' && <div className="absolute top-4 right-4 w-4 h-4 bg-[#D12053] rounded-full border-2 border-white shadow-sm" />}
+                    </button>
+                    <button 
+                      onClick={() => !isBkashSuccess && setForm({...form, payment_method: 'COD'})}
+                      disabled={isBkashSuccess}
+                      className={`relative p-8 border-2 rounded-[2rem] flex flex-col items-center gap-4 transition-all text-center group ${form.payment_method === 'COD' ? 'border-secondary bg-secondary/5' : 'border-slate-50 bg-slate-50/50 hover:bg-slate-50'} ${isBkashSuccess ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
+                    >
+                       <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all ${form.payment_method === 'COD' ? 'bg-secondary text-white shadow-xl shadow-secondary/20 scale-105' : 'bg-white text-slate-400 group-hover:text-slate-600'}`}>
+                          <Truck className="w-8 h-8" />
+                       </div>
+                       <div>
+                          <p className="font-black text-sm text-slate-900 mb-1">Cash on Delivery</p>
+                          <p className="text-[10px] font-bold text-green-500 uppercase tracking-widest">Pay at your doorstep</p>
+                       </div>
+                       {form.payment_method === 'COD' && <div className="absolute top-4 right-4 w-4 h-4 bg-secondary rounded-full border-2 border-white shadow-sm" />}
+                       {isBkashSuccess && (
+                         <div className="absolute inset-0 bg-white/10 backdrop-blur-[1px] rounded-[2rem] flex items-center justify-center">
+                            <span className="bg-slate-900/10 text-slate-400 text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-full">Locked</span>
+                         </div>
+                       )}
+                    </button>
+                 </div>
+
+                 {form.payment_method === 'bKash' && (
+                   <div className="mt-8 pt-8 border-t border-slate-100 flex flex-col items-center">
+                     {!isBkashSuccess ? (
+                       <button 
+                         onClick={handleBkashInit}
+                         disabled={loading}
+                         className="w-full sm:w-auto px-12 py-5 bg-[#D12053] text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-[#D12053]/20 hover:bg-[#b01b45] transition-all active:scale-95 flex items-center gap-3"
+                       >
+                         {loading ? <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <img src="https://www.logo.wine/a/logo/BKash/BKash-bKash-Logo.wine.svg" className="h-5 bg-white rounded px-1" alt="bKash" />}
+                         Pay with bKash
+                       </button>
+                     ) : (
+                       <div className="bg-emerald-50 border border-emerald-100 p-6 rounded-[2rem] flex items-center gap-4 w-full">
+                         <div className="w-12 h-12 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                           <CheckCircle className="w-6 h-6" />
+                         </div>
+                         <div>
+                           <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Payment Verified</p>
+                           <p className="text-sm font-black text-slate-900 tracking-tight">Transaction: {bkashTrxID}</p>
+                         </div>
+                       </div>
+                     )}
+                   </div>
+                 )}
                </div>
              )}
           </section>
@@ -449,21 +463,30 @@ const Checkout = () => {
                   </div>
                </div>
 
-               <button 
-                 disabled={step < 3 || loading}
-                 onClick={handlePlaceOrder}
-                 className="w-full py-6 bg-slate-900 text-white rounded-[2rem] font-black text-[11px] uppercase tracking-[0.4em] flex items-center justify-center gap-4 shadow-2xl shadow-slate-900/20 hover:bg-secondary hover:shadow-secondary/30 hover:scale-[1.02] active:scale-95 transition-all duration-500 disabled:opacity-30 disabled:grayscale disabled:scale-100 group/btn overflow-hidden relative"
-               >
-                  {loading ? (
-                    <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <span className="relative z-10">Confirm Purchase</span>
-                      <ChevronRight className="w-4 h-4 relative z-10 group-hover/btn:translate-x-2 transition-transform duration-500" />
-                      <div className="absolute inset-0 bg-gradient-to-r from-secondary to-orange-400 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-500" />
-                    </>
-                  )}
-               </button>
+               <div className="pt-8">
+                 {(form.payment_method === 'COD' || isBkashSuccess) && step === 3 ? (
+                   <button 
+                      onClick={handlePlaceOrder}
+                      disabled={loading}
+                      className="w-full py-5 bg-slate-900 text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] flex justify-center items-center gap-3 shadow-xl shadow-slate-900/20 hover:bg-secondary hover:shadow-secondary/20 transition-all disabled:opacity-50 active:scale-95"
+                   >
+                     {loading ? (
+                       <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                     ) : (
+                       <>
+                          <CheckCircle className="w-5 h-5" />
+                          Confirm Purchase
+                       </>
+                     )}
+                   </button>
+                 ) : (
+                   <div className="bg-slate-50 border border-dashed border-slate-200 p-8 rounded-[2rem] text-center">
+                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-loose">
+                       {step < 3 ? 'Complete previous steps' : 'Please complete payment on the left to confirm order'}
+                     </p>
+                   </div>
+                 )}
+               </div>
 
                <div className="mt-10 pt-8 border-t border-slate-50 flex flex-col items-center gap-6">
                   <div className="flex items-center gap-6">

@@ -602,7 +602,10 @@ const AdminOrders = () => {
                         <span className="w-1 h-1 bg-slate-200 rounded-full" />
                         <span>{new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                         <span className="w-1 h-1 bg-slate-200 rounded-full" />
-                        <span className="flex items-center gap-1 truncate max-w-[100px]"><CreditCard className="w-2.5 h-2.5" /> {order.payment_method === 'cod' || order.payment_method === 'COD' ? 'Cash' : order.payment_method}</span>
+                        <span className={`flex items-center gap-1 truncate px-2 py-0.5 rounded-md ${order.payment_method?.toLowerCase() === 'bkash' ? 'bg-[#D12053]/10 text-[#D12053]' : 'text-slate-600'}`}>
+                           <CreditCard className="w-2.5 h-2.5" /> 
+                           {order.payment_method?.toLowerCase() === 'cod' ? 'Cash on Delivery' : order.payment_method}
+                        </span>
                       </div>
                       
                         {order.shipping_address && (
@@ -610,28 +613,7 @@ const AdminOrders = () => {
                             <MapPin className="w-3 h-3" /> {order.shipping_address}
                           </p>
                         )}
-                        {(order.trx_id || order.sender_number) && (
-                          <div className="mt-3 p-3 bg-slate-50 rounded-2xl border border-slate-100 flex flex-wrap gap-4">
-                            {order.trx_id && (
-                              <div className="flex flex-col">
-                                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">TrxID</span>
-                                <span className="text-[10px] font-black text-slate-900">{order.trx_id}</span>
-                              </div>
-                            )}
-                            {order.sender_number && (
-                              <div className="flex flex-col">
-                                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">From Number</span>
-                                <span className="text-[10px] font-black text-slate-900">{order.sender_number}</span>
-                              </div>
-                            )}
-                            {order.paid_amount && (
-                              <div className="flex flex-col">
-                                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Claimed Amount</span>
-                                <span className="text-[10px] font-black text-secondary">৳{order.paid_amount.toLocaleString()}</span>
-                              </div>
-                            )}
-                          </div>
-                        )}
+
                     </div>
                   </div>
 
@@ -736,6 +718,32 @@ const AdminOrders = () => {
                                        <p className="text-[11px] font-medium text-slate-500 mt-1">No special instructions provided by the buyer.</p>
                                     </div>
                                  </div>
+
+                                 {order.payment_method?.toLowerCase() === 'bkash' && (
+                                    <div className="mt-6 p-6 bg-[#D12053]/5 border-2 border-dashed border-[#D12053]/10 rounded-[2rem] space-y-4">
+                                       <div className="flex items-center gap-3 mb-2">
+                                          <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                                             <img src="https://www.logo.wine/a/logo/BKash/BKash-bKash-Logo.wine.svg" className="w-6 h-6 object-contain" alt="bKash" />
+                                          </div>
+                                          <p className="text-xs font-black text-[#D12053] uppercase tracking-widest">bKash Payment Details</p>
+                                       </div>
+                                       
+                                       <div className="grid grid-cols-2 gap-4">
+                                          <div>
+                                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Transaction ID</p>
+                                             <p className="text-sm font-black text-slate-900 tracking-tight select-all cursor-copy">{order.trx_id || 'N/A'}</p>
+                                          </div>
+                                          <div>
+                                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Sender Number</p>
+                                             <p className="text-sm font-black text-slate-900 tracking-tight">{order.sender_number || 'N/A'}</p>
+                                          </div>
+                                          <div className="col-span-2 pt-2 border-t border-[#D12053]/5">
+                                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Verified Amount</p>
+                                             <p className="text-lg font-black text-secondary tracking-tight">৳{order.paid_amount?.toLocaleString() || '0'}</p>
+                                          </div>
+                                       </div>
+                                    </div>
+                                 )}
                               </div>
                            </div>
                         </div>

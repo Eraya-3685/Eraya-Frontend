@@ -1,10 +1,11 @@
 import React from 'react';
-import { NavLink, useNavigate, Link } from 'react-router-dom';
+import { NavLink, useNavigate, Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   LayoutDashboard, Package, ShoppingCart, LogOut, 
   Settings, ExternalLink, Tags, Users, User, 
-  Star, Mail, Phone, ShieldCheck, RefreshCcw
+  Star, Mail, Phone, ShieldCheck, RefreshCcw,
+  MessageSquare
 } from 'lucide-react';
 import { getImageUrl } from '../api/axios';
 import useAuthStore from '../store/useAuthStore';
@@ -12,6 +13,7 @@ import useAuthStore from '../store/useAuthStore';
 const AdminLayout = ({ children }) => {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
@@ -19,8 +21,8 @@ const AdminLayout = ({ children }) => {
   };
 
   const allNavItems = [
-    { to: '/', label: 'View Store', icon: ExternalLink, roles: ['admin', 'moderator', 'buyer'] },
     { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true, roles: ['admin', 'moderator'], permission: 'dashboard' },
+    { to: '/admin/chat', label: 'Messages', icon: MessageSquare, roles: ['admin', 'moderator'], permission: 'chat' },
     { to: '/admin/products', label: 'Products', icon: Package, roles: ['admin', 'moderator'], permission: 'products' },
     { to: '/admin/categories', label: 'Categories', icon: Tags, roles: ['admin', 'moderator'], permission: 'categories' },
     { to: '/admin/users', label: 'Users', icon: Users, roles: ['admin'], permission: 'users' },
@@ -52,38 +54,34 @@ const AdminLayout = ({ children }) => {
         
         {/* Logo Section */}
         <div className="p-6 relative">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-slate-900 rounded-[1.1rem] flex items-center justify-center shadow-xl shadow-slate-200 ring-1 ring-slate-100">
-              <Package className="w-4.5 h-4.5 text-white" strokeWidth={2.5} />
-            </div>
-            <div>
-              <h1 className="text-xs font-black tracking-widest leading-none text-slate-900 uppercase">ERAYA</h1>
-              <div className="flex items-center gap-1 mt-1">
-                <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse shadow-[0_0_8px_#6366f1]" />
-                <p className="text-[8px] font-black text-slate-600 uppercase tracking-[0.25em]">Control Panel</p>
+          <Link 
+            to="/" 
+            className="flex items-center justify-between gap-3 group hover:opacity-80 transition-all active:scale-95"
+            title="View Store"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-slate-900 rounded-[1.1rem] flex items-center justify-center shadow-xl shadow-slate-200 ring-1 ring-slate-100 group-hover:shadow-indigo-100 transition-all">
+                <Package className="w-4.5 h-4.5 text-white" strokeWidth={2.5} />
+              </div>
+              <div>
+                <h1 className="text-xs font-black tracking-widest leading-none text-slate-900 uppercase">ERAYA</h1>
+                <div className="flex items-center gap-1 mt-1">
+                  <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse shadow-[0_0_8px_#6366f1]" />
+                  <p className="text-[8px] font-black text-slate-600 uppercase tracking-[0.25em]">Visit Store</p>
+                </div>
               </div>
             </div>
-          </div>
+
+            <div className="p-2 rounded-lg bg-slate-50 text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all">
+              <ExternalLink className="w-3 h-3" />
+            </div>
+          </Link>
         </div>
 
         {/* Navigation */}
         <nav className="flex-grow px-4 py-2 space-y-1 overflow-y-auto custom-scrollbar relative">
           <p className="text-[8px] font-black text-slate-500 uppercase tracking-[0.3em] mb-4 mt-2 px-4">Navigation Menu</p>
           {navItems.map(({ to, label, icon: Icon, end }) => {
-            if (to === '/') {
-              return (
-                <Link
-                  key={to}
-                  to="/"
-                  className="flex items-center gap-3 px-4 py-2.5 rounded-[1.25rem] font-bold text-[10px] text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all group mb-4 border border-transparent hover:border-slate-100"
-                >
-                  <div className="w-7 h-7 rounded-lg bg-slate-50 flex items-center justify-center group-hover:bg-white group-hover:shadow-sm transition-all text-slate-500 group-hover:text-slate-900">
-                    <Icon className="w-3.5 h-3.5" />
-                  </div>
-                  {label}
-                </Link>
-              );
-            }
             return (
               <NavLink
                 key={to}
@@ -186,7 +184,7 @@ const AdminLayout = ({ children }) => {
         </header>
 
         {/* Main Page Content */}
-        <main className="p-12">
+        <main className={`${location.pathname === '/admin/chat' ? '' : 'p-12'} flex-grow`}>
           {children}
         </main>
       </div>

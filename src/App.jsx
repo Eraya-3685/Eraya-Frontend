@@ -25,6 +25,7 @@ import CompleteProfile from './pages/CompleteProfile';
 import EditProfile from './pages/EditProfile';
 import Wishlist from './pages/Wishlist';
 import OrderTracking from './pages/OrderTracking';
+import BkashMock from './pages/BkashMock';
 
 // Admin pages
 import AdminDashboard from './pages/AdminDashboard';
@@ -35,6 +36,7 @@ import AdminSettings from './pages/AdminSettings';
 import AdminProfile from './pages/AdminProfile';
 import AdminUsers from './pages/AdminUsers';
 import AdminReviews from './pages/AdminReviews';
+import AdminChat from './pages/AdminChat';
 import useAuthStore from './store/useAuthStore';
 import useWishlistStore from './store/useWishlistStore';
 import { useNavigate } from 'react-router-dom';
@@ -168,6 +170,7 @@ function App() {
                   {/* Inventory: Both Admin & Moderator */}
                   <Route path="/products" element={<AdminGuard allowedRoles={['admin', 'moderator']}><AdminProducts /></AdminGuard>} />
                   <Route path="/categories" element={<AdminGuard allowedRoles={['admin', 'moderator']}><AdminCategories /></AdminGuard>} />
+                  <Route path="/chat" element={<AdminGuard allowedRoles={['admin', 'moderator']}><AdminChat /></AdminGuard>} />
 
                   {/* Users: ONLY Admin */}
                   <Route path="/users" element={<AdminGuard allowedRoles={['admin']}><AdminUsers /></AdminGuard>} />
@@ -202,6 +205,7 @@ function App() {
                   <Route path="/profile/edit" element={<EditProfile />} />
                   <Route path="/complete-profile" element={<CompleteProfile />} />
                   <Route path="/sustainability" element={<Sustainability />} />
+                  <Route path="/bkash-sandbox" element={<BkashMock />} />
                 </Routes>
               </MainLayout>
             }
