@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingCart, Star, Check, ChevronDown, Filter, X, ArrowRight, Heart } from 'lucide-react';
+import { ShoppingCart, Star, Check, ChevronDown, Filter, X, ArrowRight, Heart, RefreshCcw } from 'lucide-react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import api, { getImageUrl } from '../api/axios';
 import useCartStore from '../store/useCartStore';

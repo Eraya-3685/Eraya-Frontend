@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, ArrowRight, Star, Truck, ShieldCheck, Globe, Tag } from 'lucide-react';
+import { ShoppingBag, ArrowRight, Star, Truck, ShieldCheck, Globe, Tag, RefreshCcw } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import api, { getImageUrl } from '../api/axios';
 import toast from 'react-hot-toast';
