@@ -1,89 +1,136 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 :root {
-  font-family: 'Outfit', 'Inter', system-ui, sans-serif;
-  line-height: 1.6;
-  font-weight: 400;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-}
-
-@theme {
-  /* Eraya Modern Classic Palette */
-  --color-primary: #1e293b; /* Slate 800 */
-  --color-secondary: #4f46e5; /* Indigo 600 */
-  --color-accent: #0ea5e9; /* Sky 500 */
-  --color-surface: #ffffff;
-  --color-background: #fafaf9;
-  
-  --font-display: "Inter", sans-serif;
-  --font-body: "Inter", sans-serif;
-  
-  --shadow-premium: 0 4px 20px rgba(0,0,0,0.05);
+  font-family: 'Inter', system-ui, sans-serif;
+  --accent-indigo: #6366f1;
+  --accent-purple: #a855f7;
+  --accent-cyan: #06b6d4;
+  --bg-deep: #020617;
 }
 
 @layer base {
   body {
     margin: 0;
-    background-color: #fafaf9;
-    color: #1e293b;
+    background-color: var(--bg-deep);
+    color: #f1f5f9;
     overflow-x: hidden;
+    min-height: 100vh;
   }
-  button, 
-  [type="button"], 
-  [type="reset"], 
-  [type="submit"] {
-    cursor: pointer;
+  
+  #root {
+    position: relative;
+    min-height: 100vh;
+    background: #020617;
   }
+}
+
+/* ── Advanced Background Orbs ── */
+.orb-container {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.noise-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  opacity: 0.03;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(140px);
+  opacity: 0.25;
+  animation: orbFloat 30s infinite alternate ease-in-out;
+}
+
+.orb-1 { width: 900px; height: 900px; background: radial-gradient(circle, var(--accent-indigo) 0%, transparent 70%); top: -200px; left: -100px; }
+.orb-2 { width: 1000px; height: 1000px; background: radial-gradient(circle, var(--accent-purple) 0%, transparent 70%); bottom: -300px; right: -100px; animation-delay: -5s; }
+.orb-3 { width: 600px; height: 600px; background: radial-gradient(circle, var(--accent-cyan) 0%, transparent 70%); top: 40%; left: 50%; animation-delay: -10s; opacity: 0.15; }
+
+@keyframes orbFloat {
+  0% { transform: translate(0, 0) rotate(0deg) scale(1); }
+  50% { transform: translate(100px, 150px) rotate(90deg) scale(1.1); }
+  100% { transform: translate(-50px, 50px) rotate(180deg) scale(0.9); }
 }
 
 @layer components {
-  .eraya-card {
-    @apply bg-white/80 backdrop-blur-xl border border-white/40 shadow-premium rounded-[2rem] hover:shadow-2xl hover:translate-y-[-5px] transition-all duration-500;
+  /* ── Ultra-Dynamic Glass Card ── */
+  .glass-card {
+    @apply relative overflow-hidden;
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(30px) saturate(190%);
+    -webkit-backdrop-filter: blur(30px) saturate(190%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 32px;
+    box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6);
   }
-  
-  .glass-button {
-    @apply bg-primary text-white px-8 py-4 rounded-2xl font-bold hover:bg-primary/90 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20;
+
+  /* Shimmer Shine Effect on Cards */
+  .glass-card::after {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      45deg,
+      transparent 45%,
+      rgba(255, 255, 255, 0.03) 48%,
+      rgba(255, 255, 255, 0.07) 50%,
+      rgba(255, 255, 255, 0.03) 52%,
+      transparent 55%
+    );
+    transform: rotate(25deg);
+    animation: shimmer 8s infinite linear;
+    pointer-events: none;
   }
-  
+
+  @keyframes shimmer {
+    0% { transform: translateX(-30%) rotate(25deg); }
+    100% { transform: translateX(30%) rotate(25deg); }
+  }
+
+  .glass-card-light {
+    @apply relative overflow-hidden;
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
+  }
+
+  .btn-primary {
+    @apply relative overflow-hidden px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all duration-500 text-white;
+    background: linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-purple) 100%);
+    box-shadow: 0 10px 30px -5px rgba(99, 102, 241, 0.5);
+  }
+
+  .btn-primary:hover {
+    @apply -translate-y-1 scale-[1.02] shadow-[0_20px_45px_-5px_rgba(99,102,241,0.6)];
+  }
+
   .glass-input {
-    @apply bg-white/50 backdrop-blur-md border border-slate-200 rounded-2xl py-4 px-6 outline-none focus:border-secondary focus:bg-white focus:ring-4 focus:ring-secondary/5 transition-all font-medium;
+    @apply bg-white/[0.03] backdrop-blur-md border border-white/[0.08] rounded-2xl py-4 px-6 text-white transition-all duration-300;
+  }
+  
+  .glass-input:focus {
+    @apply bg-white/[0.06] border-indigo-500/50 ring-4 ring-indigo-500/10;
   }
 
   .nav-blur {
-    @apply bg-white/60 backdrop-blur-2xl border-b border-white/20;
+    @apply fixed top-0 left-0 right-0 z-[100] border-b border-white/[0.05];
+    background: rgba(2, 6, 23, 0.75);
+    backdrop-filter: blur(30px) saturate(200%);
   }
 
   .gradient-text {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-secondary to-primary;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-cyan-400 font-black;
   }
-}
-
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: #e2e8f0;
-  border-radius: 10px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #cbd5e1;
-}
-
-.custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 20px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
 }

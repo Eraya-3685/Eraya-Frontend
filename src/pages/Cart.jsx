@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, ShieldCheck, Truck, Star, X, AlertCircle } from 'lucide-react';
+import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, ShieldCheck, Truck, X } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import useCartStore from '../store/useCartStore';
 import useAuthStore from '../store/useAuthStore';
@@ -9,6 +9,7 @@ import useDocumentTitle from '../hooks/useDocumentTitle';
 import useSettingsStore from '../store/useSettingsStore';
 import ConfirmModal from '../components/ConfirmModal';
 import { RefreshCcw } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const Cart = () => {
   useDocumentTitle('Your Shopping Cart');
@@ -25,9 +26,7 @@ const Cart = () => {
 
   useEffect(() => {
     fetchSettings();
-    if (user?.role === 'admin') {
-      navigate('/');
-    }
+    if (user?.role === 'admin') navigate('/');
     refreshCartStock();
   }, [user, navigate, fetchSettings]);
 
@@ -40,15 +39,11 @@ const Cart = () => {
           try {
             const res = await api.get(`/products/${item.slug}`);
             return { ...item, stock_count: res.data.stock_count };
-          } catch (err) {
-            return item;
-          }
+          } catch { return item; }
         })
       );
       syncItems(updatedItems);
-    } finally {
-      setIsRefreshing(false);
-    }
+    } finally { setIsRefreshing(false); }
   };
 
   const subtotal = items.reduce((sum, item) => sum + item.base_price * item.quantity, 0);
@@ -58,7 +53,7 @@ const Cart = () => {
   const confirmRemove = async () => {
     if (itemToRemove) {
       setIsRemoving(true);
-      await new Promise(resolve => setTimeout(resolve, 800));
+      await new Promise(r => setTimeout(r, 800));
       removeItem(itemToRemove.id);
       setIsRemoving(false);
       setItemToRemove(null);
@@ -66,205 +61,185 @@ const Cart = () => {
   };
 
   const handleUpdateQuantity = (item, newQty) => {
-    if (newQty > item.stock_count) {
-      toast.error(`Only ${item.stock_count} units available in stock`);
-      return;
-    }
-    
-    if (newQty <= 0) {
-      setItemToRemove(item);
-      return;
-    }
-    
+    if (newQty > item.stock_count) { toast.error(`Only ${item.stock_count} units available`); return; }
+    if (newQty <= 0) { setItemToRemove(item); return; }
     updateQuantity(item.id, newQty);
   };
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-slate-50 pt-40 pb-20 px-6">
-        <div className="max-w-xl mx-auto bg-white p-12 text-center rounded-3xl border border-slate-100 shadow-sm">
-          <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-8">
-            <ShoppingBag className="w-10 h-10 text-slate-300" />
+      <div className="min-h-screen pt-40 pb-20 px-6 flex items-center justify-center">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+          className="glass-card p-16 text-center max-w-md w-full">
+          <div className="w-20 h-20 bg-indigo-500/10 rounded-full flex items-center justify-center mx-auto mb-8 border border-indigo-500/20">
+            <ShoppingBag className="w-10 h-10 text-indigo-400" />
           </div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-4">Your cart is empty</h1>
-          <p className="text-slate-500 mb-10">Looks like you haven't added anything to your cart yet.</p>
-          <div className="flex flex-col gap-4">
-            <Link to="/products" className="w-full py-4 bg-secondary text-white rounded-xl font-bold hover:bg-secondary/90 transition-all">Continue Shopping</Link>
-          </div>
-        </div>
+          <h1 className="text-3xl font-black text-white mb-3">Cart is Empty</h1>
+          <p className="text-slate-400 mb-10 font-medium">You haven't added anything yet.</p>
+          <Link to="/products" className="btn-primary inline-flex items-center gap-2">
+            Start Shopping <ArrowRight className="w-4 h-4" />
+          </Link>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 pt-24 pb-12 px-4 md:px-6">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <div className="min-h-screen pt-28 pb-16 px-4 md:px-6">
+      {/* Ambient */}
+      <div className="fixed top-0 left-1/4 w-96 h-96 bg-indigo-500/5 rounded-full blur-[120px] pointer-events-none" />
 
-        {/* Left: Cart Items */}
-        <div className="lg:col-span-8 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-          <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
-            <h1 className="text-xl font-black text-slate-900 tracking-tight">Shopping Cart ({items.length} items)</h1>
-            <button
-              onClick={() => setShowClearModal(true)}
-              className="text-sm font-bold text-red-500 hover:underline flex items-center gap-2"
-            >
-              Clear All
-            </button>
-          </div>
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-10">
+          <p className="section-label mb-2">Review</p>
+          <h1 className="text-4xl font-black text-white tracking-tight">Shopping Cart
+            <span className="ml-3 text-lg font-bold text-slate-500">({items.length} items)</span>
+          </h1>
+        </div>
 
-          <div className="space-y-6">
-            <AnimatePresence>
-              {items.map((item) => {
-                const itemImageUrl = item.image_url || (item.images?.length > 0 ? (item.images.find(img => img.is_primary)?.image_url || item.images[0].image_url) : null);
-                return (
-                  <motion.div
-                    key={item.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    className="flex items-center gap-4 pb-4 border-b border-slate-50 group"
-                  >
-                    {/* Smaller compact image */}
-                    <div className="w-16 h-16 bg-slate-50 rounded-2xl overflow-hidden flex-shrink-0 border border-slate-100 group-hover:scale-105 transition-transform relative">
-                      <img src={getImageUrl(itemImageUrl)} className="w-full h-full object-contain p-2" alt={item.name} />
-                      {item.stock_count <= 0 && (
-                        <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center z-10 pointer-events-none">
-                          <span className="bg-slate-900 text-white text-[6px] font-black uppercase px-2 py-1 rounded-full transform -rotate-12">Stock Out</span>
-                        </div>
-                      )}
-                    </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Items */}
+          <div className="lg:col-span-8 glass-card p-8">
+            <div className="flex justify-between items-center mb-8 pb-5 border-b border-white/[0.06]">
+              <h2 className="font-black text-white text-sm uppercase tracking-widest">Items</h2>
+              <button onClick={() => setShowClearModal(true)}
+                className="text-xs font-black text-rose-400 hover:text-rose-300 uppercase tracking-widest flex items-center gap-1.5 transition-colors">
+                <X className="w-3.5 h-3.5" /> Clear All
+              </button>
+            </div>
 
-                    <div className="flex-grow flex items-center justify-between gap-4">
-                      <div className="min-w-0 flex-grow">
-                        <Link to={`/products/${item.slug}`} className="text-sm font-black text-slate-900 hover:text-secondary transition-colors line-clamp-1 leading-tight mb-1 block">{item.name}</Link>
-                        <div className="flex items-center gap-3">
-                          <p className="text-xs font-black text-slate-900">৳{item.base_price.toLocaleString()}</p>
-                          <div className="w-1 h-1 bg-slate-200 rounded-full" />
-                          {item.stock_count <= 0 ? (
-                            <span className="text-[10px] font-black text-red-500 uppercase tracking-widest">Stock Out</span>
-                          ) : (
-                            <button
-                              onClick={() => setItemToRemove(item)}
-                              className="text-[10px] font-black text-slate-400 hover:text-red-500 transition-colors uppercase tracking-widest"
-                            >
-                              Remove
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-6">
-                        {/* Compact Quantity Control */}
-                        <div className="flex items-center bg-slate-50 rounded-xl border border-slate-100 overflow-hidden h-9">
-                          <button
-                            onClick={() => handleUpdateQuantity(item, item.quantity - 1)}
-                            disabled={item.stock_count <= 0}
-                            className="px-2 hover:bg-slate-200 transition-colors disabled:opacity-30"
-                          >
-                            <Minus className="w-3 h-3 text-slate-600" />
-                          </button>
-                          <span className="w-8 text-center font-black text-xs text-slate-900">{item.quantity}</span>
-                          <button
-                            onClick={() => handleUpdateQuantity(item, item.quantity + 1)}
-                            disabled={item.stock_count <= 0}
-                            className="px-2 hover:bg-slate-200 transition-colors disabled:opacity-30"
-                          >
-                            <Plus className="w-3 h-3 text-slate-600" />
-                          </button>
-                        </div>
+            <div className="space-y-6">
+              <AnimatePresence>
+                {items.map((item) => {
+                  const img = item.image_url || item.images?.[0]?.image_url;
+                  return (
+                    <motion.div key={item.id}
+                      initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}
+                      className="flex items-center gap-5 pb-6 border-b border-white/[0.04] last:border-0 last:pb-0 group">
+                      <div className="w-18 h-18 shrink-0 w-[72px] h-[72px] glass-card-light rounded-2xl overflow-hidden border border-white/[0.08] group-hover:border-indigo-500/30 transition-colors relative">
+                        <img src={getImageUrl(img)} className="w-full h-full object-contain p-2" alt={item.name} />
                         {item.stock_count <= 0 && (
-                          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[8px] font-black uppercase px-2 py-1 rounded-full shadow-lg border border-white z-10">
-                            Out of Stock
-                          </span>
+                          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                            <span className="text-[8px] font-black text-rose-300 uppercase -rotate-12">Out</span>
+                          </div>
                         )}
+                      </div>
 
-                        <div className="text-right min-w-[80px]">
-                          <p className="text-sm font-[1000] text-slate-900 tracking-tight">৳{(item.base_price * item.quantity).toLocaleString()}</p>
+                      <div className="flex-grow flex items-center justify-between gap-4 min-w-0">
+                        <div className="min-w-0">
+                          <Link to={`/products/${item.slug}`}
+                            className="text-sm font-black text-white hover:text-indigo-300 transition-colors line-clamp-1 mb-1 block">
+                            {item.name}
+                          </Link>
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs font-black text-indigo-300">৳{item.base_price.toLocaleString()}</span>
+                            {item.stock_count <= 0
+                              ? <span className="text-[10px] font-black text-rose-400 uppercase">Stock Out</span>
+                              : <button onClick={() => setItemToRemove(item)}
+                                  className="text-[10px] font-black text-slate-500 hover:text-rose-400 transition-colors uppercase tracking-widest">
+                                  Remove
+                                </button>}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-5 shrink-0">
+                          <div className="flex items-center glass-input border border-white/[0.10] rounded-xl overflow-hidden">
+                            <button onClick={() => handleUpdateQuantity(item, item.quantity - 1)}
+                              disabled={item.stock_count <= 0}
+                              className="px-3 py-2.5 hover:glass-card-light/[0.08] transition-colors disabled:opacity-30 text-slate-400 hover:text-white">
+                              <Minus className="w-3 h-3" />
+                            </button>
+                            <span className="w-8 text-center font-black text-xs text-white">{item.quantity}</span>
+                            <button onClick={() => handleUpdateQuantity(item, item.quantity + 1)}
+                              disabled={item.stock_count <= 0}
+                              className="px-3 py-2.5 hover:glass-card-light/[0.08] transition-colors disabled:opacity-30 text-slate-400 hover:text-white">
+                              <Plus className="w-3 h-3" />
+                            </button>
+                          </div>
+                          <p className="text-sm font-black text-white min-w-[70px] text-right">
+                            ৳{(item.base_price * item.quantity).toLocaleString()}
+                          </p>
                         </div>
                       </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </div>
           </div>
-        </div>
 
-        {/* Right: Order Summary */}
-        <div className="lg:col-span-4 space-y-6">
-          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-            <h3 className="text-lg font-black text-slate-900 mb-6 tracking-tight">Order Summary</h3>
+          {/* Summary */}
+          <div className="lg:col-span-4 space-y-5">
+            <div className="glass-card p-7">
+              <h3 className="font-black text-white text-sm uppercase tracking-widest mb-7 pb-5 border-b border-white/[0.06]">
+                Order Summary
+              </h3>
+              <div className="space-y-4 mb-8">
+                <div className="flex justify-between">
+                  <span className="text-slate-400 font-medium text-sm">Subtotal</span>
+                  <span className="font-black text-white text-sm">৳{subtotal.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400 font-medium text-sm">Shipping</span>
+                  <span className={`font-black text-sm ${shipping === 0 ? 'text-emerald-400' : 'text-white'}`}>
+                    {shipping === 0 ? 'FREE' : `৳${shipping}`}
+                  </span>
+                </div>
+                {shipping > 0 && (
+                  <p className="text-[10px] text-indigo-400 font-bold">
+                    Add ৳{(settings.free_shipping_threshold - subtotal).toLocaleString()} more for free shipping
+                  </p>
+                )}
+                <div className="glow-divider" />
+                <div className="flex justify-between">
+                  <span className="font-black text-white">Total</span>
+                  <span className="text-2xl font-black text-white">৳{total.toLocaleString()}</span>
+                </div>
+              </div>
 
-            <div className="space-y-4 mb-8">
-              <div className="flex justify-between text-slate-500 font-medium">
-                <span>Subtotal</span>
-                <span className="font-bold text-slate-900">৳{subtotal.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between text-slate-500 font-medium">
-                <span>Shipping</span>
-                <span className="font-bold text-emerald-600">{shipping === 0 ? 'FREE' : `৳${shipping}`}</span>
-              </div>
-              <div className="h-px bg-slate-100 my-4" />
-              <div className="flex justify-between text-xl font-black text-slate-900 tracking-tighter">
-                <span>Total</span>
-                <span>৳{total.toLocaleString()}</span>
-              </div>
+              <button
+                onClick={async () => {
+                  if (items.some(i => i.stock_count <= 0)) { toast.error('Remove out of stock items first'); return; }
+                  if (!user?.id) { toast.error('Please login first'); navigate('/login', { state: { from: '/checkout' } }); return; }
+                  setIsNavigating(true);
+                  await new Promise(r => setTimeout(r, 500));
+                  navigate('/checkout');
+                }}
+                disabled={isNavigating || items.some(i => i.stock_count <= 0)}
+                className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none">
+                {isNavigating ? <RefreshCcw className="w-4 h-4 animate-spin" /> : <>Checkout Now <ArrowRight className="w-4 h-4" /></>}
+              </button>
             </div>
 
-            <button
-              onClick={async () => {
-                const outOfStockItems = items.filter(item => item.stock_count <= 0);
-                if (outOfStockItems.length > 0) {
-                  toast.error('Please remove out of stock items before checkout');
-                  return;
-                }
-                setIsNavigating(true);
-                await new Promise(resolve => setTimeout(resolve, 500));
-                navigate('/checkout');
-              }}
-              disabled={isNavigating || items.some(i => i.stock_count <= 0)}
-              className="w-full py-3 bg-secondary text-white rounded-xl font-bold text-base hover:bg-secondary/90 transition-all shadow-lg shadow-secondary/10 flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {isNavigating ? <RefreshCcw className="w-4 h-4 animate-spin" /> : 'Checkout Now'}
-              {!isNavigating && <ArrowRight className="w-4 h-4" />}
-            </button>
-          </div>
-
-          <div className="bg-slate-900 p-6 rounded-3xl text-white relative overflow-hidden">
-            <div className="relative z-10">
-              <Truck className="w-8 h-8 text-secondary mb-4" />
-              <h3 className="text-lg font-bold mb-2">Fast Delivery</h3>
-              <p className="text-xs text-slate-400 leading-relaxed font-medium">Free express delivery on all orders above ৳{settings.free_shipping_threshold}. Securely packed and tracked.</p>
+            <div className="glass-card-light p-6 border border-indigo-500/20">
+              <div className="flex items-center gap-3 mb-3">
+                <Truck className="w-5 h-5 text-indigo-400" />
+                <span className="font-black text-white text-sm">Fast Delivery</span>
+              </div>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Free express delivery on all orders above ৳{settings.free_shipping_threshold}. Securely packed and tracked.
+              </p>
             </div>
-            <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-secondary/10 rounded-full blur-3xl" />
+
+            <div className="glass-card-light p-6 border border-emerald-500/20">
+              <div className="flex items-center gap-3">
+                <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                <div>
+                  <p className="font-black text-white text-sm">Secure Checkout</p>
+                  <p className="text-xs text-slate-400">256-bit SSL encrypted</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-
       </div>
 
-      <ConfirmModal 
-        isOpen={!!itemToRemove}
-        onClose={() => setItemToRemove(null)}
-        onConfirm={confirmRemove}
-        loading={isRemoving}
-        title="Remove Item?"
-        message={`Are you sure you want to remove "${itemToRemove?.name}" from your shopping cart?`}
-      />
-
-      <ConfirmModal 
-        isOpen={showClearModal}
-        onClose={() => setShowClearModal(false)}
-        onConfirm={async () => {
-          setIsClearing(true);
-          await new Promise(resolve => setTimeout(resolve, 800));
-          clearCart();
-          setIsClearing(false);
-          setShowClearModal(false);
-        }}
-        loading={isClearing}
-        title="Clear Cart?"
-        message="Are you sure you want to remove all items from your shopping cart? This action cannot be undone."
-      />
+      <ConfirmModal isOpen={!!itemToRemove} onClose={() => setItemToRemove(null)}
+        onConfirm={confirmRemove} loading={isRemoving}
+        title="Remove Item?" message={`Remove "${itemToRemove?.name}" from cart?`} />
+      <ConfirmModal isOpen={showClearModal} onClose={() => setShowClearModal(false)}
+        onConfirm={async () => { setIsClearing(true); await new Promise(r => setTimeout(r, 800)); clearCart(); setIsClearing(false); setShowClearModal(false); }}
+        loading={isClearing} title="Clear Cart?" message="Remove all items from your cart?" />
     </div>
   );
 };

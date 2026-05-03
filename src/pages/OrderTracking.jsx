@@ -41,7 +41,7 @@ const OrderTrackbar = ({ status }) => {
   return (
     <div className="py-12">
       <div className="relative flex justify-between">
-        <div className="absolute top-1/2 left-0 right-0 h-1.5 bg-slate-100 -translate-y-1/2 z-0 rounded-full" />
+        <div className="absolute top-1/2 left-0 right-0 h-1.5 glass-input -translate-y-1/2 z-0 rounded-full" />
         <motion.div 
           initial={{ width: 0 }}
           animate={{ width: `${(currentIndex / (steps.length - 1)) * 100}%` }}
@@ -60,7 +60,7 @@ const OrderTrackbar = ({ status }) => {
               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border-4 transition-all duration-700 ${
                 isActive 
                   ? `bg-${color}-500 border-white text-white shadow-xl shadow-${color}-200 scale-110` 
-                  : 'bg-white border-slate-50 text-slate-200'
+                  : 'glass-card-light border-slate-50 text-slate-200'
               }`}>
                 <Icon className={`w-6 h-6 ${isCurrent ? 'animate-pulse' : ''}`} strokeWidth={2.5} />
               </div>
@@ -114,7 +114,7 @@ const OrderTracking = () => {
       <div className="min-h-screen flex items-center justify-center bg-[#f8fafc]">
         <div className="flex flex-col items-center gap-6">
           <div className="relative w-20 h-20">
-             <div className="absolute inset-0 border-4 border-slate-100 rounded-full" />
+             <div className="absolute inset-0 border-4 border-white/[0.08] rounded-full" />
              <div className="absolute inset-0 border-4 border-t-indigo-600 rounded-full animate-spin" />
           </div>
           <p className="text-xs font-black text-slate-400 uppercase tracking-[0.3em] animate-pulse">Syncing with Logistics...</p>
@@ -126,11 +126,11 @@ const OrderTracking = () => {
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f8fafc] p-6">
-        <div className="max-w-md w-full bg-white rounded-[3rem] shadow-2xl p-12 text-center border border-slate-100">
+        <div className="max-w-md w-full glass-card-light rounded-[3rem] shadow-2xl p-12 text-center border border-white/[0.08]">
           <div className="w-20 h-20 bg-red-50 rounded-3xl flex items-center justify-center mx-auto mb-8">
             <AlertCircle className="w-10 h-10 text-red-500" />
           </div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-4">Tracking Error</h2>
+          <h2 className="text-2xl font-black text-white tracking-tight mb-4">Tracking Error</h2>
           <p className="text-slate-500 text-sm leading-relaxed mb-10">{error}</p>
           <button 
             onClick={() => navigate('/profile')}
@@ -151,8 +151,8 @@ const OrderTracking = () => {
     <div className="min-h-screen bg-[#f8fafc] pb-24 pt-12 px-4 md:px-6">
       <div className="max-w-4xl mx-auto">
         
-        <Link to="/profile" className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-900 font-black text-[10px] uppercase tracking-widest mb-10 transition-colors group">
-          <div className="p-2 rounded-xl bg-white border border-slate-100 shadow-sm group-hover:bg-slate-900 group-hover:text-white transition-all">
+        <Link to="/profile" className="inline-flex items-center gap-2 text-slate-400 hover:text-white font-black text-[10px] uppercase tracking-widest mb-10 transition-colors group">
+          <div className="p-2 rounded-xl glass-card-light border border-white/[0.08] shadow-sm group-hover:bg-slate-900 group-hover:text-white transition-all">
             <ChevronLeft className="w-4 h-4" />
           </div>
           Back to Profile
@@ -167,17 +167,17 @@ const OrderTracking = () => {
                </div>
                <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Order ID: #{order.id}</span>
             </div>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tighter">Your order is <span className={`text-${statusColor}-500`}>{config.label}</span></h1>
+            <h1 className="text-4xl font-black text-white tracking-tighter">Your order is <span className={`text-${statusColor}-500`}>{config.label}</span></h1>
             <p className="text-slate-500 text-sm font-medium mt-2 max-w-md">{config.desc}</p>
           </div>
           <div className="text-right hidden md:block">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Placed On</p>
-            <p className="text-xl font-black text-slate-900">{new Date(order.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+            <p className="text-xl font-black text-white">{new Date(order.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
           </div>
         </div>
 
         {/* The Trackbar */}
-        <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-[0_20px_50px_rgba(0,0,0,0.02)] p-10 mb-10 overflow-x-auto md:overflow-x-visible">
+        <div className="glass-card-light rounded-[3.5rem] border border-white/[0.08] shadow-[0_20px_50px_rgba(0,0,0,0.02)] p-10 mb-10 overflow-x-auto md:overflow-x-visible">
            <OrderTrackbar status={currentStatus} />
         </div>
 
@@ -185,41 +185,41 @@ const OrderTracking = () => {
            {/* Details Column */}
            <div className="md:col-span-7 space-y-8">
               {/* Order Items */}
-              <div className="bg-white rounded-[3rem] border border-slate-100 shadow-sm p-8">
-                 <h2 className="text-xs font-black text-slate-900 uppercase tracking-widest mb-8 flex items-center gap-3">
+              <div className="glass-card-light rounded-[3rem] border border-white/[0.08] shadow-sm p-8">
+                 <h2 className="text-xs font-black text-white uppercase tracking-widest mb-8 flex items-center gap-3">
                     <ShoppingBag className="w-4 h-4 text-indigo-500" />
                     Purchase Summary
                  </h2>
                  <div className="space-y-4">
                     {order.items?.map((item) => (
-                       <div key={item.id} className="flex items-center justify-between gap-4 p-4 bg-slate-50/50 rounded-2xl border border-slate-50 group hover:border-indigo-100 transition-colors">
+                       <div key={item.id} className="flex items-center justify-between gap-4 p-4 glass-card-light/50 rounded-2xl border border-slate-50 group hover:border-indigo-100 transition-colors">
                           <div className="flex items-center gap-4 flex-grow">
-                             <div className="w-16 h-16 bg-white rounded-xl overflow-hidden border border-slate-100 shadow-sm p-2 flex items-center justify-center">
+                             <div className="w-16 h-16 glass-card-light rounded-xl overflow-hidden border border-white/[0.08] shadow-sm p-2 flex items-center justify-center">
                                 <img src={getImageUrl(item.product?.image_url)} className="w-full h-full object-contain" alt={item.product?.name} />
                              </div>
                              <div className="min-w-0">
-                                <p className="text-sm font-bold text-slate-900 truncate">{item.product?.name}</p>
+                                <p className="text-sm font-bold text-white truncate">{item.product?.name}</p>
                                 <p className="text-[10px] font-black text-slate-400 mt-1 uppercase tracking-widest">{item.quantity} × ৳{item.price_at_purchase.toLocaleString()}</p>
                              </div>
                           </div>
                           <div className="text-right">
-                             <p className="text-sm font-black text-slate-900">৳{(item.price_at_purchase * item.quantity).toLocaleString()}</p>
+                             <p className="text-sm font-black text-white">৳{(item.price_at_purchase * item.quantity).toLocaleString()}</p>
                           </div>
                        </div>
                     ))}
                  </div>
 
-                 <div className="mt-10 pt-8 border-t border-dashed border-slate-200 space-y-3">
+                 <div className="mt-10 pt-8 border-t border-dashed border-white/[0.10] space-y-3">
                     <div className="flex justify-between items-center text-[11px] font-bold text-slate-400">
                        <span className="uppercase tracking-widest">Subtotal</span>
-                       <span className="text-slate-900">৳{order.items?.reduce((sum, i) => sum + (i.price_at_purchase * i.quantity), 0).toLocaleString()}</span>
+                       <span className="text-white">৳{order.items?.reduce((sum, i) => sum + (i.price_at_purchase * i.quantity), 0).toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between items-center text-[11px] font-bold text-slate-400">
                        <span className="uppercase tracking-widest">Shipping Fee</span>
                        <span className="text-indigo-600">+ ৳{(order.total_price - order.items?.reduce((sum, i) => sum + (i.price_at_purchase * i.quantity), 0)).toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between items-center pt-4">
-                       <span className="text-[11px] font-black text-slate-900 uppercase tracking-widest">Total Amount Paid</span>
+                       <span className="text-[11px] font-black text-white uppercase tracking-widest">Total Amount Paid</span>
                        <span className="text-2xl font-black text-indigo-600 tracking-tighter">৳{order.total_price.toLocaleString()}</span>
                     </div>
                  </div>
@@ -234,7 +234,7 @@ const OrderTracking = () => {
                     <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-8">Fulfillment Details</h2>
                     <div className="space-y-8">
                        <div className="flex gap-4">
-                          <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center text-secondary border border-white/10">
+                          <div className="w-10 h-10 rounded-2xl glass-card-light/5 flex items-center justify-center text-secondary border border-white/10">
                              <MapPin className="w-5 h-5" />
                           </div>
                           <div>
@@ -244,7 +244,7 @@ const OrderTracking = () => {
                        </div>
 
                        <div className="flex gap-4">
-                          <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center text-indigo-400 border border-white/10">
+                          <div className="w-10 h-10 rounded-2xl glass-card-light/5 flex items-center justify-center text-indigo-400 border border-white/10">
                              <CreditCard className="w-5 h-5" />
                           </div>
                           <div>
@@ -266,17 +266,17 @@ const OrderTracking = () => {
                        )}
                     </div>
                  </div>
-                 <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-32 -mt-32" />
+                 <div className="absolute top-0 right-0 w-64 h-64 glass-card-light/5 rounded-full blur-3xl -mr-32 -mt-32" />
               </div>
 
               {/* Support Card */}
-              <div className="bg-white rounded-[3rem] border border-slate-100 shadow-sm p-10 text-center">
+              <div className="glass-card-light rounded-[3rem] border border-white/[0.08] shadow-sm p-10 text-center">
                  <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-6">
                     <Package className="w-8 h-8 text-indigo-600" />
                  </div>
-                 <h3 className="text-lg font-black text-slate-900 tracking-tight mb-2">Need Assistance?</h3>
+                 <h3 className="text-lg font-black text-white tracking-tight mb-2">Need Assistance?</h3>
                  <p className="text-xs font-medium text-slate-400 leading-relaxed mb-8 px-4">Our artisan support team is available 24/7 for any questions regarding your package.</p>
-                 <button className="w-full py-4 bg-slate-50 hover:bg-slate-900 hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-slate-900 transition-all">
+                 <button className="w-full py-4 glass-card-light hover:bg-slate-900 hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-white transition-all">
                     Contact Support
                  </button>
               </div>

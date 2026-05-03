@@ -146,7 +146,7 @@ const EditProfile = () => {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-slate-50 pt-32 pb-20 px-4 md:px-8">
+    <div className="min-h-screen pt-32 pb-20 px-4 md:px-8">
       <div className="max-w-6xl mx-auto">
         <button onClick={() => navigate('/profile')} className="flex items-center gap-2 text-slate-500 font-bold text-sm mb-8 hover:text-secondary transition-colors group">
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Back to Profile
@@ -159,7 +159,7 @@ const EditProfile = () => {
              <motion.div 
                initial={{ opacity: 0, x: -20 }} 
                animate={{ opacity: 1, x: 0 }}
-               className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl p-10 text-center sticky top-32"
+               className="glass-card-light rounded-[2.5rem] border border-white/[0.08] shadow-xl p-10 text-center sticky top-32"
              >
                 <div className="relative w-40 h-40 mx-auto mb-8 group">
                    <div className="w-full h-full rounded-full border-4 border-slate-50 overflow-hidden bg-slate-100 shadow-2xl transition-transform duration-500 group-hover:scale-105">
@@ -182,7 +182,7 @@ const EditProfile = () => {
                    </label>
                 </div>
 
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">{user.full_name}</h2>
+                <h2 className="text-2xl font-black text-white tracking-tight">{user.full_name}</h2>
                 <div className="flex items-center justify-center gap-2 mt-2">
                    <span className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-100">
                       {user.role}
@@ -190,11 +190,11 @@ const EditProfile = () => {
                 </div>
 
                 <div className="mt-10 pt-10 border-t border-slate-50 space-y-4">
-                   <div className="flex items-center gap-4 text-left p-4 bg-slate-50 rounded-2xl">
+                   <div className="flex items-center gap-4 text-left p-4 glass-card-light rounded-2xl">
                       <Activity className="w-5 h-5 text-blue-500" />
                       <div>
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Account Status</p>
-                        <p className="text-sm font-bold text-slate-900">Verified & Active</p>
+                        <p className="text-sm font-bold text-white">Verified & Active</p>
                       </div>
                    </div>
                 </div>
@@ -205,13 +205,13 @@ const EditProfile = () => {
           <div className="flex-grow space-y-8">
              
              {/* Section 1: Basic Info */}
-             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl p-8 md:p-10">
+             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card-light rounded-[2.5rem] border border-white/[0.08] shadow-xl p-8 md:p-10">
                 <div className="flex items-center gap-4 mb-8">
                    <div className="w-12 h-12 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary">
                       <User className="w-6 h-6" />
                    </div>
                    <div>
-                      <h2 className="text-xl font-bold text-slate-900">Personal Details</h2>
+                      <h2 className="text-xl font-bold text-white">Personal Details</h2>
                       <p className="text-slate-500 text-xs">Manage your primary account identity</p>
                    </div>
                 </div>
@@ -226,7 +226,7 @@ const EditProfile = () => {
                             type="text"
                             value={profileData.full_name}
                             onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
-                            className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-3.5 pl-11 pr-4 text-sm font-bold text-slate-900 focus:bg-white focus:border-secondary transition-all outline-none"
+                            className="w-full glass-card-light border border-white/[0.08] rounded-2xl py-3.5 pl-11 pr-4 text-sm font-bold text-white focus:glass-card-light focus:border-indigo-500 transition-all outline-none"
                           />
                         </div>
                         <AnimatePresence>{errors.full_name && <ErrorMsg message={errors.full_name} />}</AnimatePresence>
@@ -240,7 +240,7 @@ const EditProfile = () => {
                             type="text"
                             value={profileData.address}
                             onChange={(e) => setProfileData({ ...profileData, address: e.target.value })}
-                            className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-3.5 pl-11 pr-4 text-sm font-bold text-slate-900 focus:bg-white focus:border-secondary transition-all outline-none"
+                            className="w-full glass-card-light border border-white/[0.08] rounded-2xl py-3.5 pl-11 pr-4 text-sm font-bold text-white focus:glass-card-light focus:border-indigo-500 transition-all outline-none"
                           />
                         </div>
                         <AnimatePresence>{errors.address && <ErrorMsg message={errors.address} />}</AnimatePresence>
@@ -257,12 +257,12 @@ const EditProfile = () => {
              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 
                 {/* Contact Details */}
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl p-8">
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card-light rounded-[2.5rem] border border-white/[0.08] shadow-xl p-8">
                    <div className="flex items-center gap-4 mb-8">
                       <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-500">
                          <Mail className="w-5 h-5" />
                       </div>
-                      <h3 className="font-bold text-slate-900">Contact Details</h3>
+                      <h3 className="font-bold text-white">Contact Details</h3>
                    </div>
 
                    <div className="space-y-6">
@@ -275,7 +275,7 @@ const EditProfile = () => {
                           type="email"
                           value={sensitiveData.email}
                           onChange={(e) => setSensitiveData({ ...sensitiveData, email: e.target.value })}
-                          className="w-full bg-slate-50 border border-slate-100 rounded-xl py-3 px-4 text-xs font-bold text-slate-900 focus:bg-white focus:border-blue-500 outline-none"
+                          className="w-full glass-card-light border border-white/[0.08] rounded-xl py-3 px-4 text-xs font-bold text-white focus:glass-card-light focus:border-blue-500 outline-none"
                         />
                       </div>
 
@@ -288,19 +288,19 @@ const EditProfile = () => {
                           type="tel"
                           value={sensitiveData.phone}
                           onChange={(e) => setSensitiveData({ ...sensitiveData, phone: e.target.value.replace(/\D/g, '') })}
-                          className="w-full bg-slate-50 border border-slate-100 rounded-xl py-3 px-4 text-xs font-bold text-slate-900 focus:bg-white focus:border-blue-500 outline-none"
+                          className="w-full glass-card-light border border-white/[0.08] rounded-xl py-3 px-4 text-xs font-bold text-white focus:glass-card-light focus:border-blue-500 outline-none"
                         />
                       </div>
                    </div>
                 </motion.div>
 
                 {/* Password Management */}
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl p-8">
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card-light rounded-[2.5rem] border border-white/[0.08] shadow-xl p-8">
                    <div className="flex items-center gap-4 mb-8">
                       <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center text-amber-500">
                          <Lock className="w-5 h-5" />
                       </div>
-                      <h3 className="font-bold text-slate-900">Password</h3>
+                      <h3 className="font-bold text-white">Password</h3>
                    </div>
 
                    <div className="space-y-4">
@@ -311,7 +311,7 @@ const EditProfile = () => {
                           autoComplete="new-password"
                           value={sensitiveData.password}
                           onChange={(e) => setSensitiveData({ ...sensitiveData, password: e.target.value })}
-                          className="w-full bg-slate-50 border border-slate-100 rounded-xl py-3 pl-4 pr-10 text-xs font-bold text-slate-900 outline-none focus:border-amber-500"
+                          className="w-full glass-card-light border border-white/[0.08] rounded-xl py-3 pl-4 pr-10 text-xs font-bold text-white outline-none focus:border-amber-500"
                         />
                         <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300">
                           {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -323,7 +323,7 @@ const EditProfile = () => {
                         autoComplete="new-password"
                         value={sensitiveData.confirmPassword}
                         onChange={(e) => setSensitiveData({ ...sensitiveData, confirmPassword: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-100 rounded-xl py-3 px-4 text-xs font-bold text-slate-900 outline-none focus:border-amber-500"
+                        className="w-full glass-card-light border border-white/[0.08] rounded-xl py-3 px-4 text-xs font-bold text-white outline-none focus:border-amber-500"
                       />
                       <button onClick={() => startSecureUpdate('password')} disabled={!sensitiveData.password} className="w-full py-3 bg-amber-500 text-white rounded-xl font-bold text-xs hover:bg-amber-600 transition-all disabled:opacity-20 mt-2">
                         Set New Password

@@ -27,9 +27,14 @@ const Checkout = () => {
   const bkashSenderNumber = searchParams.get('senderNumber');
   const isBkashError = searchParams.get('bkash_error') === 'true';
 
-  // Guard: Must have phone and address to checkout
+  // Guard: Must be logged in to checkout
   React.useEffect(() => {
     fetchSettings();
+    if (!user) {
+      toast.error('Please login to proceed to checkout');
+      navigate('/login', { state: { from: '/checkout' } });
+      return;
+    }
     if (user && (!user.phone || !user.address)) {
       toast.error('Please complete your profile before placing an order');
       navigate('/complete-profile');
@@ -134,22 +139,22 @@ const Checkout = () => {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6">
-        <div className="w-24 h-24 bg-white rounded-[2.5rem] shadow-xl flex items-center justify-center mb-8">
+      <div className="min-h-screen flex flex-col items-center justify-center p-6">
+        <div className="w-24 h-24 glass-card-light rounded-[2.5rem] shadow-xl flex items-center justify-center mb-8">
            <ShoppingBag className="w-10 h-10 text-slate-200" />
         </div>
-        <h2 className="text-2xl font-black text-slate-900 mb-2">Your cart is empty</h2>
+        <h2 className="text-2xl font-black text-white mb-2">Your cart is empty</h2>
         <p className="text-slate-400 text-sm mb-8 font-bold">Looks like you haven't added anything yet</p>
-        <Link to="/products" className="px-10 py-4 bg-secondary text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-secondary/20 hover:scale-105 transition-all">Start Shopping</Link>
+        <Link to="/products" className="px-10 py-4 bg-secondary text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-500/20 hover:scale-105 transition-all">Start Shopping</Link>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20 font-sans">
-      <header className="bg-white/80 backdrop-blur-xl border-b border-slate-100 py-6 px-6 sticky top-0 z-[100] shadow-sm">
+    <div className="min-h-screen pb-20">
+      <header className="glass-card-light/80 backdrop-blur-xl border-b border-white/[0.08] py-6 px-6 sticky top-0 z-[100] shadow-sm">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-           <Link to="/" className="text-2xl font-[1000] tracking-[0.25em] text-slate-900 hover:text-secondary transition-all">ERAYA</Link>
+           <Link to="/" className="text-2xl font-[1000] tracking-[0.25em] text-white hover:text-secondary transition-all">ERAYA</Link>
            
            <div className="hidden md:flex items-center gap-8">
               {[
@@ -160,12 +165,12 @@ const Checkout = () => {
                 <div key={item.s} className="flex items-center gap-3">
                   <div className={`w-8 h-8 rounded-2xl flex items-center justify-center text-[10px] font-black transition-all border-2 ${
                     step >= item.s 
-                      ? 'bg-secondary border-secondary text-white shadow-lg shadow-secondary/20' 
-                      : 'bg-white border-slate-100 text-slate-300'
+                      ? 'bg-secondary border-secondary text-white shadow-lg shadow-indigo-500/20' 
+                      : 'glass-card-light border-white/[0.08] text-slate-300'
                   }`}>
                     {item.s}
                   </div>
-                  <span className={`text-[10px] font-black uppercase tracking-widest ${step >= item.s ? 'text-slate-900' : 'text-slate-300'}`}>
+                  <span className={`text-[10px] font-black uppercase tracking-widest ${step >= item.s ? 'text-white' : 'text-slate-300'}`}>
                     {item.label}
                   </span>
                   {item.s < 3 && <div className="w-8 h-[2px] bg-slate-100 mx-1" />}
@@ -173,7 +178,7 @@ const Checkout = () => {
               ))}
            </div>
 
-           <div className="flex items-center gap-3 p-2 bg-slate-50 rounded-2xl border border-slate-100">
+           <div className="flex items-center gap-3 p-2 glass-card-light rounded-2xl border border-white/[0.08]">
               <Lock className="w-3.5 h-3.5 text-emerald-500" />
               <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 hidden sm:inline">Encrypted Checkout</span>
            </div>
@@ -183,10 +188,10 @@ const Checkout = () => {
       <div className="max-w-7xl mx-auto px-4 md:px-6 mt-12 grid grid-cols-1 lg:grid-cols-12 gap-10">
         <div className="lg:col-span-8 space-y-8">
           {/* Shipping Section */}
-          <section className={`bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm transition-all duration-500 ${step !== 1 ? 'opacity-40 scale-[0.98]' : ''}`}>
+          <section className={`glass-card-light p-10 rounded-[2.5rem] border border-white/[0.08] shadow-sm transition-all duration-500 ${step !== 1 ? 'opacity-40 scale-[0.98]' : ''}`}>
              <div className="flex justify-between items-center mb-10">
                 <div>
-                   <h3 className="text-xl font-black flex items-center gap-4 text-slate-900 tracking-tight">
+                   <h3 className="text-xl font-black flex items-center gap-4 text-white tracking-tight">
                       <div className="w-12 h-12 bg-secondary/10 rounded-2xl flex items-center justify-center">
                          <MapPin className="w-6 h-6 text-secondary" />
                       </div>
@@ -194,7 +199,7 @@ const Checkout = () => {
                    </h3>
                 </div>
                 {step > 1 && (
-                  <button onClick={() => setStep(1)} className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-secondary hover:bg-secondary/10 transition-all border border-slate-100">
+                  <button onClick={() => setStep(1)} className="w-10 h-10 rounded-xl glass-card-light flex items-center justify-center text-secondary hover:bg-secondary/10 transition-all border border-white/[0.08]">
                      <ChevronRight className="w-5 h-5 rotate-180" />
                   </button>
                 )}
@@ -210,7 +215,7 @@ const Checkout = () => {
                         setForm({...form, shipping_address: e.target.value});
                         if (errors.shipping_address) setErrors({...errors, shipping_address: null});
                       }}
-                      className={`w-full bg-slate-50 border rounded-3xl p-6 text-sm font-bold outline-none transition-all resize-none ${errors.shipping_address ? 'border-red-200 ring-4 ring-red-50 text-red-900' : 'border-slate-100 focus:ring-4 focus:ring-secondary/10 focus:bg-white focus:border-secondary'}`}
+                      className={`w-full glass-card-light border rounded-3xl p-6 text-sm font-bold outline-none transition-all resize-none ${errors.shipping_address ? 'border-red-200 ring-4 ring-red-50 text-red-900' : 'border-white/[0.08] focus:ring-4 focus:ring-indigo-500/10 focus:glass-card-light focus:border-indigo-500'}`}
                       rows={4}
                       placeholder="e.g. House 42, Road 7, Rupatoli, Barishal"
                     />
@@ -236,23 +241,23 @@ const Checkout = () => {
                  </button>
                </div>
              ) : (
-               <div className="ml-16 p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                  <p className="text-slate-900 font-bold text-sm tracking-tight">{form.shipping_address}</p>
+               <div className="ml-16 p-6 glass-card-light rounded-2xl border border-white/[0.08]">
+                  <p className="text-white font-bold text-sm tracking-tight">{form.shipping_address}</p>
                </div>
              )}
           </section>
 
           {/* Review Section */}
-          <section className={`bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm transition-all duration-500 ${step < 2 ? 'opacity-30 pointer-events-none grayscale' : step > 2 ? 'opacity-40 scale-[0.98]' : ''}`}>
+          <section className={`glass-card-light p-10 rounded-[2.5rem] border border-white/[0.08] shadow-sm transition-all duration-500 ${step < 2 ? 'opacity-30 pointer-events-none grayscale' : step > 2 ? 'opacity-40 scale-[0.98]' : ''}`}>
              <div className="flex justify-between items-center mb-10">
-                 <h3 className="text-xl font-black flex items-center gap-4 text-slate-900 tracking-tight">
+                 <h3 className="text-xl font-black flex items-center gap-4 text-white tracking-tight">
                     <div className="w-12 h-12 bg-secondary/10 rounded-2xl flex items-center justify-center">
                        <CheckCircle className="w-6 h-6 text-secondary" />
                     </div>
                     2. Review Order
                  </h3>
                  {step > 2 && (
-                   <button onClick={() => setStep(2)} className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-secondary hover:bg-secondary/10 transition-all border border-slate-100">
+                   <button onClick={() => setStep(2)} className="w-10 h-10 rounded-xl glass-card-light flex items-center justify-center text-secondary hover:bg-secondary/10 transition-all border border-white/[0.08]">
                       <ChevronRight className="w-5 h-5 rotate-180" />
                    </button>
                  )}
@@ -260,7 +265,7 @@ const Checkout = () => {
  
              {step === 2 && (
                <div className="space-y-8">
-                 <div className="bg-slate-50 rounded-[2rem] border border-slate-100 overflow-hidden">
+                 <div className="glass-card-light rounded-[2rem] border border-white/[0.08] overflow-hidden">
                      <div className="p-6 space-y-3">
                         {items.map((item) => {
                           const itemImageUrl = item.image_url || (item.images?.length > 0 ? (item.images.find(img => img.is_primary)?.image_url || item.images[0].image_url) : null);
@@ -268,17 +273,17 @@ const Checkout = () => {
                             <Link 
                               key={item.id} 
                               to={`/products/${item.slug}`}
-                              className="flex items-center gap-4 p-3 rounded-2xl hover:bg-white transition-all border border-transparent hover:border-slate-100 group"
+                              className="flex items-center gap-4 p-3 rounded-2xl hover:glass-card-light transition-all border border-transparent hover:border-white/[0.08] group"
                             >
-                               <div className="w-14 h-14 bg-white rounded-xl overflow-hidden flex-shrink-0 border border-slate-100 group-hover:scale-105 transition-transform">
+                               <div className="w-14 h-14 glass-card-light rounded-xl overflow-hidden flex-shrink-0 border border-white/[0.08] group-hover:scale-105 transition-transform">
                                   <img src={getImageUrl(itemImageUrl)} className="w-full h-full object-contain p-2" alt={item.name} />
                                </div>
                                <div className="flex-grow min-w-0">
-                                  <p className="font-black text-[13px] text-slate-900 mb-0.5 leading-tight line-clamp-1">{item.name}</p>
+                                  <p className="font-black text-[13px] text-white mb-0.5 leading-tight line-clamp-1">{item.name}</p>
                                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Qty: {item.quantity}</p>
                                </div>
                                <div className="text-right flex flex-col items-end">
-                                  <p className="text-sm font-black text-slate-900">৳{(item.base_price * item.quantity).toLocaleString()}</p>
+                                  <p className="text-sm font-black text-white">৳{(item.base_price * item.quantity).toLocaleString()}</p>
                                   <p className="text-[9px] font-bold text-slate-400">৳{item.base_price.toLocaleString()} / item</p>
                                </div>
                             </Link>
@@ -305,8 +310,8 @@ const Checkout = () => {
           </section>
 
           {/* Payment Section */}
-          <section className={`bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm transition-all duration-500 ${step < 3 ? 'opacity-30 pointer-events-none grayscale' : ''}`}>
-             <h3 className="text-xl font-black flex items-center gap-4 mb-10 text-slate-900 tracking-tight">
+          <section className={`glass-card-light p-10 rounded-[2.5rem] border border-white/[0.08] shadow-sm transition-all duration-500 ${step < 3 ? 'opacity-30 pointer-events-none grayscale' : ''}`}>
+             <h3 className="text-xl font-black flex items-center gap-4 mb-10 text-white tracking-tight">
                 <div className="w-12 h-12 bg-secondary/10 rounded-2xl flex items-center justify-center">
                    <Wallet className="w-6 h-6 text-secondary" />
                 </div>
@@ -319,13 +324,13 @@ const Checkout = () => {
                     <button 
                       onClick={() => !isBkashSuccess && setForm({...form, payment_method: 'bKash'})}
                       disabled={isBkashSuccess}
-                      className={`relative p-8 border-2 rounded-[2rem] flex flex-col items-center gap-4 transition-all text-center group ${form.payment_method === 'bKash' ? 'border-[#D12053] bg-[#D12053]/5' : 'border-slate-50 bg-slate-50/50 hover:bg-slate-50'} ${isBkashSuccess ? 'cursor-default' : ''}`}
+                      className={`relative p-8 border-2 rounded-[2rem] flex flex-col items-center gap-4 transition-all text-center group ${form.payment_method === 'bKash' ? 'border-[#D12053] bg-[#D12053]/5' : 'border-slate-50 glass-card-light/50 hover:glass-card-light'} ${isBkashSuccess ? 'cursor-default' : ''}`}
                     >
-                       <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all ${form.payment_method === 'bKash' ? 'bg-white shadow-xl shadow-[#D12053]/20 scale-105' : 'bg-white text-slate-400 group-hover:text-[#D12053]'}`}>
+                       <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all ${form.payment_method === 'bKash' ? 'glass-card-light shadow-xl shadow-[#D12053]/20 scale-105' : 'glass-card-light text-slate-400 group-hover:text-[#D12053]'}`}>
                           <img src="https://www.logo.wine/a/logo/BKash/BKash-bKash-Logo.wine.svg" className="w-full h-full object-contain p-1" alt="bKash" />
                        </div>
                        <div>
-                          <p className="font-black text-sm text-slate-900 mb-1">bKash Payment</p>
+                          <p className="font-black text-sm text-white mb-1">bKash Payment</p>
                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Fast & Secure Mobile Pay</p>
                        </div>
                        {form.payment_method === 'bKash' && <div className="absolute top-4 right-4 w-4 h-4 bg-[#D12053] rounded-full border-2 border-white shadow-sm" />}
@@ -333,18 +338,18 @@ const Checkout = () => {
                     <button 
                       onClick={() => !isBkashSuccess && setForm({...form, payment_method: 'COD'})}
                       disabled={isBkashSuccess}
-                      className={`relative p-8 border-2 rounded-[2rem] flex flex-col items-center gap-4 transition-all text-center group ${form.payment_method === 'COD' ? 'border-secondary bg-secondary/5' : 'border-slate-50 bg-slate-50/50 hover:bg-slate-50'} ${isBkashSuccess ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
+                      className={`relative p-8 border-2 rounded-[2rem] flex flex-col items-center gap-4 transition-all text-center group ${form.payment_method === 'COD' ? 'border-secondary bg-secondary/5' : 'border-slate-50 glass-card-light/50 hover:glass-card-light'} ${isBkashSuccess ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
                     >
-                       <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all ${form.payment_method === 'COD' ? 'bg-secondary text-white shadow-xl shadow-secondary/20 scale-105' : 'bg-white text-slate-400 group-hover:text-slate-600'}`}>
+                       <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all ${form.payment_method === 'COD' ? 'bg-secondary text-white shadow-xl shadow-indigo-500/20 scale-105' : 'glass-card-light text-slate-400 group-hover:text-slate-300'}`}>
                           <Truck className="w-8 h-8" />
                        </div>
                        <div>
-                          <p className="font-black text-sm text-slate-900 mb-1">Cash on Delivery</p>
+                          <p className="font-black text-sm text-white mb-1">Cash on Delivery</p>
                           <p className="text-[10px] font-bold text-green-500 uppercase tracking-widest">Pay at your doorstep</p>
                        </div>
                        {form.payment_method === 'COD' && <div className="absolute top-4 right-4 w-4 h-4 bg-secondary rounded-full border-2 border-white shadow-sm" />}
                        {isBkashSuccess && (
-                         <div className="absolute inset-0 bg-white/10 backdrop-blur-[1px] rounded-[2rem] flex items-center justify-center">
+                         <div className="absolute inset-0 glass-card-light/10 backdrop-blur-[1px] rounded-[2rem] flex items-center justify-center">
                             <span className="bg-slate-900/10 text-slate-400 text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-full">Locked</span>
                          </div>
                        )}
@@ -352,14 +357,14 @@ const Checkout = () => {
                  </div>
 
                  {form.payment_method === 'bKash' && (
-                   <div className="mt-8 pt-8 border-t border-slate-100 flex flex-col items-center">
+                   <div className="mt-8 pt-8 border-t border-white/[0.08] flex flex-col items-center">
                      {!isBkashSuccess ? (
                        <button 
                          onClick={handleBkashInit}
                          disabled={loading}
                          className="w-full sm:w-auto px-12 py-5 bg-[#D12053] text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-[#D12053]/20 hover:bg-[#b01b45] transition-all active:scale-95 flex items-center gap-3"
                        >
-                         {loading ? <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <img src="https://www.logo.wine/a/logo/BKash/BKash-bKash-Logo.wine.svg" className="h-5 bg-white rounded px-1" alt="bKash" />}
+                         {loading ? <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <img src="https://www.logo.wine/a/logo/BKash/BKash-bKash-Logo.wine.svg" className="h-5 glass-card-light rounded px-1" alt="bKash" />}
                          Pay with bKash
                        </button>
                      ) : (
@@ -369,7 +374,7 @@ const Checkout = () => {
                          </div>
                          <div>
                            <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Payment Verified</p>
-                           <p className="text-sm font-black text-slate-900 tracking-tight">Transaction: {bkashTrxID}</p>
+                           <p className="text-sm font-black text-white tracking-tight">Transaction: {bkashTrxID}</p>
                          </div>
                        </div>
                      )}
@@ -381,15 +386,15 @@ const Checkout = () => {
         </div>
 
         <aside className="lg:col-span-4">
-          <div className="bg-white/80 backdrop-blur-2xl p-10 rounded-[3rem] border border-white shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] sticky top-32 overflow-hidden group">
+          <div className="glass-card-light/80 backdrop-blur-2xl p-10 rounded-[3rem] border border-white shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] sticky top-32 overflow-hidden group">
              {/* Dynamic background element */}
              <div className="absolute top-0 right-0 w-64 h-64 bg-secondary/10 rounded-full -mr-32 -mt-32 blur-[100px] animate-pulse" />
              <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-500/5 rounded-full -ml-24 -mb-24 blur-[80px]" />
              
              <div className="relative z-10">
                <div className="flex items-center justify-between mb-10">
-                 <h4 className="font-black text-slate-900 uppercase tracking-[0.3em] text-[10px]">Order Summary</h4>
-                 <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center border border-slate-100">
+                 <h4 className="font-black text-white uppercase tracking-[0.3em] text-[10px]">Order Summary</h4>
+                 <div className="w-8 h-8 rounded-xl glass-card-light flex items-center justify-center border border-white/[0.08]">
                     <ShoppingBag className="w-4 h-4 text-slate-400" />
                  </div>
                </div>
@@ -400,22 +405,22 @@ const Checkout = () => {
                     const itemImageUrl = item.image_url || (item.images?.length > 0 ? (item.images.find(img => img.is_primary)?.image_url || item.images[0].image_url) : null);
                     return (
                       <div key={item.id} className="flex items-center gap-5 group/mini transition-all hover:translate-x-1">
-                        <div className="w-12 h-12 bg-white rounded-xl overflow-hidden flex-shrink-0 border border-slate-100 shadow-sm transition-all group-hover/mini:shadow-md relative">
+                        <div className="w-12 h-12 glass-card-light rounded-xl overflow-hidden flex-shrink-0 border border-white/[0.08] shadow-sm transition-all group-hover/mini:shadow-md relative">
                           <img src={getImageUrl(itemImageUrl)} className="w-full h-full object-contain p-1.5" alt={item.name} />
                           {item.stock_count <= 0 && (
-                            <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center z-10 pointer-events-none">
+                            <div className="absolute inset-0 glass-card-light/60 backdrop-blur-[1px] flex items-center justify-center z-10 pointer-events-none">
                                <span className="bg-slate-900 text-white text-[4px] font-black uppercase px-1 py-0.5 rounded-full transform -rotate-12">Stock Out</span>
                             </div>
                           )}
                         </div>
                         <div className="flex-grow min-w-0">
-                          <p className="text-[11px] font-black text-slate-900 truncate leading-tight tracking-tight">{item.name}</p>
+                          <p className="text-[11px] font-black text-white truncate leading-tight tracking-tight">{item.name}</p>
                           <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">
                             Qty: {item.quantity}
                           </p>
                         </div>
                         <div className="flex-shrink-0 text-right">
-                           <p className="text-xs font-black text-slate-900 tracking-tight">৳{(item.base_price * item.quantity).toLocaleString()}</p>
+                           <p className="text-xs font-black text-white tracking-tight">৳{(item.base_price * item.quantity).toLocaleString()}</p>
                         </div>
                       </div>
                     );
@@ -428,7 +433,7 @@ const Checkout = () => {
                         <div className="w-1 h-1 rounded-full bg-slate-200 group-hover/price:bg-secondary transition-colors" />
                         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Subtotal</span>
                      </div>
-                     <span className="text-sm font-black text-slate-900 tracking-tight">৳{subtotal.toLocaleString()}</span>
+                     <span className="text-sm font-black text-white tracking-tight">৳{subtotal.toLocaleString()}</span>
                   </div>
 
                   <div className="flex justify-between items-center group/price">
@@ -436,7 +441,7 @@ const Checkout = () => {
                         <div className="w-1 h-1 rounded-full bg-slate-200 group-hover/price:bg-emerald-500 transition-colors" />
                         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Shipping</span>
                      </div>
-                     <span className={`text-[11px] font-black tracking-widest uppercase ${shipping === 0 ? 'text-emerald-500' : 'text-slate-900'}`}>
+                     <span className={`text-[11px] font-black tracking-widest uppercase ${shipping === 0 ? 'text-emerald-500' : 'text-white'}`}>
                         {shipping === 0 ? 'Complimentary' : `৳${shipping}`}
                      </span>
                   </div>
@@ -446,10 +451,10 @@ const Checkout = () => {
                         <div className="w-1 h-1 rounded-full bg-slate-200 group-hover/price:bg-secondary transition-colors" />
                         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Est. VAT</span>
                      </div>
-                     <span className="text-sm font-black text-slate-900 tracking-tight">৳{tax.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                     <span className="text-sm font-black text-white tracking-tight">৳{tax.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
                   </div>
 
-                  <div className="pt-8 border-t border-slate-100 flex justify-between items-end">
+                  <div className="pt-8 border-t border-white/[0.08] flex justify-between items-end">
                      <div className="space-y-1">
                         <span className="text-[10px] font-[1000] uppercase tracking-[0.3em] text-secondary">Total Amount</span>
                         <div className="flex items-center gap-2">
@@ -458,7 +463,7 @@ const Checkout = () => {
                         </div>
                      </div>
                      <div className="text-right">
-                        <span className="text-4xl font-[1000] text-slate-900 tracking-tighter leading-none block">৳{total.toLocaleString()}</span>
+                        <span className="text-4xl font-[1000] text-white tracking-tighter leading-none block">৳{total.toLocaleString()}</span>
                      </div>
                   </div>
                </div>
@@ -468,7 +473,7 @@ const Checkout = () => {
                    <button 
                       onClick={handlePlaceOrder}
                       disabled={loading}
-                      className="w-full py-5 bg-slate-900 text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] flex justify-center items-center gap-3 shadow-xl shadow-slate-900/20 hover:bg-secondary hover:shadow-secondary/20 transition-all disabled:opacity-50 active:scale-95"
+                      className="w-full py-5 bg-slate-900 text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] flex justify-center items-center gap-3 shadow-xl shadow-slate-900/20 hover:bg-secondary hover:shadow-indigo-500/20 transition-all disabled:opacity-50 active:scale-95"
                    >
                      {loading ? (
                        <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
@@ -480,7 +485,7 @@ const Checkout = () => {
                      )}
                    </button>
                  ) : (
-                   <div className="bg-slate-50 border border-dashed border-slate-200 p-8 rounded-[2rem] text-center">
+                   <div className="glass-card-light border border-dashed border-white/[0.1] p-8 rounded-[2rem] text-center">
                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-loose">
                        {step < 3 ? 'Complete previous steps' : 'Please complete payment on the left to confirm order'}
                      </p>

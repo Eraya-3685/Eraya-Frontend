@@ -75,7 +75,7 @@ const OrderTrackbar = ({ status }) => {
               <div className={`w-10 h-10 rounded-2xl flex items-center justify-center border-4 transition-all duration-500 ${
                 isActive 
                   ? `bg-${color}-500 border-white text-white shadow-lg shadow-${color}-200 scale-110` 
-                  : 'bg-white border-slate-50 text-slate-200'
+                  : 'glass-card-light border-slate-50 text-slate-200'
               }`}>
                 <Icon className={`w-4 h-4 ${isCurrent ? 'animate-pulse' : ''}`} strokeWidth={2.5} />
               </div>
@@ -178,9 +178,9 @@ const Profile = () => {
 
   if (!user && token) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center glass-card-light">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-slate-200 border-t-slate-900 rounded-full animate-spin" />
+          <div className="w-12 h-12 border-4 border-white/[0.1] border-t-slate-900 rounded-full animate-spin" />
           <p className="text-sm font-bold text-slate-500 animate-pulse uppercase tracking-widest">Securing Session...</p>
         </div>
       </div>
@@ -190,11 +190,11 @@ const Profile = () => {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24 pt-12 px-4 md:px-6">
+    <div className="min-h-screen pb-24 pt-28 px-4 md:px-6">
       <div className="max-w-7xl mx-auto">
         
         {/* Profile Header */}
-        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 md:p-8 mb-8 flex flex-col md:flex-row items-center gap-8">
+        <div className="glass-card-light rounded-[2rem] border border-white/[0.08] shadow-sm p-6 md:p-8 mb-8 flex flex-col md:flex-row items-center gap-8">
           <div className="relative group">
             <div className="w-28 h-28 rounded-full bg-slate-100 border-4 border-white shadow-lg overflow-hidden relative group">
               {user.avatar_url ? (
@@ -222,7 +222,7 @@ const Profile = () => {
 
           <div className="text-center md:text-left flex-grow">
             <div className="flex flex-col md:flex-row md:items-center gap-3 mb-2">
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight">{user.full_name}</h1>
+              <h1 className="text-2xl font-black text-white tracking-tight">{user.full_name}</h1>
               {isStaff ? (
                 <span className="w-fit mx-auto md:mx-0 px-2 py-0.5 bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest rounded-full">Official Staff</span>
               ) : (
@@ -253,7 +253,7 @@ const Profile = () => {
           </div>
 
           <div className="flex gap-3">
-             <Link to="/profile/edit" className="px-5 py-2.5 border border-slate-100 rounded-xl font-black text-[10px] uppercase tracking-widest text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-all flex items-center gap-2">
+             <Link to="/profile/edit" className="px-5 py-2.5 border border-white/[0.08] rounded-xl font-black text-[10px] uppercase tracking-widest text-slate-400 hover:text-white hover:glass-card-light transition-all flex items-center gap-2">
                 <Settings className="w-3.5 h-3.5" /> Edit Profile
              </Link>
           </div>
@@ -273,24 +273,24 @@ const Profile = () => {
                     </p>
                     <button 
                       onClick={() => navigate('/admin')}
-                      className="px-8 py-4 bg-secondary text-white rounded-2xl font-bold flex items-center gap-3 hover:bg-white hover:text-slate-900 transition-all group-hover:scale-105"
+                      className="px-8 py-4 bg-secondary text-white rounded-2xl font-bold flex items-center gap-3 hover:glass-card-light hover:text-white transition-all group-hover:scale-105"
                     >
                       Enter Admin Dashboard <ArrowRight className="w-5 h-5" />
                     </button>
                  </div>
-                 <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-32 -mt-32" />
+                 <div className="absolute top-0 right-0 w-64 h-64 glass-card-light/5 rounded-full blur-3xl -mr-32 -mt-32" />
                  <div className="absolute bottom-0 left-0 w-64 h-64 bg-secondary/10 rounded-full blur-3xl -ml-32 -mb-32" />
               </div>
             ) : (
-              <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 md:p-8">
+              <div className="glass-card-light rounded-[2rem] border border-white/[0.08] shadow-sm p-6 md:p-8">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-black text-slate-900 tracking-tight">Recent Orders</h2>
+                  <h2 className="text-xl font-black text-white tracking-tight">Recent Orders</h2>
                   <Link 
                     to="/products" 
-                    className="group flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-secondary text-slate-900 hover:text-white rounded-full transition-all duration-500 border border-slate-100 shadow-sm"
+                    className="group flex items-center gap-2 px-4 py-2 glass-card-light hover:bg-secondary text-white hover:text-white rounded-full transition-all duration-500 border border-white/[0.08] shadow-sm"
                   >
                     <span className="text-[9px] font-black uppercase tracking-[0.15em]">Shop More</span>
-                    <div className="w-5 h-5 rounded-full bg-white group-hover:bg-white/20 flex items-center justify-center transition-colors">
+                    <div className="w-5 h-5 rounded-full glass-card-light group-hover:glass-card-light/20 flex items-center justify-center transition-colors">
                       <ShoppingBag className="w-2.5 h-2.5 group-hover:scale-110 transition-transform" />
                     </div>
                   </Link>
@@ -298,10 +298,10 @@ const Profile = () => {
 
                 {loadingOrders ? (
                   <div className="space-y-4">
-                    {[...Array(3)].map((_, i) => <div key={i} className="h-24 bg-slate-50 animate-pulse rounded-2xl" />)}
+                    {[...Array(3)].map((_, i) => <div key={i} className="h-24 glass-card-light animate-pulse rounded-2xl" />)}
                   </div>
                 ) : orders.length === 0 ? (
-                  <div className="text-center py-20 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                  <div className="text-center py-20 glass-card-light rounded-3xl border border-dashed border-white/[0.1]">
                     <ShoppingBag className="w-12 h-12 text-slate-300 mx-auto mb-4" />
                     <p className="text-slate-400 font-bold text-sm">No orders found yet.</p>
                   </div>
@@ -320,7 +320,7 @@ const Profile = () => {
                           <div key={order.id} className="overflow-hidden">
                             <button 
                               onClick={() => toggleOrderExpansion(order.id)}
-                              className={`w-full p-4 md:p-5 flex flex-col md:flex-row justify-between items-center gap-4 transition-all group ${isExpanded ? 'bg-slate-50/80' : 'hover:bg-slate-50/50'}`}
+                              className={`w-full p-4 md:p-5 flex flex-col md:flex-row justify-between items-center gap-4 transition-all group ${isExpanded ? 'glass-card-light/80' : 'hover:glass-card-light/50'}`}
                             >
                               <div className="flex items-center gap-4">
                                 <div className={`w-11 h-11 rounded-xl flex items-center justify-center border transition-all ${
@@ -331,7 +331,7 @@ const Profile = () => {
                                   <StatusIcon className="w-5 h-5" strokeWidth={2.5} />
                                 </div>
                                 <div className="text-left">
-                                  <p className="font-black text-slate-900 text-sm tracking-tight">Order #{order.id}</p>
+                                  <p className="font-black text-white text-sm tracking-tight">Order #{order.id}</p>
                                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-2">
                                     {new Date(order.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                                     <span className="w-1 h-1 bg-slate-200 rounded-full" />
@@ -371,7 +371,7 @@ const Profile = () => {
                                   initial={{ height: 0, opacity: 0 }}
                                   animate={{ height: 'auto', opacity: 1 }}
                                   exit={{ height: 0, opacity: 0 }}
-                                  className="border-t border-slate-50 bg-white"
+                                  className="border-t border-slate-50 glass-card-light"
                                 >
                                   <div className="p-6 space-y-10">
                                     {/* Trackbar */}
@@ -382,9 +382,9 @@ const Profile = () => {
                                     {/* Items */}
                                     <div className="space-y-2">
                                       {order.items?.map((item) => (
-                                        <div key={item.id} className="flex items-center justify-between gap-3 p-3 bg-slate-50/50 rounded-2xl border border-slate-50">
+                                        <div key={item.id} className="flex items-center justify-between gap-3 p-3 glass-card-light/50 rounded-2xl border border-slate-50">
                                           <Link to={`/products/${item.product?.slug}`} className="flex items-center gap-4 flex-grow group/item">
-                                            <div className="w-12 h-12 bg-white rounded-xl overflow-hidden border border-slate-100 shadow-sm group-hover/item:scale-105 transition-all">
+                                            <div className="w-12 h-12 glass-card-light rounded-xl overflow-hidden border border-white/[0.08] shadow-sm group-hover/item:scale-105 transition-all">
                                               <img src={getImageUrl(item.product?.image_url)} className="w-full h-full object-contain p-1.5" alt={item.product?.name} />
                                             </div>
                                             <div className="min-w-0 text-left">
@@ -393,7 +393,7 @@ const Profile = () => {
                                             </div>
                                           </Link>
                                           <div className="text-right shrink-0">
-                                            <p className="text-xs font-black text-slate-900">৳{(item.price_at_purchase * item.quantity).toLocaleString()}</p>
+                                            <p className="text-xs font-black text-white">৳{(item.price_at_purchase * item.quantity).toLocaleString()}</p>
                                             {order.order_status === 'Delivered' && (
                                               <button onClick={() => openReviewModal(item.product)} className="text-[9px] font-black text-secondary uppercase tracking-widest hover:underline mt-0.5">Review</button>
                                             )}
@@ -456,10 +456,10 @@ const Profile = () => {
                                         )}
                                       </div>
 
-                                      <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
+                                      <div className="glass-card-light rounded-2xl p-5 border border-white/[0.08]">
                                         <div className="flex items-center gap-2 mb-2">
                                           <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                                          <h4 className="text-[9px] font-black text-slate-900 uppercase tracking-widest">Shipping</h4>
+                                          <h4 className="text-[9px] font-black text-white uppercase tracking-widest">Shipping</h4>
                                         </div>
                                         <p className="text-[10px] font-medium text-slate-500 leading-relaxed pl-5">{order.shipping_address}</p>
                                       </div>
@@ -480,7 +480,7 @@ const Profile = () => {
 
           {/* Right Column: Actions */}
           <div className="lg:col-span-4 space-y-8">
-            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8">
+            <div className="glass-card-light rounded-[2.5rem] border border-white/[0.08] shadow-sm p-8">
                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-8">Account Services</h3>
                <div className="space-y-2">
                    {(isStaff ? [
@@ -497,13 +497,13 @@ const Profile = () => {
                     <button 
                       key={link.label} 
                       onClick={() => link.to !== '#' && navigate(link.to)}
-                      className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-white border border-transparent hover:border-slate-100 hover:shadow-xl hover:shadow-slate-200/40 rounded-2xl transition-all group"
+                      className="w-full flex items-center justify-between p-4 glass-card-light hover:glass-card-light border border-transparent hover:border-white/[0.08] hover:shadow-xl hover:shadow-slate-200/40 rounded-2xl transition-all group"
                     >
                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center border border-slate-100 shadow-sm group-hover:bg-secondary group-hover:text-white transition-all">
+                          <div className="w-10 h-10 glass-card-light rounded-xl flex items-center justify-center border border-white/[0.08] shadow-sm group-hover:bg-secondary group-hover:text-white transition-all">
                              <link.icon className="w-5 h-5" />
                           </div>
-                          <span className="font-bold text-sm text-slate-700">{link.label}</span>
+                          <span className="font-bold text-sm text-slate-200">{link.label}</span>
                        </div>
                        <ChevronRight className="w-4 h-4 text-slate-300 group-hover:translate-x-1 transition-all" />
                     </button>
@@ -527,7 +527,7 @@ const Profile = () => {
                   <h3 className="text-lg font-bold mb-2">Eraya Loyalty</h3>
                   <p className="text-white/40 text-xs leading-relaxed">You've completed {orders.filter(o => o.order_status === 'Delivered').length} orders. Keep shopping to unlock premium perks!</p>
                </div>
-               <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-16 -mt-16" />
+               <div className="absolute top-0 right-0 w-32 h-32 glass-card-light/5 rounded-full blur-2xl -mr-16 -mt-16" />
             </div>
           </div>
 
@@ -589,21 +589,21 @@ const ReviewModal = ({ isOpen, onClose, product, onSubmit }) => {
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="relative bg-white w-full max-w-lg rounded-[3rem] p-10 shadow-2xl border border-slate-100 overflow-hidden"
+            className="relative glass-card-light w-full max-w-lg rounded-[3rem] p-10 shadow-2xl border border-white/[0.08] overflow-hidden"
           >
             <div className="relative z-10">
               <div className="flex justify-between items-start mb-8">
                 <div>
-                  <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Share Feedback</h2>
+                  <h2 className="text-3xl font-black text-white tracking-tight mb-2">Share Feedback</h2>
                   <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">{product?.name}</p>
                 </div>
-                <button onClick={onClose} className="p-2 hover:bg-slate-50 rounded-full transition-all">
+                <button onClick={onClose} className="p-2 hover:glass-card-light rounded-full transition-all">
                   <X className="w-6 h-6 text-slate-400" />
                 </button>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-8">
-                <div className="flex flex-col items-center gap-4 py-6 bg-slate-50 rounded-[2rem] border border-slate-100">
+                <div className="flex flex-col items-center gap-4 py-6 glass-card-light rounded-[2rem] border border-white/[0.08]">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">How would you rate this piece?</p>
                   <div className="flex gap-2">
                     {[1, 2, 3, 4, 5].map((star) => (
@@ -625,7 +625,7 @@ const ReviewModal = ({ isOpen, onClose, product, onSubmit }) => {
                       </button>
                     ))}
                   </div>
-                  <p className="text-xs font-bold text-slate-900">
+                  <p className="text-xs font-bold text-white">
                     {rating === 5 ? 'Excellent' : rating === 4 ? 'Very Good' : rating === 3 ? 'Good' : rating === 2 ? 'Fair' : rating === 1 ? 'Poor' : 'Select Stars'}
                   </p>
                 </div>
@@ -636,7 +636,7 @@ const ReviewModal = ({ isOpen, onClose, product, onSubmit }) => {
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
                     placeholder="Tell us what you loved about this product..."
-                    className="w-full bg-slate-50 border border-slate-100 rounded-[2rem] p-6 text-sm font-medium outline-none focus:bg-white focus:ring-4 focus:ring-secondary/5 focus:border-secondary transition-all min-h-[150px] resize-none"
+                    className="w-full glass-card-light border border-white/[0.08] rounded-[2rem] p-6 text-sm font-medium outline-none focus:glass-card-light focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all min-h-[150px] resize-none"
                   />
                 </div>
 

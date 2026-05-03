@@ -105,12 +105,12 @@ const ProductDetails = () => {
   };
 
   if (loading) return (
-    <div className="h-screen flex flex-col items-center justify-center bg-[#fdfbf9] gap-6">
+    <div className="h-screen flex flex-col items-center justify-center gap-6">
       <div className="relative">
         <div className="w-20 h-20 border-4 border-secondary/10 border-t-secondary rounded-full animate-spin" />
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">
-            <span className="text-[10px] font-black text-secondary tracking-tighter">ERAYA</span>
+          <div className="w-12 h-12 bg-indigo-500/20 rounded-full flex items-center justify-center">
+            <span className="text-[10px] font-black text-indigo-300 tracking-tighter">ERAYA</span>
           </div>
         </div>
       </div>
@@ -153,7 +153,7 @@ const ProductDetails = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="aspect-square bg-white rounded-[2.5rem] overflow-hidden border border-slate-100 shadow-sm relative"
+            className="aspect-square glass-card-light rounded-[2.5rem] overflow-hidden border border-white/[0.08] relative"
           >
             <img
               src={getImageUrl(selectedImage)}
@@ -161,8 +161,8 @@ const ProductDetails = () => {
               alt={product.name}
             />
             {product.stock_count <= 0 && (
-              <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] flex items-center justify-center z-10 pointer-events-none">
-                <div className="bg-slate-900 text-white px-8 py-4 rounded-full text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-black/20 transform -rotate-12 border border-white/20">
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-10 pointer-events-none">
+                <div className="badge-rose px-8 py-4 text-sm font-black -rotate-12">
                   Stock Out
                 </div>
               </div>
@@ -174,7 +174,7 @@ const ProductDetails = () => {
                 <button
                   key={img.id}
                   onClick={() => setSelectedImage(img.image_url)}
-                  className={`aspect-square bg-white rounded-2xl overflow-hidden transition-all border ${selectedImage === img.image_url ? 'border-secondary ring-4 ring-secondary/5' : 'border-slate-100 hover:border-slate-300'
+                  className={`aspect-square glass-input rounded-2xl overflow-hidden transition-all border ${selectedImage === img.image_url ? 'border-indigo-500 ring-4 ring-indigo-500/20' : 'border-white/[0.10] hover:border-white/20'
                     }`}
                 >
                   <img src={getImageUrl(img.image_url)} className="w-full h-full object-cover" alt="" />
@@ -187,30 +187,30 @@ const ProductDetails = () => {
         {/* Center Column: Product Main Info (5 cols) */}
         <div className="lg:col-span-5 flex flex-col">
           <div className="mb-8">
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-4 leading-tight">
+            <h1 className="text-3xl font-black text-white tracking-tight mb-4 leading-tight">
               {product.name}
             </h1>
 
             <div className="flex flex-wrap items-center gap-4 mb-6">
-              <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100">
+              <div className="flex items-center gap-1.5 glass-input px-3 py-1.5 rounded-full border border-white/[0.10]">
                 <div className="flex gap-0.5">
                   {[1, 2, 3, 4, 5].map(i => (
                     <Star key={i} className={`w-3.5 h-3.5 ${i <= Math.round(product.average_rating) ? 'text-amber-400 fill-amber-400' : 'text-slate-200'}`} />
                   ))}
                 </div>
-                <span className="text-[10px] font-black text-secondary uppercase tracking-widest">{product.total_reviews} Ratings</span>
+                <span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">{product.total_reviews} Ratings</span>
               </div>
-              <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100">
+              <div className="flex items-center gap-1.5 glass-input px-3 py-1.5 rounded-full border border-white/[0.10]">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Brand:</span>
-                <span className="text-[10px] font-black text-secondary uppercase tracking-widest">Eraya Official</span>
+                <span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">Eraya Official</span>
               </div>
             </div>
 
-            <div className="p-8 bg-slate-50/50 rounded-[2.5rem] border border-slate-100 relative overflow-hidden">
+            <div className="p-8 glass-card-light rounded-[2.5rem] relative overflow-hidden">
               <div className="flex items-center gap-4 mb-2">
-                <span className="text-4xl font-black text-slate-900 tracking-tighter">৳{product.base_price.toLocaleString()}</span>
+                <span className="text-4xl font-black text-white tracking-tighter">৳{product.base_price.toLocaleString()}</span>
                 {product.discount_price && (
-                  <span className="text-slate-400 line-through text-xl font-bold">৳{product.discount_price.toLocaleString()}</span>
+                  <span className="text-slate-500 line-through text-xl font-bold">৳{product.discount_price.toLocaleString()}</span>
                 )}
               </div>
               {product.discount_percentage && (
@@ -222,14 +222,14 @@ const ProductDetails = () => {
           </div>
 
           {/* Promotions */}
-          <div className="mb-8 p-6 bg-amber-50/50 rounded-3xl border border-amber-100/30 flex items-center justify-between group cursor-pointer hover:bg-amber-50 transition-colors">
+          <div className="mb-8 p-6 bg-amber-500/10 rounded-3xl border border-amber-500/20 flex items-center justify-between group cursor-pointer hover:bg-amber-500/15 transition-colors">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
+              <div className="w-12 h-12 bg-amber-500/20 rounded-2xl flex items-center justify-center">
                 <Truck className="w-5 h-5 text-amber-500" />
               </div>
               <div>
                 <div className="text-[9px] font-black text-amber-500 uppercase tracking-[0.2em] mb-0.5">Promotions</div>
-                <span className="text-xs font-bold text-slate-700">Free shipping on orders above ৳{settings.free_shipping_threshold.toLocaleString()}</span>
+                <span className="text-xs font-bold text-slate-200">Free shipping on orders above ৳{settings.free_shipping_threshold.toLocaleString()}</span>
               </div>
             </div>
             <ChevronRight className="w-5 h-5 text-amber-300 group-hover:text-amber-500 transition-colors" />
@@ -241,21 +241,21 @@ const ProductDetails = () => {
                 <div className="flex items-center gap-10">
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] w-16">Quantity</span>
                    <div className="flex items-center gap-5">
-                     <div className={`flex items-center gap-3 bg-white rounded-2xl p-1.5 w-fit border border-slate-100 shadow-sm ${product.stock_count <= 0 ? 'opacity-30 pointer-events-none' : ''}`}>
+                     <div className={`flex items-center gap-3 glass-input rounded-2xl p-1.5 w-fit border border-white/[0.10] ${product.stock_count <= 0 ? 'opacity-30 pointer-events-none' : ''}`}>
                        <button
                          onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                          disabled={product.stock_count <= 0}
-                         className="w-10 h-10 flex items-center justify-center hover:bg-slate-50 rounded-xl transition-all"
+                         className="w-10 h-10 flex items-center justify-center hover:glass-card-light/[0.10] rounded-xl transition-all"
                        >
-                         <Minus className="w-4 h-4 text-slate-600" />
+                         <Minus className="w-4 h-4 text-slate-300" />
                        </button>
-                       <span className="font-black w-8 text-center text-sm">{quantity}</span>
+                       <span className="font-black w-8 text-center text-sm text-white">{quantity}</span>
                        <button
                          onClick={() => setQuantity((q) => Math.min(product.stock_count, q + 1))}
                          disabled={product.stock_count <= 0}
-                         className="w-10 h-10 flex items-center justify-center hover:bg-slate-50 rounded-xl transition-all"
+                         className="w-10 h-10 flex items-center justify-center hover:glass-card-light/[0.10] rounded-xl transition-all"
                        >
-                         <Plus className="w-4 h-4 text-slate-600" />
+                         <Plus className="w-4 h-4 text-slate-300" />
                        </button>
                      </div>
                      {product.stock_count > 0 ? (
@@ -280,7 +280,7 @@ const ProductDetails = () => {
                       navigate('/checkout');
                     }}
                     disabled={product.stock_count <= 0 || buyingNow}
-                    className="flex-grow bg-secondary text-white py-5 rounded-2xl font-black hover:bg-secondary/90 transition-all flex items-center justify-center gap-3 shadow-2xl shadow-secondary/20 disabled:opacity-50 text-[11px] uppercase tracking-[0.2em]"
+                    className="btn-primary flex-grow py-5 flex items-center justify-center gap-3 disabled:opacity-50"
                   >
                     {buyingNow ? (
                       <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
@@ -289,7 +289,7 @@ const ProductDetails = () => {
                   <button
                     onClick={handleAddToCart}
                     disabled={product.stock_count <= 0 || addingToCart}
-                    className="flex-grow bg-slate-900 text-white py-5 rounded-2xl font-black hover:bg-slate-800 transition-all flex items-center justify-center gap-3 shadow-2xl shadow-slate-200 disabled:opacity-50 text-[11px] uppercase tracking-[0.2em]"
+                    className="btn-ghost flex-grow py-5 flex items-center justify-center gap-3 disabled:opacity-50"
                   >
                     {addingToCart ? (
                       <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
@@ -315,8 +315,8 @@ const ProductDetails = () => {
                     }}
                     disabled={addingToWishlist}
                     className={`w-16 h-16 rounded-2xl flex items-center justify-center border transition-all shrink-0 ${isInWishlist(product.id)
-                        ? 'bg-amber-50 border-amber-100 text-amber-500 shadow-inner'
-                        : 'bg-white border-slate-100 text-slate-400 hover:text-amber-500 hover:bg-amber-50'
+                        ? 'bg-amber-500/20 border-amber-500/30 text-amber-400'
+                        : 'glass-input border-white/[0.10] text-slate-400 hover:text-amber-400 hover:bg-amber-500/10'
                       }`}
                   >
                     {addingToWishlist ? (
@@ -334,7 +334,7 @@ const ProductDetails = () => {
         {/* Right Column: Delivery & Seller Info (3 cols) */}
         <div className="lg:col-span-3 space-y-6">
           {/* Delivery Options Box */}
-          <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 space-y-8 shadow-sm">
+          <div className="glass-card p-8 space-y-8">
             <div className="flex items-center justify-between">
               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Delivery Options</h4>
               <HelpCircle className="w-4 h-4 text-slate-200" />
@@ -342,12 +342,12 @@ const ProductDetails = () => {
 
             <div className="space-y-6">
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 glass-input rounded-xl flex items-center justify-center shrink-0 border border-white/[0.08]">
                   <MapPin className="w-5 h-5 text-slate-400" />
                 </div>
                 <div className="flex-grow min-w-0">
                   <div className="flex items-center justify-between gap-2 mb-1">
-                    <p className="text-xs font-black text-slate-700 truncate tracking-tight">{deliveryAddress.city}</p>
+                    <p className="text-xs font-black text-white truncate tracking-tight">{deliveryAddress.city}</p>
                     {!['admin', 'moderator'].includes(user?.role?.toLowerCase()) && (
                       <button
                         onClick={() => {
@@ -364,25 +364,25 @@ const ProductDetails = () => {
                 </div>
               </div>
 
-              <div className="flex items-start gap-4 pt-6 border-t border-slate-50">
-                <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center shrink-0">
+              <div className="flex items-start gap-4 pt-6 border-t border-white/[0.06]">
+                <div className="w-10 h-10 glass-input rounded-xl flex items-center justify-center shrink-0 border border-white/[0.08]">
                   <Truck className="w-5 h-5 text-slate-400" />
                 </div>
                 <div className="flex-grow">
                   <div className="flex items-center justify-between mb-1">
-                    <p className="text-[10px] font-black text-slate-700 tracking-widest">Standard Delivery</p>
-                    <span className="text-xs font-black text-slate-900">৳{settings.standard_delivery_fee}</span>
+                    <p className="text-[10px] font-black text-slate-200 tracking-widest">Standard Delivery</p>
+                    <span className="text-xs font-black text-white">৳{settings.standard_delivery_fee}</span>
                   </div>
                   <p className="text-[10px] font-bold text-slate-400 tracking-tight">Delivered in 2-5 days</p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-4 pt-6 border-t border-slate-50">
-                <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center shrink-0">
+              <div className="flex items-start gap-4 pt-6 border-t border-white/[0.06]">
+                <div className="w-10 h-10 glass-input rounded-xl flex items-center justify-center shrink-0 border border-white/[0.08]">
                   <div className="text-[10px] font-black text-slate-400 italic">৳</div>
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-slate-700 tracking-widest">Cash on Delivery</p>
+                  <p className="text-[10px] font-black text-slate-200 tracking-widest">Cash on Delivery</p>
                   <p className="text-[10px] font-bold text-green-500 tracking-tight mt-1">Available</p>
                 </div>
               </div>
@@ -390,7 +390,7 @@ const ProductDetails = () => {
           </div>
 
           {/* Service & Warranty Box */}
-          <div className="bg-slate-50/50 rounded-[2.5rem] p-8 border border-slate-100 space-y-8">
+          <div className="glass-card-light p-8 space-y-8">
             <div className="flex items-center justify-between">
               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Service Guarantee</h4>
               <Shield className="w-4 h-4 text-slate-200" />
@@ -400,14 +400,14 @@ const ProductDetails = () => {
               <div className="flex items-start gap-4">
                 <RotateCcw className="w-5 h-5 text-slate-400 shrink-0" />
                 <div>
-                  <p className="text-[11px] font-black text-slate-700 tracking-widest">7 Days Return</p>
+                  <p className="text-[11px] font-black text-slate-200 tracking-widest">7 Days Return</p>
                   <p className="text-[10px] font-bold text-slate-400 tracking-tight mt-1">Original Condition</p>
                 </div>
               </div>
-              <div className="flex items-start gap-4 pt-6 border-t border-slate-200/50">
+              <div className="flex items-start gap-4 pt-6 border-t border-white/[0.06]">
                 <Shield className="w-5 h-5 text-slate-400 shrink-0" />
                 <div>
-                  <p className="text-[11px] font-black text-slate-700 tracking-widest">Official Warranty</p>
+                  <p className="text-[11px] font-black text-slate-200 tracking-widest">Official Warranty</p>
                   <p className="text-[10px] font-bold text-slate-400 tracking-tight mt-1">Not Applicable</p>
                 </div>
               </div>
@@ -415,11 +415,11 @@ const ProductDetails = () => {
           </div>
 
           {/* Seller Info Box */}
-          <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm">
+          <div className="glass-card p-8">
             <div className="flex items-center justify-between mb-8">
               <div>
                 <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em] mb-1">Verified Seller</p>
-                <h5 className="font-black text-slate-900 text-sm tracking-tight">Eraya Official Store</h5>
+                <h5 className="font-black text-white text-sm tracking-tight">Eraya Official Store</h5>
               </div>
               <div className="w-12 h-12 bg-secondary/10 rounded-2xl flex items-center justify-center">
                 <Info className="w-5 h-5 text-secondary" />
@@ -428,16 +428,16 @@ const ProductDetails = () => {
 
             <div className="grid grid-cols-2 gap-6">
               <div>
-                <p className="text-xl font-black text-slate-900">92%</p>
+                <p className="text-xl font-black text-white">92%</p>
                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Positive</p>
               </div>
-              <div className="border-l border-slate-100 pl-6">
-                <p className="text-xl font-black text-slate-900">100%</p>
+              <div className="border-l border-white/[0.06] pl-6">
+                <p className="text-xl font-black text-white">100%</p>
                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">On Time</p>
               </div>
             </div>
 
-            <button className="w-full mt-8 py-3 bg-slate-50 text-[10px] font-black text-secondary uppercase tracking-[0.2em] rounded-xl hover:bg-secondary hover:text-white transition-all">
+            <button className="btn-ghost w-full mt-8 py-3 text-[10px]">
               Visit Store
             </button>
           </div>
@@ -445,17 +445,17 @@ const ProductDetails = () => {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-slate-100 mb-12 flex items-center justify-center gap-16">
+      <div className="border-b border-white/[0.06] mb-12 flex items-center justify-center gap-16">
         {['description', 'reviews'].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`pb-6 text-xs font-black uppercase tracking-[0.3em] transition-all relative ${activeTab === tab ? 'text-secondary' : 'text-slate-400 hover:text-slate-600'
+            className={`pb-6 text-xs font-black uppercase tracking-[0.3em] transition-all relative ${activeTab === tab ? 'text-indigo-400' : 'text-slate-500 hover:text-slate-300'
               }`}
           >
             {tab === 'reviews' ? `Customer Reviews (${product.total_reviews})` : tab}
             {activeTab === tab && (
-              <motion.div layoutId="tab-indicator" className="absolute bottom-0 left-[-20%] right-[-20%] h-1 bg-secondary rounded-full" />
+              <motion.div layoutId="tab-indicator" className="absolute bottom-0 left-[-20%] right-[-20%] h-1 bg-indigo-400 rounded-full" />
             )}
           </button>
         ))}
@@ -470,16 +470,16 @@ const ProductDetails = () => {
           className="min-h-[300px] max-w-4xl mx-auto"
         >
           {activeTab === 'description' && (
-            <div className="text-slate-500 text-base leading-relaxed space-y-6 text-center lg:text-left">
+            <div className="text-slate-400 text-base leading-relaxed space-y-6 text-center lg:text-left">
               {product.description || 'This product is part of our signature collection. Hand-finished and inspected for premium quality.'}
             </div>
           )}
 
           {activeTab === 'reviews' && (
             <div className="space-y-16">
-              <div className="flex flex-col md:flex-row justify-between items-center gap-8 bg-slate-50 p-10 rounded-[3rem] border border-slate-100">
+              <div className="flex flex-col md:flex-row justify-between items-center gap-8 glass-card-light p-10 rounded-[3rem]">
                 <div className="text-center md:text-left">
-                  <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-2">Verified Feedback</h3>
+                  <h3 className="text-2xl font-black text-white tracking-tight mb-2">Verified Feedback</h3>
                   <p className="text-slate-400 text-sm font-medium">Real experiences from our collectors.</p>
                 </div>
                 <div className="flex items-center gap-6">
@@ -488,14 +488,14 @@ const ProductDetails = () => {
                       <Star key={s} className={`w-5 h-5 ${s <= Math.round(product.average_rating) ? 'text-amber-400 fill-amber-400' : 'text-slate-200'}`} />
                     ))}
                   </div>
-                  <div className="w-px h-10 bg-slate-200" />
-                  <span className="text-2xl font-black text-slate-900">{product.average_rating?.toFixed(1) || '0.0'}</span>
+                  <div className="w-px h-10 glass-card-light/20" />
+                  <span className="text-2xl font-black text-white">{product.average_rating?.toFixed(1) || '0.0'}</span>
                 </div>
               </div>
 
               {reviews.length === 0 ? (
-                <div className="text-center py-32 bg-white rounded-[3rem] border border-dashed border-slate-200">
-                  <Star className="w-16 h-16 text-slate-100 mx-auto mb-6" />
+                <div className="text-center py-32 glass-card-light rounded-[3rem]">
+                  <Star className="w-16 h-16 text-slate-200 mx-auto mb-6" />
                   <p className="text-slate-400 font-black text-sm uppercase tracking-widest">No reviews yet for this piece.</p>
                 </div>
               ) : (
@@ -506,18 +506,18 @@ const ProductDetails = () => {
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true }}
                       key={review.id}
-                      className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-secondary/5 transition-all duration-500"
+                      className="glass-card p-8 hover:shadow-[0_20px_60px_rgba(99,102,241,0.15)] transition-all duration-500"
                     >
                       <div className="flex justify-between items-start mb-8">
                         <div className="flex items-center gap-5">
-                          <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center font-black text-secondary border border-slate-100 text-lg shadow-inner">
+                          <div className="w-14 h-14 bg-indigo-500/20 rounded-2xl flex items-center justify-center font-black text-indigo-300 border border-indigo-500/30 text-lg">
                             {review.user?.full_name?.charAt(0).toUpperCase() || 'C'}
                           </div>
                           <div>
-                            <h4 className="font-black text-slate-900 text-sm tracking-tight">{review.user?.full_name || 'Verified Collector'}</h4>
+                            <h4 className="font-black text-white text-sm tracking-tight">{review.user?.full_name || 'Verified Collector'}</h4>
                             <div className="flex gap-0.5 mt-1">
                               {[1, 2, 3, 4, 5].map((s) => (
-                                <Star key={s} className={`w-3 h-3 ${s <= review.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-100'}`} />
+                                <Star key={s} className={`w-3 h-3 ${s <= review.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200'}`} />
                               ))}
                             </div>
                           </div>
@@ -527,8 +527,8 @@ const ProductDetails = () => {
                         </span>
                       </div>
                       {review.comment && (
-                        <div className="p-6 bg-slate-50/50 rounded-2xl border border-slate-50 text-sm text-slate-600 leading-relaxed italic relative">
-                          <span className="absolute top-2 left-3 text-4xl text-slate-200 font-serif">"</span>
+                        <div className="p-6 glass-card-light rounded-2xl border border-white/[0.06] text-sm text-slate-400 leading-relaxed italic relative">
+                          <span className="absolute top-2 left-3 text-4xl text-slate-300 font-serif">"</span>
                           {review.comment}
                         </div>
                       )}
@@ -562,16 +562,16 @@ const ProductDetails = () => {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="relative bg-white w-full max-w-[400px] h-full shadow-2xl flex flex-col"
+              className="relative bg-[#1e293b] w-full max-w-[400px] h-full shadow-2xl flex flex-col border-l border-white/[0.08]"
             >
-              <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div className="p-8 border-b border-white/[0.06] flex items-center justify-between">
                 <div>
-                  <h3 className="text-xl font-black text-slate-900 tracking-tight">Delivery Region</h3>
+                  <h3 className="text-xl font-black text-white tracking-tight">Delivery Region</h3>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Select your location</p>
                 </div>
                 <button
                   onClick={() => setShowAddressModal(false)}
-                  className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-slate-400 hover:text-secondary hover:shadow-lg transition-all border border-slate-100"
+                  className="w-10 h-10 rounded-xl glass-input flex items-center justify-center text-slate-400 hover:text-white transition-all border border-white/[0.10]"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -579,14 +579,14 @@ const ProductDetails = () => {
 
               <div className="flex-grow overflow-y-auto p-8 space-y-8 custom-scrollbar">
                 {/* Minimal Location Card */}
-                <div className="p-6 bg-slate-50 rounded-[2.5rem] border border-slate-100">
+                <div className="p-6 glass-input rounded-[2.5rem] border border-white/[0.10]">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
+                    <div className="w-12 h-12 bg-amber-500/20 rounded-2xl flex items-center justify-center">
                       <MapPin className="w-6 h-6 text-secondary" />
                     </div>
                     <div>
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Current Region</p>
-                      <p className="text-sm font-black text-slate-900 tracking-tight">{tempAddress.area}, {tempAddress.city}</p>
+                      <p className="text-sm font-black text-white tracking-tight">{tempAddress.area}, {tempAddress.city}</p>
                     </div>
                   </div>
                 </div>
@@ -598,7 +598,7 @@ const ProductDetails = () => {
                     <div className="relative" ref={cityDropdownRef}>
                       <button
                         onClick={() => setActiveSelector(activeSelector === 'city' ? null : 'city')}
-                        className="w-full bg-white border border-slate-100 rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 flex items-center justify-between hover:border-secondary/30 transition-all shadow-sm"
+                        className="w-full glass-input py-4 px-6 text-sm flex items-center justify-between"
                       >
                         {tempAddress.city}
                         <ChevronRight className={`w-4 h-4 text-slate-300 transition-transform ${activeSelector === 'city' ? 'rotate-90 text-secondary' : ''}`} />
@@ -610,7 +610,7 @@ const ProductDetails = () => {
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 10 }}
-                            className="absolute top-full left-0 right-0 mt-2 bg-white rounded-[2rem] shadow-2xl border border-slate-100 overflow-hidden z-10 p-2"
+                            className="absolute top-full left-0 right-0 mt-2 bg-[#1e293b] rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.5)] border border-white/[0.10] overflow-hidden z-10 p-2"
                           >
                             <div className="max-h-[200px] overflow-y-auto custom-scrollbar">
                               {Object.keys(BD_DATA).map((city) => (
@@ -620,7 +620,7 @@ const ProductDetails = () => {
                                     setTempAddress({ city: city, area: BD_DATA[city][0] });
                                     setActiveSelector(null);
                                   }}
-                                  className={`w-full text-left px-5 py-3.5 rounded-xl text-xs font-bold transition-all ${tempAddress.city === city ? 'bg-secondary/10 text-secondary' : 'text-slate-500 hover:bg-slate-50'
+                                  className={`w-full text-left px-5 py-3.5 rounded-xl text-xs font-bold transition-all ${tempAddress.city === city ? 'bg-indigo-500/20 text-indigo-300' : 'text-slate-400 hover:glass-card-light/[0.08]'
                                     }`}
                                 >
                                   {city}
@@ -639,7 +639,7 @@ const ProductDetails = () => {
                     <div className="relative" ref={areaDropdownRef}>
                       <button
                         onClick={() => setActiveSelector(activeSelector === 'area' ? null : 'area')}
-                        className="w-full bg-white border border-slate-100 rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 flex items-center justify-between hover:border-secondary/30 transition-all shadow-sm"
+                        className="w-full glass-input py-4 px-6 text-sm flex items-center justify-between"
                       >
                         {tempAddress.area}
                         <ChevronRight className={`w-4 h-4 text-slate-300 transition-transform ${activeSelector === 'area' ? 'rotate-90 text-secondary' : ''}`} />
@@ -651,7 +651,7 @@ const ProductDetails = () => {
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 10 }}
-                            className="absolute top-full left-0 right-0 mt-2 bg-white rounded-[2rem] shadow-2xl border border-slate-100 overflow-hidden z-10 p-2"
+                            className="absolute top-full left-0 right-0 mt-2 bg-[#1e293b] rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.5)] border border-white/[0.10] overflow-hidden z-10 p-2"
                           >
                             <div className="max-h-[200px] overflow-y-auto custom-scrollbar">
                               {BD_DATA[tempAddress.city].map((area) => (
@@ -661,7 +661,7 @@ const ProductDetails = () => {
                                     setTempAddress({ ...tempAddress, area: area });
                                     setActiveSelector(null);
                                   }}
-                                  className={`w-full text-left px-5 py-3.5 rounded-xl text-xs font-bold transition-all ${tempAddress.area === area ? 'bg-secondary/10 text-secondary' : 'text-slate-500 hover:bg-slate-50'
+                                  className={`w-full text-left px-5 py-3.5 rounded-xl text-xs font-bold transition-all ${tempAddress.area === area ? 'bg-indigo-500/20 text-indigo-300' : 'text-slate-400 hover:glass-card-light/[0.08]'
                                     }`}
                                 >
                                   {area}
@@ -676,7 +676,7 @@ const ProductDetails = () => {
                 </div>
               </div>
 
-              <div className="p-8 border-t border-slate-100 bg-slate-50/30">
+              <div className="p-8 border-t border-white/[0.06]">
                 <button
                   onClick={() => {
                     setDeliveryAddress(tempAddress);

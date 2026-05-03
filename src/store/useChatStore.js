@@ -18,10 +18,21 @@ const useChatStore = create((set, get) => {
     maxReconnectAttempts: 50,
     selectedAdminConv: null,
     currentWithID: 0,
+    totalUnreadCount: 0,
+    isOpen: false,
 
     setEditingMessage: (msg) => set({ editingMessage: msg }),
+    setIsOpen: (val) => set({ isOpen: val }),
     setConversations: (convs) => set({ conversations: convs }),
     setSelectedAdminConv: (conv) => set({ selectedAdminConv: conv, isPartnerOnline: false }),
+    fetchTotalUnread: async () => {
+      try {
+        const res = await api.get('/chat/unread-count');
+        set({ totalUnreadCount: res.data?.unread_count || 0 });
+      } catch (err) {
+        console.error('Failed to fetch unread count', err);
+      }
+    },
 
     connect: (withID) => {
       const { token } = useAuthStore.getState();
@@ -31,7 +42,7 @@ const useChatStore = create((set, get) => {
       if (!visibilityListenerAdded) {
         document.addEventListener('visibilitychange', () => {
           if (document.visibilityState === 'visible' && !get().isConnected) {
-            get().connect(withID);
+            get().connect(get().currentWithID || 0); // use current value, not stale closure
           }
         });
         visibilityListenerAdded = true;
@@ -50,6 +61,7 @@ const useChatStore = create((set, get) => {
 
       socket.onopen = () => {
         set({ isConnected: true, socket, reconnectAttempts: 0 });
+        get().fetchTotalUnread(); // [NEW] Fetch unread count on connect
         clearInterval(heartbeatInterval);
         heartbeatInterval = setInterval(() => {
           if (socket.readyState === WebSocket.OPEN) {
@@ -109,9 +121,8 @@ const useChatStore = create((set, get) => {
               }
 
               if (msg.type === 'delete_conversation') {
-                const isCurrentChat = (selectedAdminConv && String(selectedAdminConv.id) === String(msg.conversation_id)) || 
-                                     (messages.length > 0 && String(messages[0].conversation_id) === String(msg.conversation_id)) ||
-                                     (!isAdmin);
+                const isCurrentChat = (selectedAdminConv && String(selectedAdminConv.id) === String(msg.conversation_id));
+                
                 return { 
                   messages: isCurrentChat ? [] : messages, 
                   conversations: conversations.filter(c => String(c.id) !== String(msg.conversation_id)),
@@ -121,30 +132,41 @@ const useChatStore = create((set, get) => {
 
               // Normal message processing
               let isForCurrentChat = false;
+              const currentUserId = user?.id ? String(user.id) : null;
+
               if (isAdmin) {
+                // Admin: Relevant if it's the selected conversation or involves the current 'with' ID
                 isForCurrentChat = (selectedAdminConv && String(selectedAdminConv.id) === String(msg.conversation_id)) ||
                                    (String(get().currentWithID) === String(msg.sender_id) || String(get().currentWithID) === String(msg.receiver_id));
               } else {
-                isForCurrentChat = true; 
+                // Buyer only has ONE conversation (with support).
+                // Backend already filtered via Redis channel chat_{buyerID},
+                // so any message reaching the socket IS for this buyer.
+                // Only render in UI if widget is open.
+                isForCurrentChat = get().isOpen;
               }
 
+
               if (isForCurrentChat) {
-                if (msg.temp_id) {
-                  const index = nextMessages.findIndex(m => String(m.id) === String(msg.temp_id));
-                  if (index !== -1) {
-                    nextMessages[index] = { ...msg, status: 'sent' };
-                  } else if (!nextMessages.find(m => String(m.id) === String(msg.id))) {
-                    nextMessages.push({ ...msg, status: 'sent' });
-                  }
-                } else if (!nextMessages.find(m => String(m.id) === String(msg.id))) {
+                // Prevent duplicates by checking both ID and temp_id
+                const existingIndex = nextMessages.findIndex(m => 
+                  String(m.id) === String(msg.id) || (msg.temp_id && String(m.id) === String(msg.temp_id))
+                );
+
+                if (existingIndex !== -1) {
+                  // Update existing (useful for status changes from 'sending' to 'sent')
+                  nextMessages[existingIndex] = { ...nextMessages[existingIndex], ...msg, status: 'sent' };
+                } else {
+                  // Add as new message
                   nextMessages.push({ ...msg, status: 'sent' });
                 }
               }
 
+              const isNewMessage = !msg.type || msg.type === 'message';
               let nextConversations = [...conversations];
               const convIndex = nextConversations.findIndex(c => String(c.id) === String(msg.conversation_id));
               
-              if (convIndex !== -1) {
+              if (isNewMessage && convIndex !== -1) {
                 const isSelected = selectedAdminConv && String(selectedAdminConv.id) === String(msg.conversation_id);
                 const updatedConv = { 
                   ...nextConversations[convIndex], 
@@ -154,10 +176,15 @@ const useChatStore = create((set, get) => {
                 };
                 nextConversations.splice(convIndex, 1);
                 nextConversations.unshift(updatedConv);
-              } else if (isAdmin && msg.conversation_id) {
+              } else if (isNewMessage && isAdmin && msg.conversation_id) {
                 api.get('/chat/conversations').then(res => {
                   set({ conversations: res.data || [] });
                 });
+              }
+
+              // Update global unread count only if it's a new message for us
+              if (isNewMessage && String(msg.sender_id) !== String(user?.id) && !isForCurrentChat) {
+                set(state => ({ totalUnreadCount: state.totalUnreadCount + 1 }));
               }
 
               return { messages: nextMessages, conversations: nextConversations };
@@ -217,7 +244,7 @@ const useChatStore = create((set, get) => {
         set((state) => ({ messages: [...state.messages, optimisticMsg] }));
         socket.send(JSON.stringify({ 
           text, 
-          tempId, 
+          temp_id: tempId, 
           receiverID: receiverID.toString(),
           replyToID: replyTo?.id?.toString() 
         }));
@@ -276,11 +303,16 @@ const useChatStore = create((set, get) => {
     markAsRead: async (convID) => {
       try {
         await api.post(`/chat/conversation/${convID}/read`);
-        set((state) => ({
-          conversations: state.conversations.map(c => 
-            String(c.id) === String(convID) ? { ...c, unread_count: 0 } : c
-          )
-        }));
+        set((state) => {
+          const conv = state.conversations.find(c => String(c.id) === String(convID));
+          const unreadForThisConv = conv?.unread_count || 0;
+          return {
+            conversations: state.conversations.map(c => 
+              String(c.id) === String(convID) ? { ...c, unread_count: 0 } : c
+            ),
+            totalUnreadCount: Math.max(0, state.totalUnreadCount - unreadForThisConv)
+          };
+        });
       } catch (err) {
         console.error('Failed to mark as read', err);
       }

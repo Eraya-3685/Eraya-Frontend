@@ -76,18 +76,18 @@ const AdminReviews = () => {
   });
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-screen bg-slate-50/50">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-screen">
       {/* Header */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+          <h1 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
             <MessageSquare className="w-8 h-8 text-secondary" />
             Product Reviews
           </h1>
           <p className="text-xs text-slate-500 mt-1 font-medium">Moderate customer feedback and verify product ratings.</p>
         </div>
         
-        <div className="flex items-center gap-4 bg-white p-1.5 rounded-2xl border border-slate-100 shadow-sm w-full md:w-auto">
+        <div className="flex items-center gap-4 glass-card-light p-1.5 rounded-2xl border border-white/[0.08] shadow-sm w-full md:w-auto">
           <div className="relative flex-grow md:w-64">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
             <input
@@ -95,17 +95,17 @@ const AdminReviews = () => {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search reviewers or comments..."
-              className="w-full bg-slate-50 border-none rounded-xl py-2.5 pl-10 pr-4 text-xs font-bold outline-none focus:ring-2 focus:ring-secondary/20 transition-all"
+              className="w-full glass-card-light border-none rounded-xl py-2.5 pl-10 pr-4 text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
             />
           </div>
-          <button onClick={fetchReviews} className="p-2.5 hover:bg-slate-50 rounded-xl transition-colors">
+          <button onClick={fetchReviews} className="p-2.5 hover:glass-card-light rounded-xl transition-colors">
             <RefreshCcw className={`w-4 h-4 text-slate-400 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
       </header>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-2 mb-8 bg-white/50 p-2 rounded-[2rem] border border-slate-100/50 w-fit">
+      <div className="flex flex-wrap gap-2 mb-8 glass-card-light/50 p-2 rounded-[2rem] border border-white/[0.08]/50 w-fit">
         {['All', 'Pending', 'Approved'].map((s) => (
           <button
             key={s}
@@ -113,11 +113,11 @@ const AdminReviews = () => {
             className={`px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all border ${
               filter === s
                 ? 'bg-slate-900 text-white border-slate-900 shadow-lg shadow-slate-200'
-                : 'bg-transparent text-slate-400 border-transparent hover:bg-white hover:text-slate-600'
+                : 'bg-transparent text-slate-400 border-transparent hover:glass-card-light hover:text-slate-300'
             }`}
           >
             {s} {s === 'Pending' && reviews.filter(r => !r.is_approved).length > 0 && (
-              <span className="ml-2 bg-secondary text-white px-1.5 py-0.5 rounded-md text-[8px] animate-pulse">
+              <span className="ml-2 bg-indigo-600 text-white px-1.5 py-0.5 rounded-md text-[8px] animate-pulse">
                 {reviews.filter(r => !r.is_approved).length}
               </span>
             )}
@@ -129,18 +129,18 @@ const AdminReviews = () => {
       <AnimatePresence mode="wait">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-32 gap-4">
-             <div className="w-12 h-12 border-4 border-slate-100 border-t-secondary rounded-full animate-spin" />
+             <div className="w-12 h-12 border-4 border-white/[0.08] border-t-secondary rounded-full animate-spin" />
              <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Loading Feedback...</p>
           </div>
         ) : filtered.length === 0 ? (
           <motion.div 
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-            className="text-center py-32 bg-white rounded-[3rem] border border-slate-100 shadow-sm"
+            className="text-center py-32 glass-card-light rounded-[3rem] border border-white/[0.08] shadow-sm"
           >
-            <div className="w-20 h-20 bg-slate-50 rounded-[32px] flex items-center justify-center mx-auto mb-6">
+            <div className="w-20 h-20 glass-card-light rounded-[32px] flex items-center justify-center mx-auto mb-6">
               <Star className="w-10 h-10 text-slate-200" />
             </div>
-            <h3 className="text-xl font-bold text-slate-900">No reviews to show</h3>
+            <h3 className="text-xl font-bold text-white">No reviews to show</h3>
             <p className="text-slate-400 text-sm">Customer feedback will appear here after approval.</p>
           </motion.div>
         ) : (
@@ -151,15 +151,15 @@ const AdminReviews = () => {
                 layout
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 flex flex-col hover:shadow-xl hover:shadow-slate-200/40 transition-all duration-500"
+                className="glass-card-light rounded-[2.5rem] border border-white/[0.08] shadow-sm p-8 flex flex-col hover:shadow-xl hover:shadow-slate-200/40 transition-all duration-500"
               >
                 <div className="flex justify-between items-start mb-6">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center border border-slate-100">
+                    <div className="w-12 h-12 glass-card-light rounded-2xl flex items-center justify-center border border-white/[0.08]">
                        <User className="w-6 h-6 text-slate-300" />
                     </div>
                     <div>
-                       <h4 className="font-bold text-slate-900">{rev.user?.full_name}</h4>
+                       <h4 className="font-bold text-white">{rev.user?.full_name}</h4>
                        <div className="flex items-center gap-2 mt-0.5">
                           <div className="flex">
                              {[...Array(5)].map((_, i) => (
@@ -183,7 +183,7 @@ const AdminReviews = () => {
                 </div>
 
                 <div className="flex-grow">
-                   <div className="p-5 bg-slate-50/50 rounded-2xl border border-slate-100 italic text-slate-600 text-sm leading-relaxed mb-6">
+                   <div className="p-5 glass-card-light/50 rounded-2xl border border-white/[0.08] italic text-slate-300 text-sm leading-relaxed mb-6">
                      "{rev.comment}"
                    </div>
                    
@@ -202,7 +202,7 @@ const AdminReviews = () => {
                      <button
                        onClick={() => handleApprove(rev.id)}
                        disabled={approvingId === rev.id}
-                       className="flex-grow py-3 bg-slate-900 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-secondary transition-all shadow-lg shadow-slate-200 disabled:opacity-50 flex items-center justify-center gap-2"
+                       className="flex-grow py-3 bg-slate-900 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-lg shadow-slate-200 disabled:opacity-50 flex items-center justify-center gap-2"
                      >
                        {approvingId === rev.id ? <RefreshCcw className="w-3 h-3 animate-spin" /> : 'Approve Review'}
                      </button>
@@ -212,8 +212,8 @@ const AdminReviews = () => {
                      disabled={deletingId === rev.id}
                      className={`py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center ${
                        rev.is_approved 
-                         ? 'flex-grow border border-slate-100 text-slate-400 hover:text-red-500 hover:border-red-100 hover:bg-red-50'
-                         : 'px-6 border border-slate-100 text-slate-300 hover:text-red-500 hover:bg-red-50'
+                         ? 'flex-grow border border-white/[0.08] text-slate-400 hover:text-red-500 hover:border-red-100 hover:bg-red-50'
+                         : 'px-6 border border-white/[0.08] text-slate-300 hover:text-red-500 hover:bg-red-50'
                      } disabled:opacity-50`}
                    >
                      {deletingId === rev.id ? (

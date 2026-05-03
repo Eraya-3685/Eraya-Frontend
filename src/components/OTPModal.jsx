@@ -65,12 +65,12 @@ const OTPModal = ({
         initial={{ scale: 0.9, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.9, opacity: 0, y: 20 }}
-        className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden border border-slate-100"
+        className="relative glass-card-light rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden border border-white/[0.08]"
       >
         <div className="absolute top-6 right-6">
           <button 
             onClick={onClose}
-            className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-all"
+            className="w-10 h-10 rounded-full glass-card-light flex items-center justify-center text-slate-400 hover:text-white hover:glass-input transition-all"
           >
             <X className="w-5 h-5" />
           </button>
@@ -81,19 +81,19 @@ const OTPModal = ({
             <div className="w-20 h-20 bg-secondary/10 rounded-[2.5rem] flex items-center justify-center mx-auto mb-2 relative">
               <ShieldCheck className="w-10 h-10 text-secondary" />
               <div className="absolute -top-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full border-4 border-white flex items-center justify-center">
-                <div className="w-1.5 h-1.5 bg-white rounded-full animate-ping" />
+                <div className="w-1.5 h-1.5 glass-card-light rounded-full animate-ping" />
               </div>
             </div>
             
             <div className="space-y-2">
-              <h3 className="text-2xl font-black text-slate-900 tracking-tight">{title}</h3>
+              <h3 className="text-2xl font-black text-white tracking-tight">{title}</h3>
               <p className="text-sm text-slate-500 leading-relaxed px-4">{description}</p>
             </div>
 
             {email && (
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100">
+              <div className="inline-flex items-center gap-2 px-4 py-2 glass-card-light rounded-2xl border border-white/[0.08]">
                 <Mail className="w-3.5 h-3.5 text-slate-400" />
-                <span className="text-[11px] font-black text-slate-600 tracking-wider font-mono">
+                <span className="text-[11px] font-black text-slate-300 tracking-wider font-mono">
                   {maskEmail(email)}
                 </span>
               </div>
@@ -108,7 +108,7 @@ const OTPModal = ({
                 placeholder="000000"
                 value={otp}
                 onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, ''))}
-                className="w-full px-6 py-5 bg-slate-50 border-2 border-transparent rounded-3xl text-center text-3xl font-black tracking-[0.5em] focus:bg-white focus:border-secondary outline-none transition-all placeholder:text-slate-200"
+                className="w-full px-6 py-5 glass-card-light border-2 border-transparent rounded-3xl text-center text-3xl font-black tracking-[0.5em] focus:glass-card-light focus:border-indigo-500 outline-none transition-all placeholder:text-slate-200"
                 autoFocus
               />
             </div>
@@ -117,7 +117,7 @@ const OTPModal = ({
               <button 
                 onClick={() => onConfirm(otp)}
                 disabled={loading || otp.length < 6}
-                className="w-full py-5 rounded-3xl bg-secondary text-white text-xs font-black uppercase tracking-[0.2em] hover:bg-secondary/90 shadow-xl shadow-secondary/20 transition-all disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-3 hover:-translate-y-0.5 active:translate-y-0"
+                className="w-full py-5 rounded-3xl bg-indigo-600 text-white text-xs font-black uppercase tracking-[0.2em] hover:bg-secondary/90 shadow-xl shadow-secondary/20 transition-all disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-3 hover:-translate-y-0.5 active:translate-y-0"
               >
                 {loading ? <RefreshCcw className="w-4 h-4 animate-spin" /> : 'Verify & Proceed'}
               </button>
@@ -126,7 +126,7 @@ const OTPModal = ({
                 <button 
                   onClick={handleResend}
                   disabled={resendCooldown > 0 || resendLoading}
-                  className="text-xs font-black text-slate-400 hover:text-secondary transition-colors disabled:opacity-50 flex items-center justify-center gap-2 py-2"
+                  className="text-xs font-black text-slate-400 hover:text-indigo-400 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 py-2"
                 >
                   {resendLoading ? (
                     <RefreshCcw className="w-3 h-3 animate-spin" />

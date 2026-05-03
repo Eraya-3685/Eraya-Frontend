@@ -174,7 +174,7 @@ const AdminCategories = () => {
       {/* Dynamic Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
         <div>
-          <h1 className="text-3xl font-black font-display text-slate-900 tracking-tight mb-1">
+          <h1 className="text-3xl font-black font-display text-white tracking-tight mb-1">
             Categories
           </h1>
           <p className="text-slate-500 flex items-center gap-2 text-xs font-medium">
@@ -201,18 +201,18 @@ const AdminCategories = () => {
           placeholder="Search categories..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-white border border-slate-200 rounded-xl py-2.5 pl-11 pr-5 outline-none focus:border-primary transition-all shadow-sm text-xs font-bold text-slate-900 placeholder:text-slate-300"
+          className="w-full glass-card-light border border-white/[0.1] rounded-xl py-2.5 pl-11 pr-5 outline-none focus:border-primary transition-all shadow-sm text-xs font-bold text-white placeholder:text-slate-300"
         />
       </div>
 
       {/* Content Grid */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-24 gap-6 bg-white rounded-[32px] border border-slate-50">
-          <div className="w-12 h-12 border-[5px] border-slate-100 border-t-primary rounded-full animate-spin" />
+        <div className="flex flex-col items-center justify-center py-24 gap-6 glass-card-light rounded-[32px] border border-slate-50">
+          <div className="w-12 h-12 border-[5px] border-white/[0.08] border-t-primary rounded-full animate-spin" />
           <p className="text-slate-400 font-black uppercase tracking-[0.3em] text-[9px] animate-pulse">Loading Categories...</p>
         </div>
       ) : filteredCategories.length === 0 ? (
-        <div className="text-center py-24 bg-white rounded-[32px] border-2 border-dashed border-slate-100">
+        <div className="text-center py-24 glass-card-light rounded-[32px] border-2 border-dashed border-white/[0.08]">
           <Tags className="w-12 h-12 text-slate-100 mx-auto mb-4" />
           <p className="text-slate-400 text-sm font-bold">No categories matched your search</p>
         </div>
@@ -226,7 +226,7 @@ const AdminCategories = () => {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="group relative bg-white rounded-2xl p-5 border border-slate-100 hover:border-primary/20 transition-all duration-500 hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.05)] overflow-hidden"
+                className="group relative glass-card-light rounded-2xl p-5 border border-white/[0.08] hover:border-primary/20 transition-all duration-500 hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.05)] overflow-hidden"
               >
 
                 {/* Selection Checkbox */}
@@ -237,7 +237,7 @@ const AdminCategories = () => {
                   <div className={`w-7 h-7 rounded-[10px] border-2 flex items-center justify-center transition-all ${
                     selectedIds.includes(cat.id) 
                       ? 'bg-slate-900 border-slate-900 text-white rotate-[15deg]' 
-                      : 'bg-white/80 backdrop-blur-md border-slate-200 text-transparent hover:border-primary'
+                      : 'glass-card-light/80 backdrop-blur-md border-white/[0.1] text-transparent hover:border-primary'
                   }`}>
                     <Check className="w-3.5 h-3.5" />
                   </div>
@@ -257,7 +257,7 @@ const AdminCategories = () => {
                   <div className="flex items-center gap-1.5 relative z-20">
                     <button
                       onClick={(e) => { e.stopPropagation(); handleOpenModal(cat); }}
-                      className="p-2.5 bg-white/80 backdrop-blur-md text-slate-400 rounded-lg hover:bg-slate-900 hover:text-white transition-all active:scale-90 shadow-sm"
+                      className="p-2.5 glass-card-light/80 backdrop-blur-md text-slate-400 rounded-lg hover:bg-slate-900 hover:text-white transition-all active:scale-90 shadow-sm"
                       title="Edit"
                     >
                       <Edit2 className="w-3 h-3" />
@@ -280,11 +280,11 @@ const AdminCategories = () => {
                   className="cursor-pointer relative z-10"
                   onClick={() => navigate(`/products?category=${cat.id}`)}
                 >
-                  <h3 className="text-xl font-black text-slate-900 tracking-tight mb-1 group-hover:text-primary transition-colors line-clamp-1">
+                  <h3 className="text-xl font-black text-white tracking-tight mb-1 group-hover:text-primary transition-colors line-clamp-1">
                     {cat.name}
                   </h3>
                   <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-full">
+                    <div className="flex items-center gap-1.5 glass-card-light px-2.5 py-1 rounded-full">
                       <div className="w-1 h-1 rounded-full bg-primary" />
                       <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">
                         {cat.product_count} Products
@@ -308,7 +308,7 @@ const AdminCategories = () => {
             className="fixed bottom-12 left-1/2 -translate-x-1/2 bg-slate-900 text-white p-6 rounded-[32px] shadow-2xl flex items-center gap-12 z-[100] border border-white/10 backdrop-blur-xl"
           >
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center font-black text-primary">
+              <div className="w-12 h-12 glass-card-light/10 rounded-2xl flex items-center justify-center font-black text-primary">
                 {selectedIds.length}
               </div>
               <div>
@@ -351,19 +351,19 @@ const AdminCategories = () => {
               initial={{ opacity: 0, scale: 0.9, y: 40 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 40 }}
-              className="relative w-full max-w-lg bg-white rounded-[40px] shadow-2xl overflow-hidden border border-slate-100"
+              className="relative w-full max-w-lg glass-card-light rounded-[40px] shadow-2xl overflow-hidden border border-white/[0.08]"
             >
               {/* Modal Header */}
-              <div className="flex justify-between items-center p-8 bg-slate-50/50">
+              <div className="flex justify-between items-center p-8/50">
                 <div>
-                  <h2 className="text-2xl font-black text-slate-900 tracking-tight leading-none mb-1.5">
+                  <h2 className="text-2xl font-black text-white tracking-tight leading-none mb-1.5">
                     {editingCategory ? 'Edit Category' : 'New Category'}
                   </h2>
                   <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Category Details</p>
                 </div>
                 <button 
                   onClick={handleCloseModal} 
-                  className="p-3 bg-white text-slate-300 hover:text-slate-900 hover:bg-white rounded-xl transition-all shadow-sm active:scale-90"
+                  className="p-3 glass-card-light text-slate-300 hover:text-white hover:glass-card-light rounded-xl transition-all shadow-sm active:scale-90"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -380,7 +380,7 @@ const AdminCategories = () => {
                       fileInputRef.current?.click();
                       if (errors.image) setErrors({ ...errors, image: null });
                     }}
-                    className={`relative group cursor-pointer aspect-video bg-slate-50 border-2 border-dashed rounded-[28px] flex flex-col items-center justify-center overflow-hidden transition-all ${errors.image ? 'border-red-300 bg-red-50/30' : 'border-slate-200 group-hover:border-primary/50'}`}
+                    className={`relative group cursor-pointer aspect-video glass-card-light border-2 border-dashed rounded-[28px] flex flex-col items-center justify-center overflow-hidden transition-all ${errors.image ? 'border-red-300 bg-red-50/30' : 'border-white/[0.1] group-hover:border-primary/50'}`}
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-[28px] blur-xl opacity-0 group-hover:opacity-100 transition-all duration-700" />
                     <div className="relative w-full h-full flex flex-col items-center justify-center">
@@ -388,19 +388,19 @@ const AdminCategories = () => {
                         <>
                           <img src={imagePreview} className="w-full h-full object-cover" alt="Preview" />
                           <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
-                             <div className="bg-white/90 p-3 rounded-xl flex items-center gap-2 scale-90 group-hover:scale-100 transition-all">
+                             <div className="glass-card-light/90 p-3 rounded-xl flex items-center gap-2 scale-90 group-hover:scale-100 transition-all">
                                 <Cloud className="w-4 h-4 text-primary" />
-                                <span className="text-[9px] font-black uppercase tracking-widest text-slate-900">Change Photo</span>
+                                <span className="text-[9px] font-black uppercase tracking-widest text-white">Change Photo</span>
                              </div>
                           </div>
                         </>
                       ) : (
                         <div className="flex flex-col items-center gap-3">
-                           <div className={`w-12 h-12 bg-white rounded-xl shadow-lg flex items-center justify-center transition-all ${errors.image ? 'text-red-400' : 'text-slate-300 group-hover:text-primary'}`}>
+                           <div className={`w-12 h-12 glass-card-light rounded-xl shadow-lg flex items-center justify-center transition-all ${errors.image ? 'text-red-400' : 'text-slate-300 group-hover:text-primary'}`}>
                               <ImageIcon className="w-6 h-6" />
                            </div>
                            <div className="text-center">
-                              <p className={`text-xs font-bold ${errors.image ? 'text-red-500' : 'text-slate-900'}`}>Upload Category Image</p>
+                              <p className={`text-xs font-bold ${errors.image ? 'text-red-500' : 'text-white'}`}>Upload Category Image</p>
                               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5">PNG, JPG up to 5MB</p>
                            </div>
                         </div>
@@ -430,7 +430,7 @@ const AdminCategories = () => {
                         setCategoryName(e.target.value);
                         if (errors.name) setErrors({ ...errors, name: null });
                       }}
-                      className={`relative w-full border-2 rounded-[24px] py-4 px-6 outline-none transition-all bg-white text-base font-black text-slate-900 placeholder:text-slate-200 shadow-inner ${errors.name ? 'border-red-200 focus:border-red-300' : 'border-slate-100 focus:border-primary'}`}
+                      className={`relative w-full border-2 rounded-[24px] py-4 px-6 outline-none transition-all glass-card-light text-base font-black text-white placeholder:text-slate-200 shadow-inner ${errors.name ? 'border-red-200 focus:border-red-300' : 'border-white/[0.08] focus:border-primary'}`}
                       placeholder="e.g. Kinetic Sportswear"
                     />
                   </div>
@@ -441,7 +441,7 @@ const AdminCategories = () => {
                   <button
                     type="button"
                     onClick={handleCloseModal}
-                    className="flex-1 bg-slate-50 py-4 rounded-[20px] font-black text-slate-400 hover:bg-slate-100 transition-all active:scale-95 text-[9px] uppercase tracking-widest"
+                    className="flex-1 glass-card-light py-4 rounded-[20px] font-black text-slate-400 hover:bg-slate-100 transition-all active:scale-95 text-[9px] uppercase tracking-widest"
                   >
                     Cancel
                   </button>

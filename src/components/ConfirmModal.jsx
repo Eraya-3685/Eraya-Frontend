@@ -32,7 +32,7 @@ const ConfirmModal = ({
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="bg-white rounded-[32px] shadow-2xl w-full max-w-sm overflow-hidden border border-slate-100 relative z-10"
+            className="glass-card-light rounded-[32px] shadow-2xl w-full max-w-sm overflow-hidden border border-white/[0.08] relative z-10"
           >
             <div className="p-8">
               <div className="flex justify-between items-start mb-6">
@@ -46,13 +46,13 @@ const ConfirmModal = ({
                 <button 
                   onClick={onClose} 
                   disabled={loading}
-                  className="p-2 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-50"
+                  className="p-2 hover:glass-input rounded-xl transition-colors disabled:opacity-50"
                 >
                   <X className="w-5 h-5 text-slate-400" />
                 </button>
               </div>
 
-              <h2 className="text-2xl font-bold text-slate-900 tracking-tight mb-2">
+              <h2 className="text-2xl font-bold text-white tracking-tight mb-2">
                 {title}
               </h2>
               <p className="text-slate-500 font-medium leading-relaxed">
@@ -60,11 +60,11 @@ const ConfirmModal = ({
               </p>
             </div>
 
-            <div className="p-8 bg-slate-50/50 border-t border-slate-100 flex gap-4">
+            <div className="p-8 glass-card-light/50 border-t border-white/[0.08] flex gap-4">
               <button
                 onClick={onClose}
                 disabled={loading}
-                className="flex-1 px-6 py-4 rounded-2xl text-sm  text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all disabled:opacity-50"
+                className="flex-1 px-6 py-4 rounded-2xl text-sm  text-slate-400 hover:text-slate-300 hover:glass-input transition-all disabled:opacity-50"
               >
                 {cancelText}
               </button>

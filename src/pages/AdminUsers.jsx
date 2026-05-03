@@ -13,7 +13,7 @@ import OTPModal from '../components/OTPModal';
 
 /* ── Secure Confirmation & OTP Modal ─────────────────── */
 const SecureRoleModal = ({ isOpen, onClose, onConfirm, targetRole, targetIds, initialPermissions, loading }) => {
-  const [step, setStep] = useState(1); // 1: Info/Permissions, 2: Password, 3: OTP
+  const [step, setStep] = useState(1); // 1: Info/Permissions, 2: OTP, 3: Password
   const [otp, setOtp] = useState('');
   const [password, setPassword] = useState('');
   const [permissions, setPermissions] = useState(initialPermissions || []);
@@ -26,33 +26,36 @@ const SecureRoleModal = ({ isOpen, onClose, onConfirm, targetRole, targetIds, in
 
   const availableModules = [
     { id: 'dashboard', label: 'Dashboard', desc: 'View revenue and stats' },
+    { id: 'chat', label: 'Messages', desc: 'Real-time customer support' },
     { id: 'products', label: 'Products', desc: 'Manage inventory & prices' },
     { id: 'categories', label: 'Categories', desc: 'Organize catalog' },
+    { id: 'users', label: 'Users', desc: 'Manage user list' },
     { id: 'orders', label: 'Orders', desc: 'Process customer orders' },
-    { id: 'users', label: 'Users', desc: 'View user list' },
+    { id: 'reviews', label: 'Product Reviews', desc: 'Manage customer reviews' },
+    { id: 'profile', label: 'My Profile', desc: 'View/edit own profile' },
+    { id: 'settings', label: 'Store Settings', desc: 'System & store settings' },
   ];
 
   const togglePermission = (id) => {
     setPermissions(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]);
   };
 
-  const handleNextToPassword = () => setStep(2);
-
-  const handleRequestOTP = async () => {
-    if (!password) {
-      toast.error('Admin password is required');
-      return;
-    }
+  const handleNextToOTP = async () => {
     setRequestingOTP(true);
     try {
       await requestOTP('role_change');
       toast.success('Security code sent to your email');
-      setStep(3);
+      setStep(2);
     } catch (err) {
       toast.error('Failed to send security code');
     } finally {
       setRequestingOTP(false);
     }
+  };
+
+  const handleOTPSubmit = (otpVal) => {
+    setOtp(otpVal);
+    setStep(3);
   };
 
   const resetAndClose = () => {
@@ -67,13 +70,13 @@ const SecureRoleModal = ({ isOpen, onClose, onConfirm, targetRole, targetIds, in
   return (
     <>
       <AnimatePresence>
-        {step < 3 && (
+        {step !== 2 && (
           <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white rounded-[32px] shadow-2xl w-full max-w-md overflow-hidden border border-slate-100"
+              className="glass-card-light rounded-[32px] shadow-2xl w-full max-w-md overflow-hidden border border-white/[0.08]"
             >
               <div className="p-8">
                 <div className="flex justify-between items-start mb-6">
@@ -88,9 +91,9 @@ const SecureRoleModal = ({ isOpen, onClose, onConfirm, targetRole, targetIds, in
                 <AnimatePresence mode="wait">
                   {step === 1 ? (
                     <motion.div key="confirm" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                      <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-2">Confirm Role Change</h2>
+                      <h2 className="text-2xl font-black text-white tracking-tight mb-2">Confirm Role Change</h2>
                       <p className="text-slate-500 font-medium leading-relaxed">
-                        Changing <span className="text-slate-900 font-bold">{targetIds?.length} user(s)</span> to
+                        Changing <span className="text-white font-bold">{targetIds?.length} user(s)</span> to
                         <span className="mx-1.5 px-2 py-0.5 rounded-lg text-xs font-black bg-emerald-50 text-emerald-600 uppercase tracking-wider">{targetRole}</span>
                       </p>
 
@@ -102,7 +105,7 @@ const SecureRoleModal = ({ isOpen, onClose, onConfirm, targetRole, targetIds, in
                               <button
                                 key={module.id}
                                 onClick={() => togglePermission(module.id)}
-                                className={`flex items-center gap-2.5 p-2.5 rounded-2xl border-2 transition-all ${permissions.includes(module.id) ? 'bg-amber-50 border-amber-200' : 'bg-slate-50/50 border-slate-100 opacity-60'
+                                className={`flex items-center gap-2.5 p-2.5 rounded-2xl border-2 transition-all ${permissions.includes(module.id) ? 'bg-amber-50 border-amber-200' : 'glass-card-light/50 border-white/[0.08] opacity-60'
                                   }`}
                               >
                                 <div className={`shrink-0 w-5 h-5 rounded-md flex items-center justify-center ${permissions.includes(module.id) ? 'bg-amber-500' : 'bg-slate-200'}`}>
@@ -117,8 +120,8 @@ const SecureRoleModal = ({ isOpen, onClose, onConfirm, targetRole, targetIds, in
                     </motion.div>
                   ) : (
                     <motion.div key="password" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                      <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-2">Authorize Action</h2>
-                      <p className="text-slate-500 font-medium mb-6 leading-relaxed">Please enter your admin password to proceed with the security verification.</p>
+                      <h2 className="text-2xl font-black text-white tracking-tight mb-2">Final Confirmation</h2>
+                      <p className="text-slate-500 font-medium mb-6 leading-relaxed">Security code verified. Please enter your admin password to complete the update.</p>
                       <div className="space-y-4">
                         <label className="block text-xs font-bold text-slate-400 mb-2 ml-1 text-left uppercase tracking-widest">Admin Password</label>
                         <div className="relative group">
@@ -128,7 +131,8 @@ const SecureRoleModal = ({ isOpen, onClose, onConfirm, targetRole, targetIds, in
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder="••••••••"
-                            className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-3.5 pl-11 pr-5 text-sm font-bold text-slate-900 outline-none focus:border-primary transition-all"
+                            className="w-full glass-card-light border-2 border-white/[0.08] rounded-2xl py-3.5 pl-11 pr-5 text-sm font-bold text-white outline-none focus:border-primary transition-all"
+                            autoComplete="new-password"
                             autoFocus
                           />
                         </div>
@@ -138,14 +142,14 @@ const SecureRoleModal = ({ isOpen, onClose, onConfirm, targetRole, targetIds, in
                 </AnimatePresence>
               </div>
 
-              <div className="p-8 bg-slate-50/50 border-t border-slate-100 flex gap-4">
-                <button onClick={resetAndClose} className="flex-1 px-6 py-4 rounded-2xl text-sm font-bold text-slate-400 hover:text-slate-600 transition-all">Cancel</button>
+              <div className="p-8/50 border-t border-white/[0.08] flex gap-4">
+                <button onClick={resetAndClose} className="flex-1 px-6 py-4 rounded-2xl text-sm font-bold text-slate-400 hover:text-slate-300 transition-all">Cancel</button>
                 <button
-                  onClick={step === 1 ? handleNextToPassword : handleRequestOTP}
-                  disabled={requestingOTP || (step === 2 && !password) || (targetRole === 'moderator' && permissions.length === 0)}
+                  onClick={step === 1 ? handleNextToOTP : () => onConfirm(otp, targetIds, password, permissions)}
+                  disabled={requestingOTP || (step === 3 && !password) || (targetRole === 'moderator' && permissions.length === 0)}
                   className="flex-[1.5] px-6 py-4 rounded-2xl text-sm font-bold text-white bg-slate-900 hover:bg-primary transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  {requestingOTP ? <RefreshCcw className="w-4 h-4 animate-spin" /> : (step === 1 ? 'Continue' : 'Send Security Code')}
+                  {requestingOTP ? <RefreshCcw className="w-4 h-4 animate-spin" /> : (step === 1 ? 'Send Security Code' : 'Confirm & Update')}
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
@@ -155,16 +159,90 @@ const SecureRoleModal = ({ isOpen, onClose, onConfirm, targetRole, targetIds, in
       </AnimatePresence>
 
       <OTPModal
-        isOpen={step === 3}
-        onClose={() => setStep(2)}
-        onConfirm={(otpVal) => onConfirm(otpVal, targetIds, password, permissions)}
-        onResend={handleRequestOTP}
+        isOpen={step === 2}
+        onClose={() => setStep(1)}
+        onConfirm={handleOTPSubmit}
+        onResend={handleNextToOTP}
         email={currentUser?.email}
-        loading={loading}
-        title="Verify Role Change"
-        description="Final step: enter the 6-digit code sent to your email to update user roles."
+        loading={false}
+        title="Security Verification"
+        description="We've sent a security code to your email. Please enter it below to proceed."
       />
     </>
+  );
+};
+
+/* ── User Profile Detail Modal ───────────────────────── */
+const UserProfileModal = ({ isOpen, onClose, user }) => {
+  if (!isOpen || !user) return null;
+
+  const DetailRow = ({ icon: Icon, label, value, color = "indigo" }) => (
+    <div className="flex items-center gap-4 p-4 rounded-2xl glass-card-light/50 border border-white/[0.08] hover:border-indigo-100 transition-all group">
+      <div className={`w-10 h-10 rounded-xl bg-${color}-50 flex items-center justify-center shrink-0`}>
+        <Icon className={`w-5 h-5 text-${color}-500`} />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">{label}</p>
+        <p className="text-sm font-bold text-white truncate">{value || 'Not provided'}</p>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+        className="glass-card-light rounded-[40px] shadow-2xl w-full max-w-lg overflow-hidden border border-white/[0.08] relative"
+      >
+        <button onClick={onClose} className="absolute right-6 top-6 p-2 hover:bg-slate-100 rounded-2xl transition-colors z-10">
+          <X className="w-5 h-5 text-slate-400" />
+        </button>
+
+        <div className="h-32 bg-gradient-to-br from-slate-900 to-slate-800 relative overflow-hidden">
+           <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_30%_50%,_rgba(99,102,241,0.5),transparent_50%)]" />
+        </div>
+
+        <div className="px-8 pb-10">
+          <div className="relative -mt-16 mb-6 flex flex-col items-center">
+            <div className="w-32 h-32 rounded-[40px] border-8 border-white glass-card-light shadow-xl overflow-hidden mb-4">
+              {user.avatar_url ? (
+                <img src={getImageUrl(user.avatar_url)} className="w-full h-full object-cover" alt="" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-indigo-50 text-indigo-500 font-black text-4xl">
+                  {user.full_name.charAt(0).toUpperCase()}
+                </div>
+              )}
+            </div>
+            <h2 className="text-2xl font-black text-white tracking-tight">{user.full_name}</h2>
+            <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-wider">
+              <CheckCircle2 className="w-3 h-3" />
+              {user.role}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 mb-8">
+            <DetailRow icon={Mail} label="Email Address" value={user.email} color="indigo" />
+            <DetailRow icon={Phone} label="Phone Number" value={user.phone} color="emerald" />
+            <DetailRow icon={Calendar} label="Member Since" value={new Date(user.created_at).toLocaleDateString()} color="amber" />
+            <DetailRow icon={User} label="User ID" value={`#${user.id}`} color="rose" />
+          </div>
+
+          <div className="p-5 rounded-3xl bg-slate-900 text-white shadow-xl">
+             <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 glass-card-light/10 rounded-xl">
+                   <Lock className="w-4 h-4 text-indigo-400" />
+                </div>
+                <span className="text-xs font-black uppercase tracking-widest">Address Information</span>
+             </div>
+             <p className="text-sm font-medium text-slate-300 leading-relaxed italic">
+                "{user.address || 'No address provided in profile settings.'}"
+             </p>
+          </div>
+        </div>
+      </motion.div>
+    </div>
   );
 };
 
@@ -179,7 +257,7 @@ const AdminUsers = () => {
   const [updatingId, setUpdatingId] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
 
-  // Bulk / Modal state
+  const [selectedUser, setSelectedUser] = useState(null);
   const [modalConfig, setModalConfig] = useState({ isOpen: false, targetIds: [], targetRole: null, initialPermissions: [] });
   const [bulkLoading, setBulkLoading] = useState(false);
 
@@ -291,7 +369,7 @@ const AdminUsers = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
+          <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
             <UserCog className="w-6 h-6 text-primary" />
             User Management
           </h1>
@@ -305,23 +383,23 @@ const AdminUsers = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search users..."
-            className="w-full bg-white border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-sm text-slate-900 outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all shadow-sm"
+            className="w-full glass-card-light border border-white/[0.1] rounded-xl py-2.5 pl-10 pr-4 text-sm text-white outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all shadow-sm"
           />
         </div>
       </div>
 
       {/* Users Table */}
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden">
+      <div className="glass-card-light rounded-3xl border border-white/[0.08] shadow-xl shadow-slate-200/40 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/50 border-b border-slate-100">
+              <tr className="glass-card-light/50 border-b border-white/[0.08]">
                 <th className="px-6 py-4 w-12 text-center">
                   <input
                     type="checkbox"
                     checked={filteredUsers.length > 0 && selectedIds.length === filteredUsers.length}
                     onChange={toggleSelectAll}
-                    className="w-5 h-5 rounded-lg border-2 border-slate-200 text-primary focus:ring-4 focus:ring-primary/5 cursor-pointer transition-all"
+                    className="w-5 h-5 rounded-lg border-2 border-white/[0.1] text-primary focus:ring-4 focus:ring-primary/5 cursor-pointer transition-all"
                   />
                 </th>
                 <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Profile</th>
@@ -336,7 +414,7 @@ const AdminUsers = () => {
                   Array(5).fill(0).map((_, i) => (
                     <tr key={i} className="animate-pulse">
                       <td className="px-6 py-5" colSpan={5}>
-                        <div className="h-10 bg-slate-50 rounded-xl w-full" />
+                        <div className="h-10 glass-card-light rounded-xl w-full" />
                       </td>
                     </tr>
                   ))
@@ -344,10 +422,10 @@ const AdminUsers = () => {
                   <tr>
                     <td colSpan={5} className="px-6 py-24 text-center">
                       <div className="flex flex-col items-center gap-4">
-                        <div className="w-20 h-20 bg-slate-50 rounded-[32px] flex items-center justify-center">
+                        <div className="w-20 h-20 glass-card-light rounded-[32px] flex items-center justify-center">
                           <AlertCircle className="w-10 h-10 text-slate-200" />
                         </div>
-                        <h3 className="text-xl font-bold text-slate-900">No users found</h3>
+                        <h3 className="text-xl font-bold text-white">No users found</h3>
                         <p className="text-slate-400 font-medium">Try checking your spelling or clearing filters.</p>
                       </div>
                     </td>
@@ -360,14 +438,14 @@ const AdminUsers = () => {
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
                       key={u.id}
-                      className={`hover:bg-slate-50/80 transition-all duration-300 group ${selectedIds.includes(u.id) ? 'bg-primary/5' : ''}`}
+                      className={`hover:glass-card-light/80 transition-all duration-300 group ${selectedIds.includes(u.id) ? 'bg-primary/5' : ''}`}
                     >
                       <td className="px-6 py-2.5 text-center">
                         <input
                           type="checkbox"
                           checked={selectedIds.includes(u.id)}
                           onChange={() => toggleSelect(u.id)}
-                          className="w-3.5 h-3.5 rounded-lg border-2 border-slate-200 text-primary focus:ring-4 focus:ring-primary/5 cursor-pointer transition-all"
+                          className="w-3.5 h-3.5 rounded-lg border-2 border-white/[0.1] text-primary focus:ring-4 focus:ring-primary/5 cursor-pointer transition-all"
                         />
                       </td>
                       <td className="px-6 py-2.5">
@@ -382,7 +460,7 @@ const AdminUsers = () => {
                             )}
                           </div>
                           <div>
-                            <p className="font-bold text-slate-900 text-[13px] tracking-tight leading-tight">{u.full_name}</p>
+                            <p className="font-bold text-white text-[13px] tracking-tight leading-tight">{u.full_name}</p>
                             <div className="flex items-center gap-1 text-[8px] text-slate-400 font-black uppercase tracking-widest mt-0.5 opacity-60">
                               <Calendar className="w-2.5 h-2.5" />
                               Joined {new Date(u.created_at).toLocaleDateString()}
@@ -392,12 +470,12 @@ const AdminUsers = () => {
                       </td>
                       <td className="px-6 py-2.5">
                         <div className="space-y-0">
-                          <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors">
+                          <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-300 group-hover:text-white transition-colors">
                             <Mail className="w-3 h-3 text-slate-300" />
                             {u.email}
                           </div>
                           {u.phone && (
-                            <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 group-hover:text-slate-600 transition-colors">
+                            <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 group-hover:text-slate-300 transition-colors">
                               <Phone className="w-2.5 h-2.5 text-slate-200" />
                               {u.phone}
                             </div>
@@ -408,33 +486,42 @@ const AdminUsers = () => {
                         <RoleBadge user={u} />
                       </td>
                       <td className="px-6 py-2.5">
-                        <div className="w-32 opacity-60 group-hover:opacity-100 transition-all duration-300 scale-90 origin-left">
-                          <AdminDropdown
-                            value={u.role}
-                            options={roleOptions}
-                            disabled={updatingId === u.id}
-                            onChange={(opt) => handleRoleChange(u.id, opt.value)}
-                            renderValue={(val) => {
-                              const role = roleOptions.find(r => r.value === val) || roleOptions[2];
-                              return (
-                                <div className="flex items-center gap-2">
-                                  <role.icon className={`w-3 h-3 text-${role.color}-500`} />
-                                  <span>{role.label}</span>
-                                </div>
-                              );
-                            }}
-                            renderOption={(role, isSelected) => (
-                              <div className="flex items-center justify-between w-full">
-                                <div className="flex items-center gap-2.5">
-                                  <div className={`w-6 h-6 rounded-lg bg-${role.color}-50 flex items-center justify-center`}>
+                        <div className="flex items-center gap-4">
+                          <button
+                            onClick={() => setSelectedUser(u)}
+                            className="p-2 glass-card-light text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-all"
+                            title="View Profile"
+                          >
+                            <RefreshCcw className="w-3.5 h-3.5" /> 
+                          </button>
+                          <div className="w-32 opacity-60 group-hover:opacity-100 transition-all duration-300 scale-90 origin-left">
+                            <AdminDropdown
+                              value={u.role}
+                              options={roleOptions}
+                              disabled={updatingId === u.id}
+                              onChange={(opt) => handleRoleChange(u.id, opt.value)}
+                              renderValue={(val) => {
+                                const role = roleOptions.find(r => r.value === val) || roleOptions[2];
+                                return (
+                                  <div className="flex items-center gap-2">
                                     <role.icon className={`w-3 h-3 text-${role.color}-500`} />
+                                    <span>{role.label}</span>
                                   </div>
-                                  <span className={`text-[10px] font-black uppercase tracking-widest ${isSelected ? `text-${role.color}-600` : 'text-slate-600'}`}>{role.label}</span>
+                                );
+                              }}
+                              renderOption={(role, isSelected) => (
+                                <div className="flex items-center justify-between w-full">
+                                  <div className="flex items-center gap-2.5">
+                                    <div className={`w-6 h-6 rounded-lg bg-${role.color}-50 flex items-center justify-center`}>
+                                      <role.icon className={`w-3 h-3 text-${role.color}-500`} />
+                                    </div>
+                                    <span className={`text-[10px] font-black uppercase tracking-widest ${isSelected ? `text-${role.color}-600` : 'text-slate-300'}`}>{role.label}</span>
+                                  </div>
+                                  {isSelected && <Check className={`w-3.5 h-3.5 text-${role.color}-500`} />}
                                 </div>
-                                {isSelected && <Check className={`w-3.5 h-3.5 text-${role.color}-500`} />}
-                              </div>
-                            )}
-                          />
+                              )}
+                            />
+                          </div>
                         </div>
                       </td>
                     </motion.tr>
@@ -484,7 +571,7 @@ const AdminUsers = () => {
                   Make {role}
                 </button>
               ))}
-              <div className="w-px h-8 bg-white/10 mx-2" />
+              <div className="w-px h-8 glass-card-light/10 mx-2" />
               <button
                 onClick={() => setSelectedIds([])}
                 className="text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors"
@@ -506,6 +593,16 @@ const AdminUsers = () => {
             targetIds={modalConfig.targetIds}
             initialPermissions={modalConfig.initialPermissions}
             loading={bulkLoading}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {selectedUser && (
+          <UserProfileModal
+            isOpen={!!selectedUser}
+            onClose={() => setSelectedUser(null)}
+            user={selectedUser}
           />
         )}
       </AnimatePresence>

@@ -71,11 +71,11 @@ const BkashMock = () => {
 
   return (
     <div className="min-h-screen bg-[#D12053]/5 flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden border border-[#D12053]/10">
+      <div className="glass-card-light w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden border border-[#D12053]/10">
         {/* Header */}
         <div className="bg-[#D12053] p-6 text-center text-white relative">
-          <img src="https://www.logo.wine/a/logo/BKash/BKash-bKash-Logo.wine.svg" alt="bKash" className="h-10 mx-auto bg-white rounded-xl px-2 py-1 mb-4" />
-          <div className="absolute top-4 right-4 bg-white/20 p-2 rounded-full">
+          <img src="https://www.logo.wine/a/logo/BKash/BKash-bKash-Logo.wine.svg" alt="bKash" className="h-10 mx-auto glass-card-light rounded-xl px-2 py-1 mb-4" />
+          <div className="absolute top-4 right-4 glass-card-light/20 p-2 rounded-full">
             <ShieldCheck className="w-4 h-4 text-white" />
           </div>
           <p className="text-xs font-medium text-white/80 uppercase tracking-widest">Eraya Merchant</p>
@@ -93,13 +93,13 @@ const BkashMock = () => {
           <div className="space-y-4">
             {step === 1 && (
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-700 uppercase tracking-widest px-1">Your bKash Account Number</label>
+                <label className="text-[10px] font-black text-slate-200 uppercase tracking-widest px-1">Your bKash Account Number</label>
                 <input 
                   type="text"
                   value={number}
                   onChange={(e) => setNumber(e.target.value)}
                   placeholder="e.g 01712345678"
-                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-center text-lg font-bold outline-none focus:ring-4 focus:ring-[#D12053]/10 focus:border-[#D12053]/30 transition-all text-slate-900"
+                  className="w-full glass-card-light border border-white/[0.08] rounded-2xl p-4 text-center text-lg font-bold outline-none focus:ring-4 focus:ring-[#D12053]/10 focus:border-[#D12053]/30 transition-all text-white"
                 />
                 <p className="text-[9px] text-center text-slate-400 font-bold uppercase tracking-widest pt-2">Use any valid format number</p>
               </div>
@@ -107,13 +107,13 @@ const BkashMock = () => {
 
             {step === 2 && (
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-700 uppercase tracking-widest px-1">Verification Code (OTP)</label>
+                <label className="text-[10px] font-black text-slate-200 uppercase tracking-widest px-1">Verification Code (OTP)</label>
                 <input 
                   type="text"
                   value={otp}
                   onChange={(e) => setOtp(e.target.value)}
                   placeholder="123456"
-                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-center text-2xl tracking-[0.5em] font-black outline-none focus:ring-4 focus:ring-[#D12053]/10 focus:border-[#D12053]/30 transition-all text-slate-900"
+                  className="w-full glass-card-light border border-white/[0.08] rounded-2xl p-4 text-center text-2xl tracking-[0.5em] font-black outline-none focus:ring-4 focus:ring-[#D12053]/10 focus:border-[#D12053]/30 transition-all text-white"
                 />
                 <p className="text-[9px] text-center text-amber-500 font-bold uppercase tracking-widest pt-2">Test OTP: 123456</p>
               </div>
@@ -121,13 +121,13 @@ const BkashMock = () => {
 
             {step === 3 && (
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-700 uppercase tracking-widest px-1">Enter bKash PIN</label>
+                <label className="text-[10px] font-black text-slate-200 uppercase tracking-widest px-1">Enter bKash PIN</label>
                 <input 
                   type="password"
                   value={pin}
                   onChange={(e) => setPin(e.target.value)}
                   placeholder="•••••"
-                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-center text-2xl tracking-[0.5em] font-black outline-none focus:ring-4 focus:ring-[#D12053]/10 focus:border-[#D12053]/30 transition-all text-slate-900"
+                  className="w-full glass-card-light border border-white/[0.08] rounded-2xl p-4 text-center text-2xl tracking-[0.5em] font-black outline-none focus:ring-4 focus:ring-[#D12053]/10 focus:border-[#D12053]/30 transition-all text-white"
                 />
                 <p className="text-[9px] text-center text-amber-500 font-bold uppercase tracking-widest pt-2">Test PIN: 12121</p>
               </div>
@@ -136,10 +136,10 @@ const BkashMock = () => {
             {error && <p className="text-xs font-bold text-[#D12053] text-center bg-[#D12053]/10 py-2 rounded-xl">{error}</p>}
           </div>
 
-          <div className="flex gap-4 pt-4 border-t border-slate-100">
+          <div className="flex gap-4 pt-4 border-t border-white/[0.08]">
             <button 
               onClick={handleCancel}
-              className="flex-1 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:bg-slate-50 rounded-2xl transition-all"
+              className="flex-1 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:glass-card-light rounded-2xl transition-all"
             >
               Close
             </button>
@@ -153,7 +153,7 @@ const BkashMock = () => {
           </div>
         </div>
         
-        <div className="bg-slate-50 p-4 text-center border-t border-slate-100">
+        <div className="glass-card-light p-4 text-center border-t border-white/[0.08]">
           <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">☎ 16247</p>
         </div>
       </div>

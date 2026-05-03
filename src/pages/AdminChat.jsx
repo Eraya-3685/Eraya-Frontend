@@ -12,11 +12,11 @@ import ConfirmModal from '../components/ConfirmModal';
 
 const AdminChat = () => {
   const { user } = useAuthStore();
-  const { 
-    messages, 
-    conversations, 
+  const {
+    messages,
+    conversations,
     setConversations,
-    setSelectedAdminConv, 
+    setSelectedAdminConv,
     selectedAdminConv,
     connect,
     sendMessage,
@@ -27,16 +27,18 @@ const AdminChat = () => {
     setEditingMessage,
     editMessage,
     isConnected,
+    currentWithID,
     markAsRead,
     bulkDeleteMessages
   } = useChatStore();
 
   const [input, setInput] = useState('');
   const [selectedMsgIDs, setSelectedMsgIDs] = useState([]);
+  const [firstUnreadMsgId, setFirstUnreadMsgId] = useState(null);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
 
   const toggleMessageSelection = (id) => {
-    setSelectedMsgIDs(prev => 
+    setSelectedMsgIDs(prev =>
       prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
     );
   };
@@ -76,7 +78,7 @@ const AdminChat = () => {
         api.get(`/chat/users/search?q=${search}`)
           .then(res => {
             // Filter out users who are already in the conversations list to avoid duplication
-            const filtered = (res.data || []).filter(u => 
+            const filtered = (res.data || []).filter(u =>
               !conversations.some(c => c.buyer_id === u.id) && u.id !== user?.id
             );
             setGlobalUsers(filtered);
@@ -89,16 +91,16 @@ const AdminChat = () => {
 
     return () => clearTimeout(delayDebounceFn);
   }, [search, conversations, user?.id]);
-  const [confirmModal, setConfirmModal] = useState({ 
-    show: false, 
-    title: '', 
-    message: '', 
-    onConfirm: () => {} 
+  const [confirmModal, setConfirmModal] = useState({
+    show: false,
+    title: '',
+    message: '',
+    onConfirm: () => { }
   });
   const [isPartnerOnline, setIsPartnerOnline] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
-  
+
   const buyerIdFromUrl = searchParams.get('buyer');
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
@@ -140,12 +142,23 @@ const AdminChat = () => {
     if (selectedAdminConv) {
       // Fetch messages for this specific conversation
       api.get(`/chat/conversation/${selectedAdminConv.buyer_id}`).then((res) => {
-        setMessages(res.data || []);
+        const msgs = res.data || [];
+        setMessages(msgs);
+
+        // Find the first unread message from the BUYER
+        const firstUnread = msgs.find(m => !m.is_read && m.sender_id !== user?.id);
+        if (firstUnread) {
+          setFirstUnreadMsgId(firstUnread.id);
+        } else {
+          setFirstUnreadMsgId(null);
+        }
       });
-      // Reconnect WebSocket to this buyer
-      connect(selectedAdminConv.buyer_id);
+      // Only connect if not already connected to this buyer
+      if (currentWithID !== selectedAdminConv.buyer_id || !isConnected) {
+        connect(selectedAdminConv.buyer_id);
+      }
     }
-  }, [selectedAdminConv, connect, setMessages]);
+  }, [selectedAdminConv?.buyer_id, isConnected, currentWithID, connect, setMessages, user?.id]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -189,31 +202,31 @@ const AdminChat = () => {
 
   const filteredConvs = [...conversations]
     .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
-    .filter(c => 
+    .filter(c =>
       (c.buyer_name || '').toLowerCase().includes(search.toLowerCase()) ||
       String(c.buyer_id).includes(search)
     );
 
   return (
-    <div className="flex h-[calc(100vh-5rem)] bg-white overflow-hidden relative">
+    <div className="flex h-[calc(100vh-5rem)] glass-card-light overflow-hidden relative">
       {/* Sidebar */}
       <div className={`
         ${selectedAdminConv ? 'hidden md:flex' : 'flex'} 
-        w-full md:w-[400px] border-r border-slate-100 flex flex-col h-full bg-slate-50/30
+        w-full md:w-[400px] border-r border-white/[0.08] flex flex-col h-full glass-card-light/30
       `}>
         <div className="p-8">
           <div className="flex items-center justify-between mb-8">
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-3">
               Support <div className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse" />
             </h1>
           </div>
-          
+
           <div className="relative group">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-indigo-600 transition-colors" />
-            <input 
+            <input
               type="text"
               placeholder="Search conversations..."
-              className="w-full bg-white border border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-xs font-bold focus:outline-none focus:ring-4 focus:ring-indigo-600/5 focus:border-indigo-600/20 transition-all shadow-sm"
+              className="w-full glass-card-light border border-white/[0.08] rounded-2xl py-4 pl-12 pr-4 text-xs font-bold focus:outline-none focus:ring-4 focus:ring-indigo-600/5 focus:border-indigo-600/20 transition-all shadow-sm"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -228,11 +241,10 @@ const AdminChat = () => {
               <button
                 key={conv.id}
                 onClick={() => handleSelectConversation(conv)}
-                className={`w-full flex items-center gap-4 p-5 rounded-3xl transition-all duration-300 relative group/conv mb-2 ${
-                  selectedAdminConv?.id === conv.id 
-                    ? 'bg-white shadow-xl shadow-indigo-600/5 ring-1 ring-slate-100' 
-                    : 'hover:bg-white/60 text-slate-400 hover:text-slate-900'
-                }`}
+                className={`w-full flex items-center gap-4 p-5 rounded-3xl transition-all duration-300 relative group/conv mb-2 ${selectedAdminConv?.id === conv.id
+                    ? 'glass-card-light shadow-xl shadow-indigo-600/5 ring-1 ring-slate-100'
+                    : 'hover:glass-card-light/60 text-slate-400 hover:text-white'
+                  }`}
               >
                 <div className="w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-xs shadow-inner shrink-0 overflow-hidden"
                   style={{
@@ -251,7 +263,7 @@ const AdminChat = () => {
                 </div>
                 <div className="flex-grow text-left min-w-0">
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className={`text-sm tracking-tight truncate pr-2 ${conv.unread_count > 0 ? 'font-black text-slate-900' : 'font-bold text-slate-600'}`}>
+                    <span className={`text-sm tracking-tight truncate pr-2 ${conv.unread_count > 0 ? 'font-black text-white' : 'font-bold text-slate-300'}`}>
                       {conv.buyer_name || `Customer #${conv.buyer_id}`}
                     </span>
                     <div className="flex items-center gap-2">
@@ -314,7 +326,7 @@ const AdminChat = () => {
                       setMessages([]); // Clear messages for a new conversation
                       setSearch(''); // Clear search
                     }}
-                    className="w-full flex items-center gap-4 p-4 rounded-3xl hover:bg-white transition-all group/user mb-2"
+                    className="w-full flex items-center gap-4 p-4 rounded-3xl hover:glass-card-light transition-all group/user mb-2"
                   >
                     <div className="w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-[10px] shadow-sm shrink-0 overflow-hidden"
                       style={{
@@ -323,10 +335,10 @@ const AdminChat = () => {
                       }}>
                       {u.avatar_url ? (
                         <img src={u.avatar_url.startsWith('http') ? u.avatar_url : `${import.meta.env.VITE_ASSETS_URL}/${u.avatar_url}`} className="w-full h-full object-cover" alt="" />
-                      ) : u.full_name.substring(0,1).toUpperCase()}
+                      ) : u.full_name.substring(0, 1).toUpperCase()}
                     </div>
                     <div className="text-left min-w-0">
-                      <p className="text-sm font-bold text-slate-900 truncate tracking-tight">{u.full_name}</p>
+                      <p className="text-sm font-bold text-white truncate tracking-tight">{u.full_name}</p>
                       <p className="text-[9px] font-bold text-indigo-600 uppercase tracking-widest mt-0.5">{u.role}</p>
                     </div>
                   </button>
@@ -345,17 +357,17 @@ const AdminChat = () => {
       {/* Main Chat Area */}
       <div className={`
         ${selectedAdminConv ? 'flex' : 'hidden md:flex'} 
-        flex-grow flex flex-col bg-slate-50/50 relative
+        flex-grow flex flex-col glass-card-light/50 relative
       `}>
         {selectedAdminConv ? (
           <>
             {/* Header */}
-            <div className="p-4 md:p-6 bg-white border-b border-slate-100 flex items-center justify-between">
+            <div className="p-4 md:p-6 glass-card-light border-b border-white/[0.08] flex items-center justify-between">
               <div className="flex items-center gap-3 md:gap-4">
                 {/* Back button for mobile */}
-                <button 
+                <button
                   onClick={() => setSelectedAdminConv(null)}
-                  className="md:hidden p-2 -ml-2 rounded-xl text-slate-400 hover:bg-slate-50"
+                  className="md:hidden p-2 -ml-2 rounded-xl text-slate-400 hover:glass-card-light"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -375,7 +387,7 @@ const AdminChat = () => {
                   )}
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900 text-sm tracking-tight">
+                  <h3 className="font-bold text-white text-sm tracking-tight">
                     {selectedAdminConv.buyer_name || `Customer #${selectedAdminConv.buyer_id}`}
                   </h3>
                   <div className="flex items-center gap-1.5">
@@ -399,7 +411,7 @@ const AdminChat = () => {
                       <input
                         type="text"
                         placeholder="Search messages..."
-                        className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2 pl-4 pr-4 text-[10px] font-bold focus:outline-none focus:ring-2 focus:ring-indigo-600/10 transition-all"
+                        className="w-full glass-card-light border border-white/[0.08] rounded-xl py-2 pl-4 pr-4 text-[10px] font-bold focus:outline-none focus:ring-2 focus:ring-indigo-600/10 transition-all"
                         value={msgSearch}
                         onChange={(e) => setMsgSearch(e.target.value)}
                         autoFocus
@@ -408,23 +420,23 @@ const AdminChat = () => {
                   )}
                 </AnimatePresence>
 
-                <button 
+                <button
                   onClick={() => {
                     setShowMsgSearch(!showMsgSearch);
                     if (showMsgSearch) setMsgSearch('');
                   }}
-                  className={`p-3 rounded-2xl transition-all shadow-sm ${showMsgSearch ? 'bg-indigo-600 text-white' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}
+                  className={`p-3 rounded-2xl transition-all shadow-sm ${showMsgSearch ? 'bg-indigo-600 text-white' : 'glass-card-light text-slate-400 hover:bg-slate-100'}`}
                   title="Search Messages"
                 >
                   <Search className="w-4 h-4" />
                 </button>
 
-                <button 
+                <button
                   onClick={() => {
                     setIsSelectionMode(!isSelectionMode);
                     if (isSelectionMode) setSelectedMsgIDs([]);
                   }}
-                  className={`p-3 rounded-2xl transition-all shadow-sm ${isSelectionMode ? 'bg-indigo-600 text-white' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}
+                  className={`p-3 rounded-2xl transition-all shadow-sm ${isSelectionMode ? 'bg-indigo-600 text-white' : 'glass-card-light text-slate-400 hover:bg-slate-100'}`}
                   title="Select Messages"
                 >
                   <CheckCheck className="w-4 h-4" />
@@ -456,73 +468,93 @@ const AdminChat = () => {
             {/* Messages */}
             <div
               ref={scrollRef}
-               onScroll={handleScroll}
-               className="flex-grow overflow-y-auto p-4 md:p-10 custom-scrollbar relative"
-             >
-               <div className="min-h-full flex flex-col justify-end space-y-6">
-                 {messages
-                   .filter(m => (m.message_text || '').toLowerCase().includes(msgSearch.toLowerCase()))
-                   .map((msg, i, filtered) => {
-                     const isMe = msg.sender_id === user.id;
-                     const prevMsgDate = i > 0 ? new Date(filtered[i - 1].created_at || new Date()) : null;
-                     const showDateSeparator = !prevMsgDate || new Date(msg.created_at).toDateString() !== prevMsgDate.toDateString();
- 
-                     return (
-                       <React.Fragment key={msg.id || i}>
-                         {showDateSeparator && <DateSeparator date={msg.created_at} />}
-                         <ChatMessage
-                           msg={msg}
-                           isMe={isMe}
-                           onReply={setReplyingTo}
-                           isAdminView={true}
-                           showName={!isMe && String(msg.sender_id) !== String(selectedAdminConv?.buyer_id)}
-                           setConfirmModal={setConfirmModal}
-                           isSelectionMode={isSelectionMode}
-                           isSelected={selectedMsgIDs.includes(msg.id)}
-                           onSelect={toggleMessageSelection}
-                         />
-                       </React.Fragment>
-                     );
-                   })}
-                 {msgSearch && messages.filter(m => (m.message_text || '').toLowerCase().includes(msgSearch.toLowerCase())).length === 0 && (
-                   <div className="py-20 text-center">
-                     <p className="text-[10px] font-bold text-slate-300">No matching messages found</p>
-                   </div>
-                 )}
-               </div>
- 
-               {/* Bulk Action Bar */}
-               <AnimatePresence>
-                 {isSelectionMode && (
-                   <motion.div
-                     initial={{ y: 50, opacity: 0 }}
-                     animate={{ y: 0, opacity: 1 }}
-                     exit={{ y: 50, opacity: 0 }}
-                     className="fixed bottom-32 left-1/2 -translate-x-1/2 z-[200] bg-slate-900 text-white px-8 py-4 rounded-[2rem] shadow-2xl flex items-center gap-8 border border-white/10 backdrop-blur-xl"
-                   >
-                     <div className="flex flex-col">
-                       <span className="text-[10px] font-bold opacity-50 uppercase tracking-widest">Selected</span>
-                       <span className="text-xl font-black">{selectedMsgIDs.length} Messages</span>
-                     </div>
-                     <div className="h-8 w-px bg-white/10" />
-                     <div className="flex gap-4">
-                       <button
-                         onClick={handleBulkDelete}
-                         disabled={selectedMsgIDs.length === 0}
-                         className="px-8 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 transition-all text-xs font-bold flex items-center gap-2 disabled:opacity-50"
-                       >
-                         <Trash2 className="w-4 h-4" /> Delete Selected
-                       </button>
-                       <button
-                         onClick={() => { setIsSelectionMode(false); setSelectedMsgIDs([]); }}
-                         className="p-2 hover:bg-white/10 rounded-xl transition-all"
-                       >
-                         <X className="w-5 h-5" />
-                       </button>
-                     </div>
-                   </motion.div>
-                 )}
-               </AnimatePresence>
+              onScroll={handleScroll}
+              className="flex-grow overflow-y-auto p-4 md:p-10 custom-scrollbar relative"
+            >
+              <div className="min-h-full flex flex-col justify-end space-y-6">
+                {messages
+                  .filter(m => (m.message_text || '').toLowerCase().includes(msgSearch.toLowerCase()))
+                  .map((msg, i, filtered) => {
+                    const isMe = msg.sender_id === user.id;
+                    const prevMsgDate = i > 0 ? new Date(filtered[i - 1].created_at || new Date()) : null;
+                    const showDateSeparator = !prevMsgDate || new Date(msg.created_at).toDateString() !== prevMsgDate.toDateString();
+
+                    return (
+                      <React.Fragment key={msg.id || i}>
+                        {showDateSeparator && (
+                          <div className="flex justify-center my-8">
+                            <div className="px-5 py-2 rounded-2xl glass-card-light shadow-sm border border-white/[0.08] text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                              {new Date(msg.created_at).toLocaleDateString(undefined, {
+                                weekday: 'long',
+                                month: 'short',
+                                day: 'numeric'
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {firstUnreadMsgId === msg.id && (
+                          <div className="flex items-center gap-4 py-8 px-10">
+                            <div className="h-px flex-grow bg-indigo-100"></div>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-indigo-500 bg-indigo-50/50 px-4 py-1.5 rounded-full border border-indigo-100/50 shadow-sm">
+                              Unread Messages
+                            </span>
+                            <div className="h-px flex-grow bg-indigo-100"></div>
+                          </div>
+                        )}
+                        <ChatMessage
+                          msg={msg}
+                          isMe={isMe}
+                          onReply={setReplyingTo}
+                          isAdminView={true}
+                          showName={!isMe && String(msg.sender_id) !== String(selectedAdminConv?.buyer_id)}
+                          setConfirmModal={setConfirmModal}
+                          isSelectionMode={isSelectionMode}
+                          isSelected={selectedMsgIDs.includes(msg.id)}
+                          onSelect={toggleMessageSelection}
+                        />
+                      </React.Fragment>
+                    );
+                  })}
+                {msgSearch && messages.filter(m => (m.message_text || '').toLowerCase().includes(msgSearch.toLowerCase())).length === 0 && (
+                  <div className="py-20 text-center">
+                    <p className="text-[10px] font-bold text-slate-300">No matching messages found</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Bulk Action Bar */}
+              <AnimatePresence>
+                {isSelectionMode && (
+                  <motion.div
+                    initial={{ y: 50, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: 50, opacity: 0 }}
+                    className="fixed bottom-32 left-1/2 -translate-x-1/2 z-[200] bg-slate-900 text-white px-8 py-4 rounded-[2rem] shadow-2xl flex items-center gap-8 border border-white/10 backdrop-blur-xl"
+                  >
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-bold opacity-50 uppercase tracking-widest">Selected</span>
+                      <span className="text-xl font-black">{selectedMsgIDs.length} Messages</span>
+                    </div>
+                    <div className="h-8 w-px glass-card-light/10" />
+                    <div className="flex gap-4">
+                      <button
+                        onClick={handleBulkDelete}
+                        disabled={selectedMsgIDs.length === 0}
+                        className="px-8 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 transition-all text-xs font-bold flex items-center gap-2 disabled:opacity-50"
+                      >
+                        <Trash2 className="w-4 h-4" /> Delete Selected
+                      </button>
+                      <button
+                        onClick={() => { setIsSelectionMode(false); setSelectedMsgIDs([]); }}
+                        className="p-2 hover:glass-card-light/10 rounded-xl transition-all"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Scroll to Bottom Button */}
@@ -533,7 +565,7 @@ const AdminChat = () => {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.5, y: 20 }}
                   onClick={scrollToBottom}
-                  className="absolute bottom-32 right-12 w-14 h-14 bg-white text-slate-900 rounded-full shadow-2xl border border-slate-100 flex items-center justify-center hover:bg-slate-50 transition-all z-[100] group"
+                  className="absolute bottom-32 right-12 w-14 h-14 glass-card-light text-white rounded-full shadow-2xl border border-white/[0.08] flex items-center justify-center hover:glass-card-light transition-all z-[100] group"
                 >
                   <div className="absolute inset-0 bg-indigo-500/10 rounded-full animate-ping" />
                   <ArrowDown className="w-6 h-6 group-hover:translate-y-0.5 transition-transform relative z-10" />
@@ -553,9 +585,9 @@ const AdminChat = () => {
                   >
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-bold text-indigo-600 ">Editing Message:</span>
-                      <span className="text-[10px] font-bold text-slate-600 truncate max-w-[200px]">"{editingMessage.message_text}"</span>
+                      <span className="text-[10px] font-bold text-slate-300 truncate max-w-[200px]">"{editingMessage.message_text}"</span>
                     </div>
-                    <button 
+                    <button
                       onClick={() => { setEditingMessage(null); setInput(''); }}
                       className="p-1 hover:bg-indigo-100 rounded-lg transition-all text-indigo-400"
                     >
@@ -564,7 +596,7 @@ const AdminChat = () => {
                   </motion.div>
                 )}
               </AnimatePresence>
-              
+
               <AnimatePresence>
                 {isTyping && (
                   <motion.div
@@ -585,7 +617,7 @@ const AdminChat = () => {
             </div>
 
             {/* Input */}
-            <div className="p-4 md:p-8 bg-white border-t border-slate-100">
+            <div className="p-4 md:p-8 glass-card-light border-t border-white/[0.08]">
               <ChatReplyPreview
                 replyingTo={replyingTo}
                 onClear={() => setReplyingTo(null)}
@@ -602,7 +634,7 @@ const AdminChat = () => {
                   }}
                   onBlur={() => sendTyping(false)}
                   placeholder="Type your reply..."
-                  className="w-full bg-slate-50 border border-slate-100 rounded-[1.5rem] py-5 pl-8 pr-20 text-xs font-bold focus:outline-none focus:ring-4 focus:ring-slate-900/5 focus:bg-white focus:border-slate-200 transition-all"
+                  className="w-full glass-card-light border border-white/[0.08] rounded-[1.5rem] py-5 pl-8 pr-20 text-xs font-bold focus:outline-none focus:ring-4 focus:ring-slate-900/5 focus:glass-card-light focus:border-white/[0.1] transition-all"
                 />
                 <button
                   type="submit"
@@ -616,10 +648,10 @@ const AdminChat = () => {
           </>
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-center p-20">
-            <div className="w-24 h-24 bg-white rounded-[2.5rem] shadow-xl flex items-center justify-center mb-8">
+            <div className="w-24 h-24 glass-card-light rounded-[2.5rem] shadow-xl flex items-center justify-center mb-8">
               <MessageSquare className="w-10 h-10 text-slate-100" />
             </div>
-            <h3 className="text-xl font-bold text-slate-900 mb-2">Select a Conversation</h3>
+            <h3 className="text-xl font-bold text-white mb-2">Select a Conversation</h3>
             <p className="text-slate-400 text-xs font-bold  leading-loose max-w-[300px]">
               Click on a conversation in the sidebar to start chatting with buyers.
             </p>
@@ -627,7 +659,7 @@ const AdminChat = () => {
         )}
       </div>
 
-      <ConfirmModal 
+      <ConfirmModal
         isOpen={confirmModal.show}
         onClose={() => setConfirmModal({ ...confirmModal, show: false })}
         onConfirm={() => {
