@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ShoppingBag, Heart, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getImageUrl } from '../api/axios';
+import useAuthStore from '../store/useAuthStore';
 
 const C = {
   t900: '#0d1117',
@@ -23,6 +24,8 @@ const ProductCard = ({
   loading = false,
   variant = 'default' 
 }) => {
+  const { user } = useAuthStore();
+  const isAdmin = ['admin', 'moderator'].includes(user?.role?.toLowerCase());
   const img = product?.images?.find(i => i.is_primary)?.image_url ?? product?.images?.[0]?.image_url;
   const isNew = product?.created_at && new Date(product.created_at) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
   const outOfStock = (product?.stock_count ?? product?.stock ?? 1) <= 0;
@@ -41,9 +44,11 @@ const ProductCard = ({
               <p style={{ fontSize: '0.6rem', fontWeight: 700, color: 'rgba(255,255,255,0.6)', margin: '0 0 0.1rem' }}>New Arrival</p>
               <p style={{ fontSize: '0.8rem', fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-0.01em', lineHeight: 1.1 }}>{product.name}</p>
             </div>
-            <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-              <ShoppingBag style={{ width: 11, height: 11 }} />
-            </div>
+            {!isAdmin && (
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                <ShoppingBag style={{ width: 11, height: 11 }} />
+              </div>
+            )}
           </div>
         </Link>
       </motion.div>
@@ -117,25 +122,29 @@ const ProductCard = ({
           ) : null}
         </div>
 
-        {/* Quick Action - Shopping Bag */}
-        <div 
-          onClick={() => onCart(product)}
-          style={{ position: 'absolute', bottom: '1rem', right: '1rem', width: 38, height: 38, background: 'rgba(255,255,255,0.95)', borderRadius: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
-          onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
-          onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-        >
-           <ShoppingBag style={{ width: 16, height: 16, color: C.t900 }} />
-        </div>
+        {!isAdmin && (
+          <>
+            {/* Quick Action - Shopping Bag */}
+            <div 
+              onClick={() => onCart(product)}
+              style={{ position: 'absolute', bottom: '1rem', right: '1rem', width: 38, height: 38, background: 'rgba(255,255,255,0.95)', borderRadius: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+              onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
+              onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+            >
+               <ShoppingBag style={{ width: 16, height: 16, color: C.t900 }} />
+            </div>
 
-        {/* Wishlist Heart */}
-        <div 
-          onClick={() => onWishlist(product)}
-          style={{ position: 'absolute', top: '1rem', right: '1rem', width: 38, height: 38, background: 'rgba(255,255,255,0.95)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
-          onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
-          onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-        >
-          <Heart style={{ width: 16, height: 14, color: inWishlist ? C.rose : C.t300, fill: inWishlist ? C.rose : 'none' }} />
-        </div>
+            {/* Wishlist Heart */}
+            <div 
+              onClick={() => onWishlist(product)}
+              style={{ position: 'absolute', top: '1rem', right: '1rem', width: 38, height: 38, background: 'rgba(255,255,255,0.95)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+              onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
+              onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+            >
+              <Heart style={{ width: 16, height: 14, color: inWishlist ? C.rose : C.t300, fill: inWishlist ? C.rose : 'none' }} />
+            </div>
+          </>
+        )}
       </div>
 
       {/* Info Section */}

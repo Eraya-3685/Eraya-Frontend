@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { User, Mail, Phone, MapPin, Camera, Save, Shield, UserCircle } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Camera, Save, Shield, UserCircle, Settings, Activity } from 'lucide-react';
 import { getImageUrl } from '../api/axios';
 import useAuthStore from '../store/useAuthStore';
 import toast from 'react-hot-toast';
@@ -21,16 +21,12 @@ const AdminProfile = () => {
   const handleAvatarChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be under 5MB');
-      return;
-    }
     setAvatarUploading(true);
     try {
       await uploadAvatar(file);
-      toast.success('Profile photo updated!');
-    } catch (error) {
-      toast.error(error.response?.data || 'Failed to upload photo');
+      toast.success('Avatar Updated');
+    } catch {
+      toast.error('Failed to upload');
     } finally {
       setAvatarUploading(false);
     }
@@ -40,176 +36,96 @@ const AdminProfile = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      await updateProfile({
-        full_name: form.full_name,
-        email: form.email,
-        phone: form.phone || null,
-        address: form.address || null,
-      });
-      toast.success('Account settings updated!');
-    } catch (error) {
-      toast.error(error.response?.data || 'Failed to update account');
+      await updateProfile(form);
+      toast.success('Profile Updated');
+    } catch {
+      toast.error('Failed to update');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto">
-      <header className="mb-10">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 bg-indigo-500/10 rounded-lg">
-            <User className="w-5 h-5 text-secondary" />
-          </div>
-          <span className="text-xs font-bold text-[#6366f1] tracking-[0.2em]">Personal account</span>
-        </div>
-        <h1 className="text-3xl font-bold text-[#0d1117] tracking-tight">Account settings</h1>
-        <p className="text-[#94a3b8] mt-1">Manage your administrative profile and credentials</p>
-      </header>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        {/* Left Card */}
-        <div className="lg:col-span-4 space-y-6">
-          <div className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 border border-[#eaeef2] p-8">
-            <div className="relative w-32 h-32 mx-auto mb-6 group">
-              <div className="w-full h-full rounded-full overflow-hidden border-4 border-slate-50 shadow-inner bg-slate-100">
-                {user?.avatar_url ? (
-                  <img
-                    src={getImageUrl(user.avatar_url)}
-                    alt={user.full_name}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-secondary/5 text-secondary">
-                    <UserCircle className="w-16 h-16 opacity-20" />
-                  </div>
-                )}
-              </div>
-              
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={avatarUploading}
-                className="absolute bottom-1 right-1 w-10 h-10 bg-[#0d1117] text-[#fff] rounded-full flex items-center justify-center shadow-xl hover:bg-indigo-600 hover:scale-110 transition-all duration-300 disabled:opacity-50"
-              >
-                {avatarUploading ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                ) : (
-                  <Camera className="w-4 h-4" />
-                )}
-              </button>
-              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
-            </div>
-
-            <div className="text-center">
-              <h2 className="text-xl font-bold text-[#0d1117] mb-1">{user?.full_name}</h2>
-              <p className="text-[#64748b] text-xs font-medium mb-6 capitalize">{user?.role} account</p>
-              
-              <div className="space-y-3 pt-6 border-t border-slate-50 text-left">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-[#64748b] font-bold tracking-wider">Access level</span>
-                  <span className="text-emerald-500 font-black">{user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase() : ''}</span>
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-[#64748b] font-bold tracking-wider">Status</span>
-                  <span className="text-[#0d1117] font-black italic">Active</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Form */}
-        <div className="lg:col-span-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 border border-[#eaeef2] overflow-hidden"
-          >
-            <div className="bg-[#f8fafc] p-8 text-[#0d1117] border-b border-[#eaeef2]">
-              <h3 className="text-lg font-bold">Edit information</h3>
-              <p className="text-[#94a3b8] text-xs mt-1">Update your personal details visible in the management panel.</p>
-            </div>
-
-            <form onSubmit={handleSubmit} className="p-8 md:p-10 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-[#64748b] tracking-widest ml-1">Full name</label>
-                  <div className="relative group">
-                    <input
-                      type="text"
-                      required
-                      value={form.full_name}
-                      onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-                      className="w-full bg-white border-2 border-[#eaeef2] rounded-2xl py-4 pl-12 pr-4 text-[#0d1117] font-bold text-sm outline-none focus:border-indigo-500/30 focus:bg-white transition-all"
-                    />
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748b] w-4 h-4 group-focus-within:text-secondary" />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-[#64748b] tracking-widest ml-1">Phone number</label>
-                  <div className="relative group">
-                    <input
-                      type="text"
-                      value={form.phone}
-                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                      className="w-full bg-white border-2 border-[#eaeef2] rounded-2xl py-4 pl-12 pr-4 text-[#0d1117] font-bold text-sm outline-none focus:border-indigo-500/30 focus:bg-white transition-all"
-                    />
-                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748b] w-4 h-4 group-focus-within:text-secondary" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-black text-[#64748b] tracking-widest ml-1">Email address</label>
-                <div className="relative group">
-                  <input
-                    type="email"
-                    required
-                    readOnly
-                    value={form.email}
-                    className="w-full bg-white border-2 border-[#eaeef2] rounded-2xl py-4 pl-12 pr-4 text-[#64748b] font-bold text-sm outline-none cursor-not-allowed"
-                  />
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748b] w-4 h-4" />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-black text-[#64748b] tracking-widest ml-1">Residential address</label>
-                <div className="relative group">
-                  <textarea
-                    rows={3}
-                    value={form.address}
-                    onChange={(e) => setForm({ ...form, address: e.target.value })}
-                    className="w-full bg-white border-2 border-[#eaeef2] rounded-2xl py-4 pl-12 pr-4 text-[#0d1117] font-bold text-sm outline-none focus:border-indigo-500/30 focus:bg-white transition-all resize-none"
-                  />
-                  <MapPin className="absolute left-4 top-5 text-[#64748b] w-4 h-4 group-focus-within:text-secondary" />
-                </div>
-              </div>
-
-              <div className="pt-6 border-t border-slate-50 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-[#64748b] text-[10px] font-bold">
-                  <Shield className="w-3.5 h-3.5 text-emerald-500" />
-                  Secured connection
-                </div>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="bg-[#0d1117] text-[#fff] px-10 py-4 rounded-2xl font-black text-xs tracking-widest hover:bg-secondary/90 hover:scale-105 transition-all flex items-center gap-2 shadow-xl shadow-slate-200/50 disabled:opacity-50"
-                >
-                  {loading ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                  ) : (
-                    <Save className="w-4 h-4" />
-                  )}
-                  Update account
-                </button>
-              </div>
-            </form>
-          </motion.div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem', paddingBottom: '5rem' }}>
+      
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <div>
+           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+              <div style={{ width: 32, height: 32, background: '#e11d4810', borderRadius: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e11d48' }}><User style={{ width: 18, height: 18 }} /></div>
+              <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#e11d48', textTransform: 'uppercase', letterSpacing: '0.15em' }}>Identity Management</span>
+           </div>
+           <h1 style={{ fontSize: '2.5rem', fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.03em' }}>My Profile</h1>
         </div>
       </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '400px 1fr', gap: '2.5rem' }}>
+         
+         {/* Sidebar Profile Card */}
+         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            <div style={{ background: '#fff', borderRadius: '3rem', border: '1px solid #f1f5f9', padding: '3rem', boxShadow: '0 10px 30px rgba(0,0,0,0.02)', textAlign: 'center' }}>
+               <div style={{ position: 'relative', width: 160, height: 160, margin: '0 auto 2rem' }}>
+                  <div style={{ width: '100%', height: '100%', borderRadius: '4rem', overflow: 'hidden', border: '8px solid #fff', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}>
+                     {user?.avatar_url ? <img src={getImageUrl(user.avatar_url)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : <div style={{ width: '100%', height: '100%', background: '#0f172a', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem', fontWeight: 900 }}>{user?.full_name?.charAt(0)}</div>}
+                  </div>
+                  <button onClick={() => fileInputRef.current?.click()} style={{ position: 'absolute', bottom: -5, right: -5, width: 48, height: 48, borderRadius: '1.25rem', background: '#e11d48', color: '#fff', border: '4px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 10px 20px rgba(225, 29, 72, 0.3)' }} disabled={avatarUploading}>{avatarUploading ? <RefreshCcw style={{ width: 20, height: 20, animation: 'spin 1s linear infinite' }} /> : <Camera style={{ width: 20, height: 20 }} />}</button>
+                  <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={handleAvatarChange} />
+               </div>
+               <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0f172a', margin: '0 0 0.5rem' }}>{user?.full_name}</h2>
+               <div style={{ display: 'inline-flex', padding: '0.5rem 1rem', background: '#e11d4810', color: '#e11d48', borderRadius: '1rem', fontSize: '0.65rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{user?.role}</div>
+               
+               <div style={{ marginTop: '3rem', paddingTop: '3rem', borderTop: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                     <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Auth Status</span>
+                     <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#10b981' }}>Verified</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                     <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Member Since</span>
+                     <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#0f172a' }}>{new Date(user?.created_at).getFullYear()}</span>
+                  </div>
+               </div>
+            </div>
+         </div>
+
+         {/* Form Section */}
+         <div style={{ background: '#fff', borderRadius: '3rem', border: '1px solid #f1f5f9', padding: '3.5rem', boxShadow: '0 10px 30px rgba(0,0,0,0.02)' }}>
+            <div style={{ marginBottom: '3rem' }}>
+               <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', margin: '0 0 0.5rem' }}>Account Information</h3>
+               <p style={{ fontSize: '0.85rem', fontWeight: 600, color: '#94a3b8', margin: 0 }}>Update your personal details and contact information</p>
+            </div>
+
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                     <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em', marginLeft: '1rem' }}>Full Name</label>
+                     <input type="text" value={form.full_name} onChange={(e) => setForm({...form, full_name: e.target.value})} style={{ width: '100%', background: '#f8f9fc', border: '1px solid #f1f5f9', padding: '1.25rem 1.75rem', borderRadius: '1.5rem', fontSize: '0.9rem', fontWeight: 700, outline: 'none' }} />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                     <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em', marginLeft: '1rem' }}>Phone Number</label>
+                     <input type="text" value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value})} style={{ width: '100%', background: '#f8f9fc', border: '1px solid #f1f5f9', padding: '1.25rem 1.75rem', borderRadius: '1.5rem', fontSize: '0.9rem', fontWeight: 700, outline: 'none' }} />
+                  </div>
+               </div>
+
+               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em', marginLeft: '1rem' }}>Email Address (Read Only)</label>
+                  <input type="email" value={form.email} readOnly style={{ width: '100%', background: '#f8f9fc', border: '1px solid #f1f5f9', padding: '1.25rem 1.75rem', borderRadius: '1.5rem', fontSize: '0.9rem', fontWeight: 700, outline: 'none', color: '#94a3b8', cursor: 'not-allowed' }} />
+               </div>
+
+               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em', marginLeft: '1rem' }}>Address</label>
+                  <textarea rows={4} value={form.address} onChange={(e) => setForm({...form, address: e.target.value})} style={{ width: '100%', background: '#f8f9fc', border: '1px solid #f1f5f9', padding: '1.25rem 1.75rem', borderRadius: '1.5rem', fontSize: '0.9rem', fontWeight: 700, outline: 'none', resize: 'none' }} />
+               </div>
+
+               <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-end' }}>
+                  <button type="submit" disabled={loading} style={{ background: '#e11d48', color: '#fff', border: 'none', padding: '1.25rem 3rem', borderRadius: '1.5rem', fontSize: '0.85rem', fontWeight: 800, cursor: 'pointer', boxShadow: '0 10px 20px rgba(225, 29, 72, 0.2)', transition: 'all 0.3s ease' }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-3px)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>{loading ? 'Updating...' : 'Save Settings'}</button>
+               </div>
+            </form>
+         </div>
+      </div>
+
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   );
 };

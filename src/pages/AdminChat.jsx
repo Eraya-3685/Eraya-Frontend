@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, Search, Send, User, Clock, CheckCheck, Trash2, ArrowDown, X } from 'lucide-react';
+import { MessageSquare, Search, Send, User, Clock, CheckCheck, Trash2, ArrowDown, X, MoreVertical, RefreshCcw, Activity } from 'lucide-react';
 import useChatStore from '../store/useChatStore';
 import useAuthStore from '../store/useAuthStore';
 import api from '../api/axios';
@@ -12,663 +12,121 @@ import ConfirmModal from '../components/ConfirmModal';
 
 const AdminChat = () => {
   const { user } = useAuthStore();
-  const {
-    messages,
-    conversations,
-    setConversations,
-    setSelectedAdminConv,
-    selectedAdminConv,
-    connect,
-    sendMessage,
-    setMessages,
-    sendTyping,
-    isTyping,
-    editingMessage,
-    setEditingMessage,
-    editMessage,
-    isConnected,
-    currentWithID,
-    markAsRead,
-    bulkDeleteMessages
-  } = useChatStore();
-
+  const { messages, conversations, setConversations, setSelectedAdminConv, selectedAdminConv, connect, sendMessage, setMessages, sendTyping, isTyping, editingMessage, setEditingMessage, editMessage, isConnected, currentWithID, markAsRead } = useChatStore();
   const [input, setInput] = useState('');
-  const [selectedMsgIDs, setSelectedMsgIDs] = useState([]);
-  const [firstUnreadMsgId, setFirstUnreadMsgId] = useState(null);
-  const [isSelectionMode, setIsSelectionMode] = useState(false);
-
-  const toggleMessageSelection = (id) => {
-    setSelectedMsgIDs(prev =>
-      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
-    );
-  };
-
-  const handleBulkDelete = () => {
-    setConfirmModal({
-      show: true,
-      title: `Delete ${selectedMsgIDs.length} messages?`,
-      message: 'This will permanently remove these messages for everyone. This action cannot be undone.',
-      onConfirm: async () => {
-        await bulkDeleteMessages(selectedMsgIDs);
-        setSelectedMsgIDs([]);
-        setIsSelectionMode(false);
-      }
-    });
-  };
-
-  // [NEW] Update input when editingMessage changes
-  useEffect(() => {
-    if (editingMessage) {
-      setInput(editingMessage.message_text || '');
-      inputRef.current?.focus();
-    }
-  }, [editingMessage]);
   const [search, setSearch] = useState('');
-  const [globalUsers, setGlobalUsers] = useState([]);
-  const [isSearchingUsers, setIsSearchingUsers] = useState(false);
-  const [msgSearch, setMsgSearch] = useState('');
-  const [showMsgSearch, setShowMsgSearch] = useState(false);
-  const [showScrollBottom, setShowScrollBottom] = useState(false);
-
-  // Global user search
-  useEffect(() => {
-    const delayDebounceFn = setTimeout(() => {
-      if (search.trim().length > 0) {
-        setIsSearchingUsers(true);
-        api.get(`/chat/users/search?q=${search}`)
-          .then(res => {
-            // Filter out users who are already in the conversations list to avoid duplication
-            const filtered = (res.data || []).filter(u =>
-              !conversations.some(c => c.buyer_id === u.id) && u.id !== user?.id
-            );
-            setGlobalUsers(filtered);
-          })
-          .finally(() => setIsSearchingUsers(false));
-      } else {
-        setGlobalUsers([]);
-      }
-    }, 300);
-
-    return () => clearTimeout(delayDebounceFn);
-  }, [search, conversations, user?.id]);
-  const [confirmModal, setConfirmModal] = useState({
-    show: false,
-    title: '',
-    message: '',
-    onConfirm: () => { }
-  });
-  const [isPartnerOnline, setIsPartnerOnline] = useState(false);
-  const [replyingTo, setReplyingTo] = useState(null);
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  const buyerIdFromUrl = searchParams.get('buyer');
+  const [loading, setLoading] = useState(false);
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
 
-  const handleScroll = (e) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.target;
-    setShowScrollBottom(scrollHeight - scrollTop - clientHeight > 100);
-  };
-
-  const scrollToBottom = () => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTo({
-        top: scrollRef.current.scrollHeight,
-        behavior: 'smooth'
-      });
-    }
-  };
-
   useEffect(() => {
-    // Fetch all active conversations
-    api.get('/chat/conversations').then((res) => {
-      const convs = res.data || [];
-      setConversations(convs);
-
-      // If we have a buyer ID in URL, find the conversation object
-      if (buyerIdFromUrl) {
-        const target = convs.find(c => String(c.buyer_id) === String(buyerIdFromUrl));
-        if (target) {
-          setSelectedAdminConv(target);
-        }
-      }
-    });
-
-    // Default connect to support channel initially
+    api.get('/chat/conversations').then((res) => setConversations(res.data || []));
     connect(0);
-  }, [connect, buyerIdFromUrl, setConversations, setSelectedAdminConv]);
+  }, []);
 
   useEffect(() => {
     if (selectedAdminConv) {
-      // Fetch messages for this specific conversation
-      api.get(`/chat/conversation/${selectedAdminConv.buyer_id}`).then((res) => {
-        const msgs = res.data || [];
-        setMessages(msgs);
-
-        // Find the first unread message from the BUYER
-        const firstUnread = msgs.find(m => !m.is_read && m.sender_id !== user?.id);
-        if (firstUnread) {
-          setFirstUnreadMsgId(firstUnread.id);
-        } else {
-          setFirstUnreadMsgId(null);
-        }
-      });
-      // Only connect if not already connected to this buyer
-      if (currentWithID !== selectedAdminConv.buyer_id || !isConnected) {
-        connect(selectedAdminConv.buyer_id);
-      }
+      api.get(`/chat/conversation/${selectedAdminConv.buyer_id}`).then((res) => setMessages(res.data || []));
+      if (currentWithID !== selectedAdminConv.buyer_id || !isConnected) connect(selectedAdminConv.buyer_id);
     }
-  }, [selectedAdminConv?.buyer_id, isConnected, currentWithID, connect, setMessages, user?.id]);
-
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages]);
-
-  useEffect(() => {
-    if (replyingTo) {
-      inputRef.current?.focus();
-    }
-  }, [replyingTo]);
-
-  const handleSelectConversation = (conv) => {
-    setSelectedAdminConv(conv);
-    setSearchParams({ buyer: conv.buyer_id }, { replace: true });
-    markAsRead(conv.id);
-  };
+  }, [selectedAdminConv?.buyer_id]);
 
   const handleSend = (e) => {
     e.preventDefault();
     if (input.trim() && selectedAdminConv) {
-      if (editingMessage) {
-        editMessage(editingMessage.id, input);
-        setEditingMessage(null);
-        setInput('');
-        setReplyingTo(null);
-        inputRef.current?.focus();
-      } else {
-        const success = sendMessage(input, replyingTo);
-        if (success) {
-          setInput('');
-          setReplyingTo(null);
-          inputRef.current?.focus();
-        } else {
-          alert('Connecting to chat server, please wait a second and try again.');
-        }
-      }
+       sendMessage(input);
+       setInput('');
     }
   };
 
-  const filteredConvs = [...conversations]
-    .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
-    .filter(c =>
-      (c.buyer_name || '').toLowerCase().includes(search.toLowerCase()) ||
-      String(c.buyer_id).includes(search)
-    );
+  const filteredConvs = conversations.filter(c => (c.buyer_name || '').toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="flex h-[calc(100vh-5rem)] bg-white overflow-hidden relative">
+    <div style={{ display: 'flex', height: 'calc(100vh - 120px)', background: '#fff', borderRadius: '3rem', border: '1px solid #f1f5f9', overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.03)' }}>
+      
       {/* Sidebar */}
-      <div className={`
-        ${selectedAdminConv ? 'hidden md:flex' : 'flex'} 
-        w-full md:w-[400px] border-r border-[#eaeef2] flex flex-col h-full bg-white
-      `}>
-        <div className="p-8">
-          <div className="flex items-center justify-between mb-8">
-            <h1 className="text-2xl font-bold text-[#0d1117] tracking-tight flex items-center gap-3">
-              Support <div className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse" />
-            </h1>
-          </div>
-
-          <div className="relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748b] group-focus-within:text-indigo-600 transition-colors" />
-            <input
-              type="text"
-              placeholder="Search conversations..."
-              className="w-full bg-white border border-[#eaeef2] rounded-2xl py-4 pl-12 pr-4 text-xs font-bold focus:outline-none focus:ring-4 focus:ring-indigo-600/5 focus:border-indigo-600/20 transition-all shadow-sm"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
+      <div style={{ width: 400, borderRight: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ padding: '2.5rem' }}>
+           <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0f172a', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>Messages <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#e11d48', animation: 'pulse 1.5s infinite' }} /></h2>
+           <div style={{ position: 'relative' }}>
+              <Search style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', width: 18, height: 18, color: '#94a3b8' }} />
+              <input type="text" placeholder="Search conversations..." value={search} onChange={(e) => setSearch(e.target.value)} style={{ width: '100%', background: '#f8f9fc', border: '1px solid #f1f5f9', padding: '1rem 1rem 1rem 3.5rem', borderRadius: '1.25rem', fontSize: '0.85rem', fontWeight: 700, outline: 'none' }} />
+           </div>
         </div>
 
-        <div className="flex-grow overflow-y-auto px-4 pb-8 space-y-2 custom-scrollbar">
-          {/* Active Conversations */}
-          <div className="mb-6">
-            <h2 className="px-4 text-[10px] font-black uppercase tracking-[0.2em] text-[#64748b] mb-4">Conversations</h2>
-            {filteredConvs.map((conv) => (
-              <button
-                key={conv.id}
-                onClick={() => handleSelectConversation(conv)}
-                className={`w-full flex items-center gap-4 p-5 rounded-3xl transition-all duration-300 relative group/conv mb-2 ${selectedAdminConv?.id === conv.id
-                    ? 'bg-white shadow-xl shadow-indigo-600/5 ring-1 ring-slate-100'
-                    : 'hover:bg-white text-[#64748b] hover:text-[#0d1117]'
-                  }`}
-              >
-                <div className="w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-xs shadow-inner shrink-0 overflow-hidden"
-                  style={{
-                    backgroundColor: `hsl(${(conv.buyer_id * 137.5) % 360}, 70%, 95%)`,
-                    color: `hsl(${(conv.buyer_id * 137.5) % 360}, 70%, 35%)`
-                  }}>
-                  {conv.buyer_avatar ? (
-                    <img
-                      src={conv.buyer_avatar.startsWith('http') ? conv.buyer_avatar : `${import.meta.env.VITE_ASSETS_URL}/${conv.buyer_avatar}`}
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    (conv.buyer_name || conv.buyer_id.toString()).substring(0, 1).toUpperCase()
-                  )}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '0 1.5rem 2.5rem' }}>
+           {filteredConvs.map(conv => (
+             <button key={conv.id} onClick={() => { setSelectedAdminConv(conv); markAsRead(conv.id); }} style={{ width: '100%', border: 'none', background: selectedAdminConv?.id === conv.id ? '#e11d4808' : 'transparent', padding: '1.25rem', borderRadius: '2rem', display: 'flex', gap: '1rem', alignItems: 'center', cursor: 'pointer', transition: 'all 0.3s ease', marginBottom: '0.5rem', border: selectedAdminConv?.id === conv.id ? '1px solid #e11d4810' : '1px solid transparent' }}>
+                <div style={{ width: 54, height: 54, borderRadius: '1.25rem', background: '#0f172a', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '1.1rem', shrink: 0 }}>{conv.buyer_name?.charAt(0)}</div>
+                <div style={{ flex: 1, textAlign: 'left', minWidth: 0 }}>
+                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                      <span style={{ fontSize: '0.9rem', fontWeight: 900, color: '#0f172a' }}>{conv.buyer_name}</span>
+                      {conv.unread_count > 0 && <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#e11d48', color: '#fff', fontSize: '0.6rem', fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{conv.unread_count}</div>}
+                   </div>
+                   <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#94a3b8', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{conv.last_message || 'Start a conversation...'}</p>
                 </div>
-                <div className="flex-grow text-left min-w-0">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className={`text-sm tracking-tight truncate pr-2 ${conv.unread_count > 0 ? 'font-black text-[#0d1117]' : 'font-bold text-[#64748b]'}`}>
-                      {conv.buyer_name || `Customer #${conv.buyer_id}`}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      {conv.unread_count > 0 && (
-                        <div className="w-5 h-5 bg-indigo-600 text-[#0d1117] text-[9px] font-black rounded-full flex items-center justify-center shadow-lg shadow-indigo-600/20 animate-pulse">
-                          {conv.unread_count}
-                        </div>
-                      )}
-                      <span className="text-[8px] font-bold opacity-40">
-                        {conv.updated_at && formatDistanceToNow(new Date(conv.updated_at))}
-                      </span>
-                    </div>
-                  </div>
-                  <p className={`text-[10px] truncate ${conv.unread_count > 0 ? 'font-bold text-indigo-600 opacity-100' : 'font-medium opacity-60'}`}>
-                    {conv.last_message || 'New inquiry...'}
-                  </p>
-                </div>
-
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setConfirmModal({
-                      show: true,
-                      title: 'Delete conversation?',
-                      message: 'This will remove the conversation for you. Messages will remain in the database.',
-                      onConfirm: () => {
-                        api.delete(`/chat/conversation/${conv.id}`).then(() => {
-                          if (selectedAdminConv?.id === conv.id) setSelectedAdminConv(null);
-                          api.get('/chat/conversations').then(res => setConversations(res.data || []));
-                        });
-                      }
-                    });
-                  }}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-xl bg-rose-50 text-rose-500 opacity-0 group-hover/conv:opacity-100 transition-all hover:bg-rose-100"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </button>
-            ))}
-          </div>
-
-          {/* Global Search Results */}
-          {search.trim().length > 0 && (
-            <div className="mt-8">
-              <h2 className="px-4 text-[10px] font-black uppercase tracking-[0.2em] text-[#64748b] mb-4 flex items-center gap-2">
-                Global Users {isSearchingUsers && <div className="w-2 h-2 rounded-full bg-indigo-400 animate-ping" />}
-              </h2>
-              {globalUsers.length > 0 ? (
-                globalUsers.map((u) => (
-                  <button
-                    key={u.id}
-                    onClick={() => {
-                      // Start a new conversation by selecting this user
-                      setSelectedAdminConv({
-                        buyer_id: u.id,
-                        buyer_name: u.full_name,
-                        buyer_avatar: u.avatar_url,
-                        id: 0 // Indicates a new conversation that doesn't exist yet in the list
-                      });
-                      setMessages([]); // Clear messages for a new conversation
-                      setSearch(''); // Clear search
-                    }}
-                    className="w-full flex items-center gap-4 p-4 rounded-3xl hover:bg-white transition-all group/user mb-2"
-                  >
-                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-[10px] shadow-sm shrink-0 overflow-hidden"
-                      style={{
-                        backgroundColor: `hsl(${(u.id * 137.5) % 360}, 70%, 95%)`,
-                        color: `hsl(${(u.id * 137.5) % 360}, 70%, 35%)`
-                      }}>
-                      {u.avatar_url ? (
-                        <img src={u.avatar_url.startsWith('http') ? u.avatar_url : `${import.meta.env.VITE_ASSETS_URL}/${u.avatar_url}`} className="w-full h-full object-cover" alt="" />
-                      ) : u.full_name.substring(0, 1).toUpperCase()}
-                    </div>
-                    <div className="text-left min-w-0">
-                      <p className="text-sm font-bold text-[#0d1117] truncate tracking-tight">{u.full_name}</p>
-                      <p className="text-[9px] font-bold text-indigo-600 uppercase tracking-widest mt-0.5">{u.role}</p>
-                    </div>
-                  </button>
-                ))
-              ) : !isSearchingUsers && (
-                <div className="px-4 py-4 text-center">
-                  <p className="text-[10px] font-bold text-[#64748b]">No matching users found</p>
-                </div>
-              )}
-            </div>
-          )}
+             </button>
+           ))}
         </div>
       </div>
 
-
-      {/* Main Chat Area */}
-      <div className={`
-        ${selectedAdminConv ? 'flex' : 'hidden md:flex'} 
-        flex-grow flex flex-col bg-white relative
-      `}>
+      {/* Chat Area */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#f8f9fc' }}>
         {selectedAdminConv ? (
           <>
-            {/* Header */}
-            <div className="p-4 md:p-6 bg-white border-b border-[#eaeef2] flex items-center justify-between">
-              <div className="flex items-center gap-3 md:gap-4">
-                {/* Back button for mobile */}
-                <button
-                  onClick={() => setSelectedAdminConv(null)}
-                  className="md:hidden p-2 -ml-2 rounded-xl text-[#64748b] hover:bg-white"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-                <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center font-bold text-xs md:text-sm shadow-sm overflow-hidden shrink-0"
-                  style={{
-                    backgroundColor: `hsl(${((selectedAdminConv?.buyer_id || 0) * 137.5) % 360}, 70%, 45%)`,
-                    color: '#ffffff'
-                  }}>
-                  {selectedAdminConv?.buyer_avatar ? (
-                    <img
-                      src={selectedAdminConv.buyer_avatar.startsWith('http') ? selectedAdminConv.buyer_avatar : `${import.meta.env.VITE_ASSETS_URL}/${selectedAdminConv.buyer_avatar}`}
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    (selectedAdminConv?.buyer_name || selectedAdminConv?.buyer_id?.toString() || 'U').substring(0, 1).toUpperCase()
-                  )}
-                </div>
-                <div>
-                  <h3 className="font-bold text-[#0d1117] text-sm tracking-tight">
-                    {selectedAdminConv.buyer_name || `Customer #${selectedAdminConv.buyer_id}`}
-                  </h3>
-                  <div className="flex items-center gap-1.5">
-                    <div className={`w-1.5 h-1.5 rounded-full ${isPartnerOnline ? 'bg-emerald-500' : 'bg-slate-300'}`} />
-                    <span className="text-[9px] font-bold text-[#64748b] ">
-                      {isPartnerOnline ? 'Online' : 'Offline'}
-                    </span>
+            <div style={{ padding: '1.5rem 2.5rem', background: '#fff', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <div style={{ width: 44, height: 44, borderRadius: '1rem', background: '#0f172a', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900 }}>{selectedAdminConv.buyer_name?.charAt(0)}</div>
+                  <div>
+                     <h4 style={{ fontSize: '1rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>{selectedAdminConv.buyer_name}</h4>
+                     <p style={{ fontSize: '0.65rem', fontWeight: 800, color: '#10b981', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>Active Session</p>
                   </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <AnimatePresence>
-                  {showMsgSearch && (
-                    <motion.div
-                      initial={{ width: 0, opacity: 0 }}
-                      animate={{ width: 200, opacity: 1 }}
-                      exit={{ width: 0, opacity: 0 }}
-                      className="relative overflow-hidden"
-                    >
-                      <input
-                        type="text"
-                        placeholder="Search messages..."
-                        className="w-full bg-white border border-[#eaeef2] rounded-xl py-2 pl-4 pr-4 text-[10px] font-bold focus:outline-none focus:ring-2 focus:ring-indigo-600/10 transition-all"
-                        value={msgSearch}
-                        onChange={(e) => setMsgSearch(e.target.value)}
-                        autoFocus
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                <button
-                  onClick={() => {
-                    setShowMsgSearch(!showMsgSearch);
-                    if (showMsgSearch) setMsgSearch('');
-                  }}
-                  className={`p-3 rounded-2xl transition-all shadow-sm ${showMsgSearch ? 'bg-indigo-600 text-[#0d1117]' : 'bg-white text-[#64748b] hover:bg-slate-100'}`}
-                  title="Search Messages"
-                >
-                  <Search className="w-4 h-4" />
-                </button>
-
-                <button
-                  onClick={() => {
-                    setIsSelectionMode(!isSelectionMode);
-                    if (isSelectionMode) setSelectedMsgIDs([]);
-                  }}
-                  className={`p-3 rounded-2xl transition-all shadow-sm ${isSelectionMode ? 'bg-indigo-600 text-[#0d1117]' : 'bg-white text-[#64748b] hover:bg-slate-100'}`}
-                  title="Select Messages"
-                >
-                  <CheckCheck className="w-4 h-4" />
-                </button>
-
-                <button
-                  onClick={() => {
-                    setConfirmModal({
-                      show: true,
-                      title: 'Delete Entire Conversation?',
-                      message: 'This will permanently remove all messages for both you and the buyer. This action cannot be reversed.',
-                      onConfirm: () => {
-                        api.delete(`/chat/conversation/${selectedAdminConv.id}`).then(() => {
-                          setSelectedAdminConv(null);
-                          setSearchParams({}, { replace: true });
-                          api.get('/chat/conversations').then(res => setConversations(res.data || []));
-                        });
-                      }
-                    });
-                  }}
-                  className="p-3 rounded-2xl bg-rose-50 text-rose-600 hover:bg-rose-100 transition-all shadow-sm"
-                  title="Delete Conversation"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
+               </div>
+               <div style={{ display: 'flex', gap: '0.75rem' }}>
+                  <button style={{ width: 44, height: 44, borderRadius: '1rem', border: '1px solid #f1f5f9', background: '#fff', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><Search style={{ width: 18, height: 18 }} /></button>
+                  <button style={{ width: 44, height: 44, borderRadius: '1rem', border: '1px solid #f1f5f9', background: '#fff', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><MoreVertical style={{ width: 18, height: 18 }} /></button>
+               </div>
             </div>
 
-            {/* Messages */}
-            <div
-              ref={scrollRef}
-              onScroll={handleScroll}
-              className="flex-grow overflow-y-auto p-4 md:p-10 custom-scrollbar relative"
-            >
-              <div className="min-h-full flex flex-col justify-end space-y-6">
-                {messages
-                  .filter(m => (m.message_text || '').toLowerCase().includes(msgSearch.toLowerCase()))
-                  .map((msg, i, filtered) => {
-                    const isMe = msg.sender_id === user.id;
-                    const prevMsgDate = i > 0 ? new Date(filtered[i - 1].created_at || new Date()) : null;
-                    const showDateSeparator = !prevMsgDate || new Date(msg.created_at).toDateString() !== prevMsgDate.toDateString();
-
-                    return (
-                      <React.Fragment key={msg.id || i}>
-                        {showDateSeparator && (
-                          <div className="flex justify-center my-8">
-                            <div className="px-5 py-2 rounded-2xl bg-white shadow-sm border border-[#eaeef2] text-[10px] font-black text-[#64748b] uppercase tracking-wider">
-                              {new Date(msg.created_at).toLocaleDateString(undefined, {
-                                weekday: 'long',
-                                month: 'short',
-                                day: 'numeric'
-                              })}
-                            </div>
-                          </div>
-                        )}
-
-                        {firstUnreadMsgId === msg.id && (
-                          <div className="flex items-center gap-4 py-8 px-10">
-                            <div className="h-px flex-grow bg-indigo-100"></div>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-indigo-500 bg-indigo-50/50 px-4 py-1.5 rounded-full border border-indigo-100/50 shadow-sm">
-                              Unread Messages
-                            </span>
-                            <div className="h-px flex-grow bg-indigo-100"></div>
-                          </div>
-                        )}
-                        <ChatMessage
-                          msg={msg}
-                          isMe={isMe}
-                          onReply={setReplyingTo}
-                          isAdminView={true}
-                          showName={!isMe && String(msg.sender_id) !== String(selectedAdminConv?.buyer_id)}
-                          setConfirmModal={setConfirmModal}
-                          isSelectionMode={isSelectionMode}
-                          isSelected={selectedMsgIDs.includes(msg.id)}
-                          onSelect={toggleMessageSelection}
-                        />
-                      </React.Fragment>
-                    );
-                  })}
-                {msgSearch && messages.filter(m => (m.message_text || '').toLowerCase().includes(msgSearch.toLowerCase())).length === 0 && (
-                  <div className="py-20 text-center">
-                    <p className="text-[10px] font-bold text-[#64748b]">No matching messages found</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Bulk Action Bar */}
-              <AnimatePresence>
-                {isSelectionMode && (
-                  <motion.div
-                    initial={{ y: 50, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: 50, opacity: 0 }}
-                    className="fixed bottom-32 left-1/2 -translate-x-1/2 z-[200] bg-[#0d1117] text-[#0d1117] px-8 py-4 rounded-[2rem] shadow-2xl flex items-center gap-8 border border-[#eaeef2] backdrop-blur-xl"
-                  >
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-bold opacity-50 uppercase tracking-widest">Selected</span>
-                      <span className="text-xl font-black">{selectedMsgIDs.length} Messages</span>
-                    </div>
-                    <div className="h-8 w-px bg-white" />
-                    <div className="flex gap-4">
-                      <button
-                        onClick={handleBulkDelete}
-                        disabled={selectedMsgIDs.length === 0}
-                        className="px-8 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 transition-all text-xs font-bold flex items-center gap-2 disabled:opacity-50"
-                      >
-                        <Trash2 className="w-4 h-4" /> Delete Selected
-                      </button>
-                      <button
-                        onClick={() => { setIsSelectionMode(false); setSelectedMsgIDs([]); }}
-                        className="p-2 hover:bg-white rounded-xl transition-all"
-                      >
-                        <X className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+            <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '2.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+               {messages.map((msg, i) => {
+                 const isMe = msg.sender_id === user.id;
+                 return (
+                   <div key={i} style={{ alignSelf: isMe ? 'flex-end' : 'flex-start', maxWidth: '70%' }}>
+                      <div style={{ background: isMe ? '#e11d48' : '#fff', color: isMe ? '#fff' : '#0f172a', padding: '1.25rem 1.75rem', borderRadius: isMe ? '2rem 2rem 0.5rem 2rem' : '2rem 2rem 2rem 0.5rem', boxShadow: '0 4px 15px rgba(0,0,0,0.02)', border: isMe ? 'none' : '1px solid #f1f5f9' }}>
+                         <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, lineHeight: 1.5 }}>{msg.message_text}</p>
+                      </div>
+                      <p style={{ fontSize: '0.65rem', fontWeight: 700, color: '#94a3b8', marginTop: '0.5rem', textAlign: isMe ? 'right' : 'left' }}>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                   </div>
+                 );
+               })}
+               {isTyping && <div style={{ alignSelf: 'flex-start', background: '#fff', padding: '1rem 1.5rem', borderRadius: '1.5rem', border: '1px solid #f1f5f9' }}><div className="typing-loader" /></div>}
             </div>
 
-            {/* Scroll to Bottom Button */}
-            <AnimatePresence>
-              {showScrollBottom && (
-                <motion.button
-                  initial={{ opacity: 0, scale: 0.5, y: 20 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.5, y: 20 }}
-                  onClick={scrollToBottom}
-                  className="absolute bottom-32 right-12 w-14 h-14 bg-white text-[#0d1117] rounded-full shadow-2xl border border-[#eaeef2] flex items-center justify-center hover:bg-white transition-all z-[100] group"
-                >
-                  <div className="absolute inset-0 bg-indigo-500/10 rounded-full animate-ping" />
-                  <ArrowDown className="w-6 h-6 group-hover:translate-y-0.5 transition-transform relative z-10" />
-                </motion.button>
-              )}
-            </AnimatePresence>
-
-            {/* Typing & Editing Indicator */}
-            <div className="px-8 flex flex-col gap-1">
-              <AnimatePresence>
-                {editingMessage && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 5 }}
-                    className="py-2 px-4 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-between mb-2"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold text-indigo-600 ">Editing Message:</span>
-                      <span className="text-[10px] font-bold text-[#64748b] truncate max-w-[200px]">"{editingMessage.message_text}"</span>
-                    </div>
-                    <button
-                      onClick={() => { setEditingMessage(null); setInput(''); }}
-                      className="p-1 hover:bg-indigo-100 rounded-lg transition-all text-[#6366f1]"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <AnimatePresence>
-                {isTyping && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 5 }}
-                    className="py-2 flex items-center gap-2"
-                  >
-                    <div className="flex gap-1">
-                      <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                      <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                      <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" />
-                    </div>
-                    <span className="text-[10px] font-bold text-[#64748b] ">Buyer is typing...</span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Input */}
-            <div className="p-4 md:p-8 bg-white border-t border-[#eaeef2]">
-              <ChatReplyPreview
-                replyingTo={replyingTo}
-                onClear={() => setReplyingTo(null)}
-                isAdminView={true}
-              />
-              <form onSubmit={handleSend} className="relative flex items-center">
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={input}
-                  onChange={(e) => {
-                    setInput(e.target.value);
-                    sendTyping(e.target.value.length > 0);
-                  }}
-                  onBlur={() => sendTyping(false)}
-                  placeholder="Type your reply..."
-                  className="w-full bg-white border border-[#eaeef2] rounded-[1.5rem] py-5 pl-8 pr-20 text-xs font-bold focus:outline-none focus:ring-4 focus:ring-slate-900/5 focus:bg-white focus:border-[#eaeef2] transition-all"
-                />
-                <button
-                  type="submit"
-                  disabled={!input.trim()}
-                  className="absolute right-3 w-12 h-12 bg-indigo-600 text-white rounded-2xl flex items-center justify-center hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20 disabled:opacity-20"
-                >
-                  <Send className="w-5 h-5" />
-                </button>
-              </form>
+            <div style={{ padding: '2rem 2.5rem', background: '#fff', borderTop: '1px solid #f1f5f9' }}>
+               <form onSubmit={handleSend} style={{ display: 'flex', gap: '1rem', position: 'relative' }}>
+                  <input type="text" value={input} onChange={(e) => { setInput(e.target.value); sendTyping(e.target.value.length > 0); }} placeholder="Write a message to customer..." style={{ flex: 1, background: '#f8f9fc', border: '1px solid #f1f5f9', padding: '1.25rem 1.5rem', borderRadius: '1.5rem', fontSize: '0.9rem', fontWeight: 700, outline: 'none' }} />
+                  <button type="submit" disabled={!input.trim()} style={{ width: 56, height: 56, borderRadius: '1.5rem', background: '#e11d48', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 10px 20px rgba(225, 29, 72, 0.2)', transition: 'all 0.3s ease' }} onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}><Send style={{ width: 20, height: 20 }} /></button>
+               </form>
             </div>
           </>
         ) : (
-          <div className="h-full flex flex-col items-center justify-center text-center p-20">
-            <div className="w-24 h-24 bg-white rounded-[2.5rem] shadow-xl flex items-center justify-center mb-8">
-              <MessageSquare className="w-10 h-10 text-[#374151]" />
-            </div>
-            <h3 className="text-xl font-bold text-[#0d1117] mb-2">Select a Conversation</h3>
-            <p className="text-[#64748b] text-xs font-bold  leading-loose max-w-[300px]">
-              Click on a conversation in the sidebar to start chatting with buyers.
-            </p>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1.5rem' }}>
+             <div style={{ width: 80, height: 80, background: '#fff', borderRadius: '2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#cbd5e1', boxShadow: '0 10px 30px rgba(0,0,0,0.02)' }}><MessageSquare style={{ width: 32, height: 32 }} /></div>
+             <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>Start Support Session</h3>
+             <p style={{ fontSize: '0.85rem', fontWeight: 600, color: '#94a3b8', margin: 0 }}>Select a customer from the sidebar to begin</p>
           </div>
         )}
       </div>
 
-      <ConfirmModal
-        isOpen={confirmModal.show}
-        onClose={() => setConfirmModal({ ...confirmModal, show: false })}
-        onConfirm={() => {
-          confirmModal.onConfirm();
-          setConfirmModal({ ...confirmModal, show: false });
-        }}
-        title={confirmModal.title}
-        message={confirmModal.message}
-      />
+      <style>{`
+        .typing-loader { width: 40px; height: 10px; display: flex; gap: 4px; justify-content: center; }
+        .typing-loader::before, .typing-loader::after, .typing-loader { content: ""; border-radius: 50%; background: #e11d48; width: 6px; height: 6px; animation: bounce 0.6s infinite alternate; }
+        .typing-loader::before { animation-delay: 0.2s; }
+        .typing-loader::after { animation-delay: 0.4s; }
+        @keyframes bounce { to { transform: translateY(-5px); opacity: 0.5; } }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.5); opacity: 0.5; } 100% { transform: scale(1); opacity: 1; } }
+      `}</style>
     </div>
   );
 };

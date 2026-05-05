@@ -33,6 +33,7 @@ const ProductDetails = () => {
   const addItem = useCartStore((state) => state.addItem);
   const { toggleWishlist, isInWishlist } = useWishlistStore();
   const { user } = useAuthStore();
+  const isAdmin = ['admin', 'moderator'].includes(user?.role?.toLowerCase());
 
   useEffect(() => {
     fetchProduct();
@@ -187,48 +188,50 @@ const ProductDetails = () => {
             </div>
 
             {/* Action Buttons */}
-            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-              <button 
-                onClick={handleAddToCart}
-                disabled={outOfStock || addingToCart}
-                style={{ 
-                  flex: 1, height: 36, border: 'none', background: C.t900, color: '#fff', 
-                  borderRadius: '0.65rem', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer',
-                  transition: 'all 0.2s', opacity: outOfStock ? 0.5 : 1, whiteSpace: 'nowrap'
-                }}
-                onMouseEnter={e => { if(!outOfStock) e.currentTarget.style.background = '#000'; }}
-                onMouseLeave={e => e.currentTarget.style.background = C.t900}
-              >
-                {addingToCart ? '...' : 'Add to Cart'}
-              </button>
-              
-              <button 
-                onClick={handleBuyNow}
-                disabled={outOfStock || buyingNow}
-                className="btn-lime"
-                style={{ 
-                  flex: 1.2, height: 36, padding: '0 0.75rem', borderRadius: '0.65rem', fontSize: '0.75rem',
-                  display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.4rem',
-                  opacity: outOfStock ? 0.5 : 1, whiteSpace: 'nowrap'
-                }}
-              >
-                {buyingNow ? '...' : 'Checkout'}
-                <div className="icon-circle" style={{ width: '1.15rem', height: '1.15rem' }}><ChevronRight style={{ width: 11 }} /></div>
-              </button>
+            {!isAdmin && (
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <button 
+                  onClick={handleAddToCart}
+                  disabled={outOfStock || addingToCart}
+                  style={{ 
+                    flex: 1, height: 36, border: 'none', background: C.t900, color: '#fff', 
+                    borderRadius: '0.65rem', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer',
+                    transition: 'all 0.2s', opacity: outOfStock ? 0.5 : 1, whiteSpace: 'nowrap'
+                  }}
+                  onMouseEnter={e => { if(!outOfStock) e.currentTarget.style.background = '#000'; }}
+                  onMouseLeave={e => e.currentTarget.style.background = C.t900}
+                >
+                  {addingToCart ? '...' : 'Add to Cart'}
+                </button>
+                
+                <button 
+                  onClick={handleBuyNow}
+                  disabled={outOfStock || buyingNow}
+                  className="btn-lime"
+                  style={{ 
+                    flex: 1.2, height: 36, padding: '0 0.75rem', borderRadius: '0.65rem', fontSize: '0.75rem',
+                    display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.4rem',
+                    opacity: outOfStock ? 0.5 : 1, whiteSpace: 'nowrap'
+                  }}
+                >
+                  {buyingNow ? '...' : 'Checkout'}
+                  <div className="icon-circle" style={{ width: '1.15rem', height: '1.15rem' }}><ChevronRight style={{ width: 11 }} /></div>
+                </button>
 
-              <button 
-                onClick={() => toggleWishlist(product)}
-                style={{ 
-                  width: 36, height: 36, border: `1px solid ${C.bSoft}`, background: '#fff',
-                  borderRadius: '0.65rem', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-                  transition: 'all 0.2s', flexShrink: 0
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = C.bgMuted}
-                onMouseLeave={e => e.currentTarget.style.background = '#fff'}
-              >
-                <Heart style={{ width: 14, height: 14, color: isInWishlist(product.id) ? C.rose : C.t300, fill: isInWishlist(product.id) ? C.rose : 'none' }} />
-              </button>
-            </div>
+                <button 
+                  onClick={() => toggleWishlist(product)}
+                  style={{ 
+                    width: 36, height: 36, border: `1px solid ${C.bSoft}`, background: '#fff',
+                    borderRadius: '0.65rem', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                    transition: 'all 0.2s', flexShrink: 0
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = C.bgMuted}
+                  onMouseLeave={e => e.currentTarget.style.background = '#fff'}
+                >
+                  <Heart style={{ width: 14, height: 14, color: isInWishlist(product.id) ? C.rose : C.t300, fill: isInWishlist(product.id) ? C.rose : 'none' }} />
+                </button>
+              </div>
+            )}
 
             <div style={{ display: 'flex', gap: '1.25rem', marginTop: '0.15rem' }}>
                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: C.t500, fontSize: '0.7rem', fontWeight: 700 }}>

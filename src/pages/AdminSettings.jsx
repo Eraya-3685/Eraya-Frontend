@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Settings, Save, Truck, DollarSign, Percent, ChevronRight, Mail, Phone, MapPin } from 'lucide-react';
+import { Settings, Save, Truck, DollarSign, Percent, ChevronRight, Mail, Phone, MapPin, RefreshCcw } from 'lucide-react';
 import useSettingsStore from '../store/useSettingsStore';
 import toast from 'react-hot-toast';
 import useDocumentTitle from '../hooks/useDocumentTitle';
@@ -18,9 +18,7 @@ const AdminSettings = () => {
   });
   const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
-    fetchSettings();
-  }, [fetchSettings]);
+  useEffect(() => { fetchSettings(); }, [fetchSettings]);
 
   useEffect(() => {
     if (settings && typeof settings === 'object') {
@@ -40,14 +38,10 @@ const AdminSettings = () => {
     if (e) e.preventDefault();
     setIsSaving(true);
     try {
-      const success = await updateSettings(form);
-      if (success) {
-        toast.success('Store settings updated successfully');
-      } else {
-        toast.error('Failed to update settings');
-      }
-    } catch (err) {
-      toast.error('An error occurred');
+      await updateSettings(form);
+      toast.success('Settings Optimized');
+    } catch {
+      toast.error('Update Failed');
     } finally {
       setIsSaving(false);
     }
@@ -55,167 +49,68 @@ const AdminSettings = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="flex flex-col items-center gap-4">
-           <div className="w-16 h-16 border-4 border-indigo-600/20 border-t-indigo-600 rounded-full animate-spin" />
-           <p className="text-[10px] font-black text-[#64748b] uppercase tracking-widest">Loading Configuration</p>
-        </div>
+      <div style={{ height: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1.5rem' }}>
+         <div style={{ width: 50, height: 50, border: '4px solid #f1f5f9', borderTopColor: '#e11d48', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+         <p style={{ fontSize: '0.75rem', fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.3em' }}>Loading Configuration</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen pt-32 pb-20 px-6">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 bg-indigo-600/10 rounded-2xl flex items-center justify-center">
-                <Settings className="w-5 h-5 text-indigo-600" />
-              </div>
-              <h1 className="text-3xl font-[1000] text-[#0d1117] tracking-tight">Store Settings</h1>
-            </div>
-            <p className="text-sm font-bold text-[#64748b]">Manage delivery fees, tax rates, and official store contact information</p>
-          </div>
-          <button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="flex items-center gap-3 px-8 py-4 bg-[#0d1117] text-[#0d1117] rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl hover:bg-indigo-600 transition-all active:scale-95 disabled:opacity-50"
-          >
-            {isSaving ? (
-              <div className="w-4 h-4 border-2 border-[#eaeef2] border-t-white rounded-full animate-spin" />
-            ) : (
-              <Save className="w-4 h-4" />
-            )}
-            Save Changes
-          </button>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem', paddingBottom: '5rem' }}>
+      
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <div>
+           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+              <div style={{ width: 32, height: 32, background: '#e11d4810', borderRadius: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e11d48' }}><Settings style={{ width: 18, height: 18 }} /></div>
+              <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#e11d48', textTransform: 'uppercase', letterSpacing: '0.15em' }}>System Core</span>
+           </div>
+           <h1 style={{ fontSize: '2.5rem', fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.03em' }}>Store Settings</h1>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {/* Shipping Threshold */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white p-8 rounded-[2.5rem] border border-[#eaeef2] shadow-sm group hover:border-indigo-600/30 transition-all"
-          >
-            <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110">
-              <Truck className="w-7 h-7 text-amber-500" />
-            </div>
-            <label className="block text-[10px] font-black text-[#64748b] uppercase tracking-[0.2em] mb-3 px-1">Free Shipping Threshold</label>
-            <div className="relative">
-               <div className="absolute left-6 top-1/2 -translate-y-1/2 text-[#64748b] font-black">৳</div>
-               <input
-                 type="number"
-                 value={form.free_shipping_threshold || ''}
-                 onChange={(e) => setForm({ ...form, free_shipping_threshold: e.target.value === '' ? '' : parseFloat(e.target.value) })}
-                 className="w-full bg-white border border-[#eaeef2] rounded-2xl py-4 pl-12 pr-6 text-sm font-black text-[#0d1117] outline-none focus:ring-4 focus:ring-indigo-600/5 focus:border-indigo-600 transition-all"
-               />
-            </div>
-          </motion.div>
-
-          {/* Standard Delivery Fee */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="bg-white p-8 rounded-[2.5rem] border border-[#eaeef2] shadow-sm group hover:border-indigo-600/30 transition-all"
-          >
-            <div className="w-14 h-14 bg-indigo-600/10 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110">
-              <DollarSign className="w-7 h-7 text-indigo-600" />
-            </div>
-            <label className="block text-[10px] font-black text-[#64748b] uppercase tracking-[0.2em] mb-3 px-1">Standard Delivery Fee</label>
-            <div className="relative">
-               <div className="absolute left-6 top-1/2 -translate-y-1/2 text-[#64748b] font-black">৳</div>
-               <input
-                 type="number"
-                 value={form.standard_delivery_fee || ''}
-                 onChange={(e) => setForm({ ...form, standard_delivery_fee: e.target.value === '' ? '' : parseFloat(e.target.value) })}
-                 className="w-full bg-white border border-[#eaeef2] rounded-2xl py-4 pl-12 pr-6 text-sm font-black text-[#0d1117] outline-none focus:ring-4 focus:ring-indigo-600/5 focus:border-indigo-600 transition-all"
-               />
-            </div>
-          </motion.div>
-
-          {/* Tax Percentage */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-white p-8 rounded-[2.5rem] border border-[#eaeef2] shadow-sm group hover:border-indigo-600/30 transition-all"
-          >
-            <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110">
-              <Percent className="w-7 h-7 text-emerald-500" />
-            </div>
-            <label className="block text-[10px] font-black text-[#64748b] uppercase tracking-[0.2em] mb-3 px-1">Estimated Tax (%)</label>
-            <div className="relative">
-               <input
-                 type="number"
-                 value={form.tax_percentage || ''}
-                 onChange={(e) => setForm({ ...form, tax_percentage: e.target.value === '' ? '' : parseFloat(e.target.value) })}
-                 className="w-full bg-white border border-[#eaeef2] rounded-2xl py-4 px-6 text-sm font-black text-[#0d1117] outline-none focus:ring-4 focus:ring-indigo-600/5 focus:border-indigo-600 transition-all"
-               />
-               <div className="absolute right-6 top-1/2 -translate-y-1/2 text-[#64748b] font-black">%</div>
-            </div>
-          </motion.div>
-
-          {/* Store Email */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="bg-white p-8 rounded-[2.5rem] border border-[#eaeef2] shadow-sm group hover:border-indigo-600/30 transition-all"
-          >
-            <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110">
-              <Mail className="w-7 h-7 text-blue-500" />
-            </div>
-            <label className="block text-[10px] font-black text-[#64748b] uppercase tracking-[0.2em] mb-3 px-1">Store Official Email</label>
-            <input
-              type="email"
-              value={form.store_email}
-              onChange={(e) => setForm({ ...form, store_email: e.target.value })}
-              className="w-full bg-white border border-[#eaeef2] rounded-2xl py-4 px-6 text-sm font-black text-[#0d1117] outline-none focus:ring-4 focus:ring-indigo-600/5 focus:border-indigo-600 transition-all"
-            />
-          </motion.div>
-
-          {/* Store Phone */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="bg-white p-8 rounded-[2.5rem] border border-[#eaeef2] shadow-sm group hover:border-indigo-600/30 transition-all"
-          >
-            <div className="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110">
-              <Phone className="w-7 h-7 text-rose-500" />
-            </div>
-            <label className="block text-[10px] font-black text-[#64748b] uppercase tracking-[0.2em] mb-3 px-1">Store Contact Phone</label>
-            <input
-              type="text"
-              value={form.store_phone}
-              onChange={(e) => setForm({ ...form, store_phone: e.target.value })}
-              className="w-full bg-white border border-[#eaeef2] rounded-2xl py-4 px-6 text-sm font-black text-[#0d1117] outline-none focus:ring-4 focus:ring-indigo-600/5 focus:border-indigo-600 transition-all"
-            />
-          </motion.div>
-
-          {/* Store Address */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="bg-white p-8 rounded-[2.5rem] border border-[#eaeef2] shadow-sm group hover:border-indigo-600/30 transition-all"
-          >
-            <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110">
-              <MapPin className="w-7 h-7 text-[#64748b]" />
-            </div>
-            <label className="block text-[10px] font-black text-[#64748b] uppercase tracking-[0.2em] mb-3 px-1">Store Physical Address</label>
-            <textarea
-              rows={2}
-              value={form.store_address}
-              onChange={(e) => setForm({ ...form, store_address: e.target.value })}
-              className="w-full bg-white border border-[#eaeef2] rounded-2xl py-4 px-6 text-sm font-black text-[#0d1117] outline-none focus:ring-4 focus:ring-indigo-600/5 focus:border-indigo-600 transition-all resize-none"
-            />
-          </motion.div>
-        </div>
+        <button onClick={handleSave} style={{ background: '#e11d48', color: '#fff', border: 'none', padding: '1.25rem 2.5rem', borderRadius: '1.5rem', fontSize: '0.85rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', boxShadow: '0 15px 30px rgba(225, 29, 72, 0.25)', transition: 'all 0.3s ease' }} disabled={isSaving}>
+           {isSaving ? <RefreshCcw style={{ width: 18, height: 18, animation: 'spin 1s linear infinite' }} /> : <Save style={{ width: 18, height: 18 }} />}
+           {isSaving ? 'Processing...' : 'Deploy Changes'}
+        </button>
       </div>
+
+      {/* Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '2rem' }}>
+         {[
+           { label: 'Free Shipping Threshold', value: form.free_shipping_threshold, key: 'free_shipping_threshold', icon: Truck, prefix: '৳', color: '#f59e0b' },
+           { label: 'Standard Delivery Fee', value: form.standard_delivery_fee, key: 'standard_delivery_fee', icon: DollarSign, prefix: '৳', color: '#e11d48' },
+           { label: 'Estimated Tax Rate', value: form.tax_percentage, key: 'tax_percentage', icon: Percent, suffix: '%', color: '#10b981' },
+           { label: 'Official Store Email', value: form.store_email, key: 'store_email', icon: Mail, type: 'email', color: '#6366f1' },
+           { label: 'Customer Support Line', value: form.store_phone, key: 'store_phone', icon: Phone, color: '#f43f5e' },
+           { label: 'Physical Store Address', value: form.store_address, key: 'store_address', icon: MapPin, color: '#64748b', isArea: true },
+         ].map((item, i) => (
+           <motion.div 
+             key={i}
+             initial={{ opacity: 0, y: 20 }}
+             animate={{ opacity: 1, y: 0 }}
+             transition={{ delay: i * 0.05 }}
+             style={{ background: '#fff', borderRadius: '3rem', border: '1px solid #f1f5f9', padding: '2.5rem', boxShadow: '0 10px 30px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}
+           >
+              <div style={{ width: 54, height: 54, background: `${item.color}10`, borderRadius: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center', color: item.color }}><item.icon style={{ width: 24, height: 24 }} /></div>
+              <div>
+                 <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.75rem', display: 'block', marginLeft: '0.5rem' }}>{item.label}</label>
+                 <div style={{ position: 'relative' }}>
+                    {item.prefix && <span style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', fontSize: '1rem', fontWeight: 900, color: '#0f172a' }}>{item.prefix}</span>}
+                    {item.isArea ? (
+                      <textarea rows={2} value={item.value} onChange={(e) => setForm({...form, [item.key]: e.target.value})} style={{ width: '100%', background: '#f8f9fc', border: '1px solid #f1f5f9', padding: '1.25rem', borderRadius: '1.5rem', fontSize: '0.9rem', fontWeight: 700, outline: 'none', resize: 'none' }} />
+                    ) : (
+                      <input type={item.type || 'text'} value={item.value} onChange={(e) => setForm({...form, [item.key]: e.target.value})} style={{ width: '100%', background: '#f8f9fc', border: '1px solid #f1f5f9', padding: `1.25rem 1.25rem 1.25rem ${item.prefix ? '2.5rem' : '1.25rem'}`, borderRadius: '1.5rem', fontSize: '0.9rem', fontWeight: 700, outline: 'none' }} />
+                    )}
+                    {item.suffix && <span style={{ position: 'absolute', right: '1.25rem', top: '50%', transform: 'translateY(-50%)', fontSize: '1rem', fontWeight: 900, color: '#0f172a' }}>{item.suffix}</span>}
+                 </div>
+              </div>
+           </motion.div>
+         ))}
+      </div>
+
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   );
 };

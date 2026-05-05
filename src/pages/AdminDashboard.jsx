@@ -2,224 +2,282 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Package, ShoppingCart, TrendingUp, DollarSign,
-  ArrowRight, Activity, AlertCircle, RefreshCcw
+  ArrowRight, Activity, AlertCircle, RefreshCcw,
+  Users, Star, MessageSquare, MoreHorizontal,
+  ChevronUp, ChevronDown, CheckCircle2, Clock, Zap
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { 
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, 
+  Tooltip, ResponsiveContainer, LineChart, Line 
+} from 'recharts';
 import api from '../api/axios';
 import useAuthStore from '../store/useAuthStore';
 
+// Mock data for the charts (In a real app, this would come from the API)
+const revenueData = [
+  { name: 'Jan', value: 4000 }, { name: 'Feb', value: 3000 }, { name: 'Mar', value: 5000 },
+  { name: 'Apr', value: 4500 }, { name: 'May', value: 6000 }, { name: 'Jun', value: 5500 },
+  { name: 'Jul', value: 7000 }, { name: 'Aug', value: 6500 }, { name: 'Sep', value: 8000 },
+  { name: 'Oct', value: 7500 }, { name: 'Nov', value: 9000 }, { name: 'Dec', value: 10000 },
+];
+
+const visitorData = [
+  { name: 'W1', this: 400, last: 300 }, { name: 'W2', this: 300, last: 400 },
+  { name: 'W3', this: 500, last: 350 }, { name: 'W4', this: 450, last: 480 },
+];
+
+const sparkData = [
+  { v: 40 }, { v: 30 }, { v: 50 }, { v: 45 }, { v: 60 }, { v: 55 }, { v: 70 }
+];
+
 const AdminDashboard = () => {
   const { user } = useAuthStore();
-  const [orders, setOrders] = useState([]);
-  const [products, setProducts] = useState([]);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const isStaff = ['admin', 'moderator'].includes(user?.role?.toLowerCase());
-
   useEffect(() => {
-    if (user?.role?.toLowerCase() === 'moderator' && !user.permissions?.includes('dashboard')) {
-      const firstAllowed = user.permissions?.find(p => p !== 'dashboard');
-      if (firstAllowed) navigate(`/admin/${firstAllowed === 'dashboard' ? '' : firstAllowed}`);
-      else navigate('/');
-      return;
-    }
     const controller = new AbortController();
-    fetchData(controller.signal);
+    fetchStats(controller.signal);
     return () => controller.abort();
   }, [user]);
 
-  const fetchData = async (signal) => {
+  const fetchStats = async (signal) => {
     try {
-      const requests = [api.get('/products?page=1&limit=100', { signal })];
-      if (isStaff) requests.push(api.get('/admin/orders', { signal }));
-      const results = await Promise.all(requests);
-      setProducts(results[0].data?.data || []);
-      if (isStaff) setOrders(results[1].data || []);
+      const res = await api.get('/admin/orders/stats', { signal });
+      setData(res.data);
     } catch (error) {
       if (error.name === 'CanceledError') return;
-      console.error('Dashboard fetch failed', error);
+      console.error('Dashboard stats fetch failed', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const totalRevenue = orders
-    .filter((o) => o.payment_status === 'Paid')
-    .reduce((sum, o) => sum + o.total_price, 0);
-
-  const stats = [
-    ...(isStaff ? [{ name: 'Total Revenue', value: `৳${totalRevenue.toLocaleString()}`, icon: DollarSign, color: 'text-emerald-400', bg: 'bg-emerald-500/10' }] : []),
-    ...(isStaff ? [{ name: 'Total Orders', value: orders.length, icon: ShoppingCart, color: 'text-indigo-400', bg: 'bg-indigo-500/10' }] : []),
-    { name: 'Inventory Items', value: products.length, icon: Package, color: 'text-purple-400', bg: 'bg-purple-500/10' },
-    { name: 'Store Growth', value: '+12.5%', icon: TrendingUp, color: 'text-amber-400', bg: 'bg-amber-500/10' },
-  ];
-
-  if (loading) {
+  if (loading || !data) {
     return (
-      <div className="flex flex-col items-center justify-center h-[60vh] gap-6">
-        <div className="w-12 h-12 border-4 border-white/[0.05] border-t-indigo-500 rounded-full animate-spin" />
-        <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px]">Syncing Analytics...</p>
+      <div style={{ height: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.5rem' }}>
+        <div style={{ width: 48, height: 48, border: '4px solid #f1f5f9', borderTopColor: '#e11d48', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+        <p style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.2em' }}>Syncing Intelligence...</p>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
 
+  const statsCards = [
+    { name: 'Total Revenue', value: `৳${data.total_revenue?.toLocaleString()}`, trend: '+0.0%', color: '#e11d48', icon: DollarSign },
+    { name: 'Total Order', value: data.total_orders?.toLocaleString(), trend: '+0.0%', color: '#6366f1', icon: ShoppingCart },
+    { name: 'Total Sold', value: data.total_sold?.toLocaleString(), trend: '+0.0%', color: '#f59e0b', icon: TrendingUp },
+    { name: 'Total Products', value: data.total_products?.toLocaleString(), trend: '+0.0%', color: '#10b981', icon: Package },
+  ];
+
   return (
-    <div className="max-w-7xl mx-auto space-y-10">
-      {/* Header Area */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-8 h-8 bg-white flex items-center justify-center rounded-xl">
-              <Activity className="w-4 h-4 text-indigo-400" />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+      
+      {/* ── Top Row: Stats ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem' }}>
+        {statsCards.map((stat) => (
+          <motion.div 
+            key={stat.name}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{ background: '#fff', borderRadius: '2.5rem', padding: '1.75rem', boxShadow: '0 10px 30px rgba(0,0,0,0.02)', border: '1px solid #f1f5f9', position: 'relative', overflow: 'hidden' }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+              <div>
+                <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#94a3b8', margin: '0 0 0.5rem' }}>{stat.name}</p>
+                <h3 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>{stat.value}</h3>
+              </div>
+              <div style={{ width: 44, height: 44, background: `${stat.color}10`, borderRadius: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', color: stat.color }}>
+                <stat.icon style={{ width: 20, height: 20 }} />
+              </div>
             </div>
-            <h1 className="text-2xl font-black text-white tracking-tight">Analytics Engine</h1>
-          </div>
-          <p className="text-slate-400 text-xs font-medium tracking-wide">Real-time performance metrics and store insights.</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#10b981' }}>{stat.trend}</span>
+              <span style={{ fontSize: '0.65rem', fontWeight: 600, color: '#cbd5e1' }}>vs last month</span>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* ── Middle Row: Small Analytics ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr 300px', gap: '1.5rem', alignItems: 'stretch' }}>
+        {/* Growth Widget */}
+        <div style={{ background: '#fff', borderRadius: '2.5rem', padding: '2rem', boxShadow: '0 10px 30px rgba(0,0,0,0.02)', border: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+              <div style={{ width: 32, height: 32, background: '#0f172a', borderRadius: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Activity style={{ width: 16, height: 16, color: '#fff' }} /></div>
+              <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#0f172a' }}>Growth Overview</span>
+           </div>
+           <div style={{ height: 60, marginBottom: '1.5rem' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                 <LineChart data={data.revenue_chart}>
+                    <Line type="monotone" dataKey="value" stroke="#e11d48" strokeWidth={3} dot={false} />
+                 </LineChart>
+              </ResponsiveContainer>
+           </div>
+           <div>
+              <h4 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', margin: '0 0 0.25rem' }}>৳{data.total_revenue?.toLocaleString()}</h4>
+              <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#10b981' }}>+8.4% <span style={{ color: '#94a3b8', fontWeight: 600 }}>Total Growth</span></p>
+           </div>
         </div>
-        <div className="flex gap-3">
-          <button onClick={() => fetchData(new AbortController().signal)} className="btn-ghost py-3 px-6 flex items-center gap-2">
-            <RefreshCcw className="w-3.5 h-3.5" />
-            Refresh
-          </button>
+
+        {/* Order Analytics Status */}
+        <div style={{ background: '#fff', borderRadius: '2.5rem', padding: '2rem', boxShadow: '0 10px 30px rgba(0,0,0,0.02)', border: '1px solid #f1f5f9' }}>
+           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                 <div style={{ width: 32, height: 32, background: '#f8f9fc', borderRadius: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><ShoppingCart style={{ width: 16, height: 16, color: '#94a3b8' }} /></div>
+                 <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#0f172a' }}>Order Analytics</span>
+              </div>
+           </div>
+           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
+              {[
+                { label: 'Pending', key: 'Pending', color: '#f59e0b', icon: Clock },
+                { label: 'Confirmed', key: 'Confirmed', color: '#6366f1', icon: CheckCircle2 },
+                { label: 'Processing', key: 'Processing', color: '#3b82f6', icon: Zap },
+                { label: 'Delivered', key: 'Delivered', color: '#10b981', icon: Package },
+              ].map(status => (
+                <div key={status.label} style={{ background: '#f8f9fc', padding: '0.75rem 1.25rem', borderRadius: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                   <div style={{ width: 24, height: 24, borderRadius: '50%', background: `${status.color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: status.color }}><status.icon style={{ width: 12, height: 12 }} /></div>
+                   <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0f172a' }}>{status.label}</span>
+                   <span style={{ fontSize: '0.75rem', fontWeight: 900, color: status.color, background: '#fff', padding: '0.1rem 0.5rem', borderRadius: '0.5rem' }}>{data.order_status_stats?.[status.key] || 0}</span>
+                </div>
+              ))}
+           </div>
+        </div>
+
+        {/* Server Status Widget */}
+        <div style={{ background: '#fff', borderRadius: '2.5rem', padding: '2rem', boxShadow: '0 10px 30px rgba(0,0,0,0.02)', border: '1px solid #f1f5f9' }}>
+           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#0f172a' }}>Server Status</span>
+              <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8' }}>All Server <ChevronDown style={{ width: 12, height: 12 }} /></span>
+           </div>
+           <div style={{ height: 40, marginBottom: '1rem' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                 <LineChart data={data.revenue_chart.slice(-7)}>
+                    <Line type="monotone" dataKey="value" stroke="#e11d48" strokeWidth={2} dot={false} />
+                 </LineChart>
+              </ResponsiveContainer>
+           </div>
+           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+              <div>
+                 <p style={{ fontSize: '0.65rem', fontWeight: 600, color: '#94a3b8', margin: '0 0 0.2rem' }}>Overall Performance</p>
+                 <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#10b981', margin: 0 }}>Excellent</p>
+              </div>
+              <span style={{ fontSize: '1.5rem', fontWeight: 900, color: '#e11d48' }}>99.9%</span>
+           </div>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <motion.div 
-        variants={{
-          hidden: { opacity: 0 },
-          show: { opacity: 1, transition: { staggerChildren: 0.1 } }
-        }}
-        initial="hidden"
-        animate="show"
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
-      >
-        {stats.map((stat, i) => (
-          <motion.div
-            key={stat.name}
-            variants={{
-              hidden: { opacity: 0, y: 20, scale: 0.95 },
-              show: { opacity: 1, y: 0, scale: 1 }
-            }}
-            whileHover={{ y: -10, transition: { duration: 0.4, ease: "easeOut" } }}
-            className="bg-white p-8 group hover:border-indigo-500/40 transition-all duration-500 relative overflow-hidden"
-          >
-            <div className={`w-14 h-14 rounded-2xl ${stat.bg} ${stat.color} flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500`}>
-              <stat.icon className="w-6 h-6" />
-            </div>
-            <p className="text-[#64748b] mb-1 opacity-60">{stat.name}</p>
-            <h3 className="text-3xl font-black text-white tracking-tighter">{stat.value}</h3>
-          </motion.div>
-        ))}
-      </motion.div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-        {/* Recent Transactions */}
-        {isStaff && (
-          <div className="lg:col-span-8 bg-white overflow-hidden">
-            <div className="p-8 border-b border-white/[0.05] flex justify-between items-center">
-              <div>
-                <h2 className="text-lg font-black text-white tracking-tight">Recent Transactions</h2>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Live order feed</p>
+      {/* ── Bottom Section: Charts & Feed ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '2rem' }}>
+        
+        {/* Main Chart Area */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+           {/* Overview Chart */}
+           <div style={{ background: '#fff', borderRadius: '3rem', padding: '2.5rem', boxShadow: '0 10px 30px rgba(0,0,0,0.02)', border: '1px solid #f1f5f9' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+                 <h4 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>Revenue Overview</h4>
+                 <div style={{ display: 'flex', background: '#f1f5f9', padding: '0.25rem', borderRadius: '1rem' }}>
+                    {['Day', 'Week', 'Month', 'Year'].map(t => (
+                      <button key={t} style={{ padding: '0.5rem 1rem', border: 'none', background: t === 'Month' ? '#e11d48' : 'transparent', color: t === 'Month' ? '#fff' : '#64748b', borderRadius: '0.85rem', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer' }}>{t}</button>
+                    ))}
+                 </div>
               </div>
-              <Link to="/admin/orders" className="btn-ghost py-2.5 px-5 text-[9px]">View All</Link>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead className="bg-white/[0.02] text-slate-500 text-[9px] uppercase tracking-[0.2em] font-black border-b border-white/[0.05]">
-                  <tr>
-                    <th className="px-8 py-5">Reference</th>
-                    <th className="px-6 py-5">Method</th>
-                    <th className="px-6 py-5">Amount</th>
-                    <th className="px-6 py-5">Status</th>
-                    <th className="px-8 py-5 text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/[0.03]">
-                  {orders.slice(0, 5).map((order) => (
-                    <tr key={order.id} className="hover:bg-white/[0.02] transition-colors group">
-                      <td className="px-8 py-6">
-                        <span className="font-black text-white text-xs">#{order.id}</span>
-                      </td>
-                      <td className="px-6 py-6">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{order.payment_method}</span>
-                      </td>
-                      <td className="px-6 py-6 font-black text-white text-sm">৳{order.total_price.toLocaleString()}</td>
-                      <td className="px-6 py-6">
-                        <span className={`badge-indigo ${order.order_status === 'Delivered' ? 'bg-emerald-500/10 text-emerald-400' : ''}`}>
-                          {order.order_status}
-                        </span>
-                      </td>
-                      <td className="px-8 py-6 text-right">
-                        <Link to="/admin/orders" className="w-10 h-10 bg-white inline-flex items-center justify-center hover:bg-indigo-600 hover:text-white transition-all">
-                          <ArrowRight className="w-4 h-4" />
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {orders.length === 0 && (
-                <div className="p-20 text-center">
-                  <AlertCircle className="w-10 h-10 text-white/[0.05] mx-auto mb-4" />
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">No recent data available</p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Growth Analytics Sidebar */}
-        <div className="lg:col-span-4 space-y-8">
-          <div className="bg-white p-8 bg-gradient-to-br from-indigo-600/10 to-purple-600/10 border-indigo-500/20">
-            <div className="w-12 h-12 bg-white flex items-center justify-center mb-6">
-              <TrendingUp className="w-6 h-6 text-indigo-400" />
-            </div>
-            <h3 className="text-xl font-black text-white mb-2 tracking-tight">Growth Insights</h3>
-            <p className="text-slate-400 text-xs leading-relaxed mb-8">Weekly traffic has increased by <span className="text-indigo-400 font-bold">15.4%</span>. Your top category is trending up.</p>
-            
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-slate-500">
-                  <span>Sales Target</span>
-                  <span className="text-indigo-400">75%</span>
-                </div>
-                <div className="h-1.5 bg-white/[0.05] rounded-full overflow-hidden">
-                  <div className="h-full bg-indigo-500 w-[75%] rounded-full shadow-[0_0_10px_#6366f1]" />
-                </div>
+              <div style={{ height: 300 }}>
+                 <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={data.revenue_chart}>
+                       <defs>
+                          <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                             <stop offset="5%" stopColor="#e11d48" stopOpacity={0.2}/>
+                             <stop offset="95%" stopColor="#e11d48" stopOpacity={0}/>
+                          </linearGradient>
+                       </defs>
+                       <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} dy={10} />
+                       <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} />
+                       <Tooltip 
+                          contentStyle={{ background: '#e11d48', border: 'none', borderRadius: '1rem', color: '#fff' }}
+                          itemStyle={{ color: '#fff', fontWeight: 800 }}
+                          cursor={{ stroke: '#e11d48', strokeWidth: 2, strokeDasharray: '5 5' }}
+                       />
+                       <Area type="monotone" dataKey="value" stroke="#e11d48" strokeWidth={4} fillOpacity={1} fill="url(#colorRev)" />
+                    </AreaChart>
+                 </ResponsiveContainer>
               </div>
-              <button className="btn-primary w-full py-4 text-[9px]">Full Intelligence Report</button>
-            </div>
-          </div>
+           </div>
 
-          <div className="bg-white p-8 space-y-6">
-            <h4 className="text-[#64748b]">System Nodes</h4>
-            <div className="space-y-5">
-              {[
-                { label: 'Cloud Gateway', status: 'Optimal', color: 'bg-emerald-500' },
-                { label: 'Neural Shield', status: 'Encrypted', color: 'bg-indigo-500' },
-                { label: 'Data Clusters', status: 'Syncing', color: 'bg-amber-500' },
-              ].map((node) => (
-                <div key={node.label} className="flex items-center justify-between">
-                  <div>
-                    <p className="text-[11px] font-bold text-white tracking-tight">{node.label}</p>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <div className={`w-1.5 h-1.5 rounded-full ${node.color} shadow-sm`} />
-                      <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{node.status}</span>
-                    </div>
-                  </div>
-                  <div className="w-10 h-1.5 bg-white/[0.05] rounded-full overflow-hidden">
-                    <div className={`h-full ${node.color} w-2/3 rounded-full opacity-30`} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+           {/* Visitor Rate Chart */}
+           <div style={{ background: '#fff', borderRadius: '2.5rem', padding: '2rem', boxShadow: '0 10px 30px rgba(0,0,0,0.02)', border: '1px solid #f1f5f9' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                 <h4 style={{ fontSize: '0.9rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>Engagement Rate</h4>
+                 <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8' }}>Weekly <ChevronDown style={{ width: 14, height: 14 }} /></span>
+              </div>
+              <div style={{ height: 120 }}>
+                 <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={data.visitor_chart}>
+                       <Line type="monotone" dataKey="this" stroke="#f59e0b" strokeWidth={3} dot={{ r: 4, fill: '#f59e0b' }} />
+                       <Line type="monotone" dataKey="last" stroke="#e2e8f0" strokeWidth={2} dot={false} />
+                    </LineChart>
+                 </ResponsiveContainer>
+              </div>
+           </div>
+        </div>
+
+        {/* Side Widgets: Messages & Contacts */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+           {/* Messages Widget */}
+           <div style={{ background: '#fff', borderRadius: '2.5rem', padding: '2rem', boxShadow: '0 10px 30px rgba(0,0,0,0.02)', border: '1px solid #f1f5f9' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                 <h4 style={{ fontSize: '0.9rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>Messages</h4>
+                 <Link to="/admin/chat" style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', textDecoration: 'none' }}>View All</Link>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                 {data.recent_messages?.length > 0 ? data.recent_messages.map((msg, i) => (
+                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <div style={{ width: 44, height: 44, borderRadius: '1rem', background: '#f1f5f9', overflow: 'hidden' }}>
+                         <div style={{ width: '100%', height: '100%', background: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.85rem', fontWeight: 800 }}>{msg.name.charAt(0)}</div>
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 800, color: '#0f172a' }}>{msg.name}</p>
+                            <span style={{ fontSize: '0.6rem', fontWeight: 600, color: '#94a3b8' }}>{msg.time}</span>
+                         </div>
+                         <p style={{ margin: '0.1rem 0 0', fontSize: '0.7rem', color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{msg.msg}</p>
+                      </div>
+                      {msg.unread > 0 && <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#e11d48', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.6rem', fontWeight: 900 }}>{msg.unread}</div>}
+                   </div>
+                 )) : (
+                   <p style={{ fontSize: '0.7rem', color: '#94a3b8', textAlign: 'center' }}>No recent messages</p>
+                 )}
+              </div>
+           </div>
+
+           {/* Contacts Widget */}
+           <div style={{ background: '#fff', borderRadius: '2.5rem', padding: '2rem', boxShadow: '0 10px 30px rgba(0,0,0,0.02)', border: '1px solid #f1f5f9' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                 <h4 style={{ fontSize: '0.9rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>Recent Customers</h4>
+                 <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <Link to="/admin/users" style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', textDecoration: 'none' }}>View All</Link>
+                 </div>
+              </div>
+              <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#94a3b8', marginBottom: '1.5rem' }}>You have {data.total_orders * 2} engagement points</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                 {data.recent_contacts?.map(contact => (
+                   <div key={contact.id} title={contact.full_name} style={{ width: 32, height: 32, borderRadius: '0.75rem', background: '#f1f5f9', border: '2px solid #fff', boxShadow: '0 4px 8px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+                      {contact.avatar_url ? <img src={api.defaults.baseURL + '/uploads/' + contact.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', background: '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.6rem', fontWeight: 800 }}>{contact.full_name.charAt(0)}</div>}
+                   </div>
+                 ))}
+                 {data.recent_contacts?.length >= 10 && <div style={{ width: 32, height: 32, borderRadius: '0.75rem', background: '#f8f9fc', border: '2px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8' }}>+...</div>}
+              </div>
+           </div>
         </div>
       </div>
     </div>
   );
 };
+
+const Plus = ({ size }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+);
 
 export default AdminDashboard;
