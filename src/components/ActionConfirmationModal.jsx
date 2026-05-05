@@ -1,6 +1,14 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertTriangle, ShieldCheck, Mail } from 'lucide-react';
+import { ShieldCheck, Mail, AlertCircle, X } from 'lucide-react';
+
+const C = {
+  t900: '#0d1117', t700: '#1f2937', t500: '#6b7280', t300: '#adb5bd',
+  bSoft: 'rgba(0,0,0,0.07)', bMed: 'rgba(0,0,0,0.12)',
+  bgCard: '#ffffff', bgPage: '#edf0f4', bgMuted: '#f3f5f8',
+  lime: '#cbff00', blue: '#3b82f6', rose: '#f43f5e', amber: '#f59e0b',
+  rSm: '0.85rem', rMd: '1.25rem', rLg: '1.5rem', r2xl: '2.5rem'
+};
 
 const ActionConfirmationModal = ({ 
   isOpen, 
@@ -14,58 +22,64 @@ const ActionConfirmationModal = ({
 }) => {
   if (!isOpen) return null;
 
-  const colorClasses = {
-    info: "bg-blue-50 text-blue-500",
-    warning: "bg-amber-50 text-amber-500",
-    danger: "bg-red-50 text-red-500",
-    success: "bg-emerald-50 text-emerald-500"
+  const themes = {
+    info:    { color: C.blue,  bg: '#eff6ff' },
+    warning: { color: C.amber, bg: '#fffbeb' },
+    danger:  { color: C.rose,  bg: '#fff1f2' },
+    success: { color: '#10b981', bg: '#ecfdf5' }
   };
 
-  const btnClasses = {
-    info: "bg-slate-900 hover:bg-secondary",
-    warning: "bg-amber-500 hover:bg-amber-600",
-    danger: "bg-red-500 hover:bg-red-600",
-    success: "bg-emerald-500 hover:bg-emerald-600"
-  };
+  const theme = themes[type] || themes.info;
 
   return (
-    <div className="fixed inset-0 z-[400] flex items-center justify-center p-4">
+    <div style={{ position: 'fixed', inset: 0, zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
       <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         onClick={onClose}
-        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+        style={{ position: 'absolute', inset: 0, background: 'rgba(13,17,23,0.4)', backdropFilter: 'blur(8px)' }}
       />
       <motion.div 
-        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        initial={{ scale: 0.95, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.9, opacity: 0, y: 20 }}
-        className="relative glass-card-light rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden border border-white/[0.08]"
+        exit={{ scale: 0.95, opacity: 0, y: 20 }}
+        style={{
+          position: 'relative', background: '#fff', borderRadius: C.r2xl,
+          boxShadow: '0 30px 60px -12px rgba(0,0,0,0.25)',
+          width: '100%', maxWidth: 400, overflow: 'hidden', border: `1px solid ${C.bSoft}`
+        }}
       >
-        <div className="p-8 space-y-6">
-          <div className="text-center space-y-4">
-            <div className={`w-16 h-16 ${colorClasses[type]} rounded-3xl flex items-center justify-center mx-auto mb-4 transition-colors`}>
-              <Icon className="w-8 h-8" />
+        <button onClick={onClose} style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'none', border: 'none', color: C.t300, cursor: 'pointer' }}>
+          <X size={20} />
+        </button>
+
+        <div style={{ padding: '2.5rem' }}>
+          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+            <div style={{ 
+              width: 64, height: 64, background: theme.bg, borderRadius: '1.25rem',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: theme.color, margin: '0 auto 1.5rem'
+            }}>
+              <Icon size={32} />
             </div>
-            <h3 className="text-xl font-black text-white tracking-tight">{title}</h3>
-            <p className="text-sm text-slate-500 leading-relaxed">
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: C.t900, margin: '0 0 0.5rem', letterSpacing: '-0.02em' }}>{title}</h3>
+            <p style={{ fontSize: '0.85rem', color: C.t500, fontWeight: 500, lineHeight: 1.6, margin: 0 }}>
               {description}
             </p>
           </div>
 
-          <div className="flex gap-3 pt-2">
-            <button 
-              onClick={onClose}
-              className="flex-1 px-6 py-4 rounded-2xl glass-card-light text-slate-300 text-xs font-black uppercase tracking-widest hover:glass-input transition-colors"
-            >
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <button onClick={onClose} style={{
+              flex: 1, padding: '1rem', borderRadius: C.rMd, background: C.bgMuted,
+              border: 'none', color: C.t700, fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer'
+            }}>
               Cancel
             </button>
-            <button 
-              onClick={onConfirm}
-              className={`flex-[1.8] px-6 py-4 rounded-2xl ${btnClasses[type]} text-white text-xs font-black uppercase tracking-widest shadow-lg transition-all hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2`}
-            >
-              <ShieldCheck className="w-4 h-4" /> {confirmText}
+            <button onClick={onConfirm} style={{
+              flex: 2, padding: '1rem', borderRadius: C.rMd, background: C.t900,
+              border: 'none', color: '#fff', fontSize: '0.8rem', fontWeight: 800,
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
+            }}>
+              <ShieldCheck size={16} /> {confirmText}
             </button>
           </div>
         </div>

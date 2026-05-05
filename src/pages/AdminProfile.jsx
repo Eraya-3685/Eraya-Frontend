@@ -61,17 +61,17 @@ const AdminProfile = () => {
           <div className="p-2 bg-indigo-500/10 rounded-lg">
             <User className="w-5 h-5 text-secondary" />
           </div>
-          <span className="text-xs font-bold text-indigo-400 uppercase tracking-[0.2em]">Personal Account</span>
+          <span className="text-xs font-bold text-[#6366f1] tracking-[0.2em]">Personal account</span>
         </div>
-        <h1 className="text-3xl font-bold text-white tracking-tight">Account Settings</h1>
-        <p className="text-slate-500 mt-1">Manage your administrative profile and credentials</p>
+        <h1 className="text-3xl font-bold text-[#0d1117] tracking-tight">Account settings</h1>
+        <p className="text-[#94a3b8] mt-1">Manage your administrative profile and credentials</p>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         {/* Left Card */}
         <div className="lg:col-span-4 space-y-6">
-          <div className="glass-card-light rounded-[2rem] shadow-xl shadow-slate-200/50 border border-white/[0.08] p-8">
+          <div className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 border border-[#eaeef2] p-8">
             <div className="relative w-32 h-32 mx-auto mb-6 group">
               <div className="w-full h-full rounded-full overflow-hidden border-4 border-slate-50 shadow-inner bg-slate-100">
                 {user?.avatar_url ? (
@@ -90,7 +90,7 @@ const AdminProfile = () => {
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={avatarUploading}
-                className="absolute bottom-1 right-1 w-10 h-10 bg-slate-900 text-white rounded-full flex items-center justify-center shadow-xl hover:bg-indigo-600 hover:scale-110 transition-all duration-300 disabled:opacity-50"
+                className="absolute bottom-1 right-1 w-10 h-10 bg-[#0d1117] text-[#fff] rounded-full flex items-center justify-center shadow-xl hover:bg-indigo-600 hover:scale-110 transition-all duration-300 disabled:opacity-50"
               >
                 {avatarUploading ? (
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
@@ -102,17 +102,17 @@ const AdminProfile = () => {
             </div>
 
             <div className="text-center">
-              <h2 className="text-xl font-bold text-white mb-1">{user?.full_name}</h2>
-              <p className="text-slate-400 text-xs font-medium mb-6 capitalize">{user?.role} Account</p>
+              <h2 className="text-xl font-bold text-[#0d1117] mb-1">{user?.full_name}</h2>
+              <p className="text-[#64748b] text-xs font-medium mb-6 capitalize">{user?.role} account</p>
               
               <div className="space-y-3 pt-6 border-t border-slate-50 text-left">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-400 font-bold uppercase tracking-wider">Access Level</span>
+                  <span className="text-[#64748b] font-bold tracking-wider">Access level</span>
                   <span className="text-emerald-500 font-black">{user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase() : ''}</span>
                 </div>
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-400 font-bold uppercase tracking-wider">Status</span>
-                  <span className="text-white font-black italic">ACTIVE</span>
+                  <span className="text-[#64748b] font-bold tracking-wider">Status</span>
+                  <span className="text-[#0d1117] font-black italic">Active</span>
                 </div>
               </div>
             </div>
@@ -124,86 +124,86 @@ const AdminProfile = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="glass-card-light rounded-[2rem] shadow-xl shadow-slate-200/50 border border-white/[0.08] overflow-hidden"
+            className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 border border-[#eaeef2] overflow-hidden"
           >
-            <div className="bg-slate-900 p-8 text-white">
-              <h3 className="text-lg font-bold">Edit Information</h3>
-              <p className="text-white/50 text-xs mt-1">Update your personal details visible in the management panel.</p>
+            <div className="bg-[#f8fafc] p-8 text-[#0d1117] border-b border-[#eaeef2]">
+              <h3 className="text-lg font-bold">Edit information</h3>
+              <p className="text-[#94a3b8] text-xs mt-1">Update your personal details visible in the management panel.</p>
             </div>
 
             <form onSubmit={handleSubmit} className="p-8 md:p-10 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
+                  <label className="text-xs font-black text-[#64748b] tracking-widest ml-1">Full name</label>
                   <div className="relative group">
                     <input
                       type="text"
                       required
                       value={form.full_name}
                       onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-                      className="w-full glass-card-light border-2 border-white/[0.08] rounded-2xl py-4 pl-12 pr-4 text-white font-bold text-sm outline-none focus:border-indigo-500/30 focus:glass-card-light transition-all"
+                      className="w-full bg-white border-2 border-[#eaeef2] rounded-2xl py-4 pl-12 pr-4 text-[#0d1117] font-bold text-sm outline-none focus:border-indigo-500/30 focus:bg-white transition-all"
                     />
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 group-focus-within:text-secondary" />
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748b] w-4 h-4 group-focus-within:text-secondary" />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Phone Number</label>
+                  <label className="text-xs font-black text-[#64748b] tracking-widest ml-1">Phone number</label>
                   <div className="relative group">
                     <input
                       type="text"
                       value={form.phone}
                       onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                      className="w-full glass-card-light border-2 border-white/[0.08] rounded-2xl py-4 pl-12 pr-4 text-white font-bold text-sm outline-none focus:border-indigo-500/30 focus:glass-card-light transition-all"
+                      className="w-full bg-white border-2 border-[#eaeef2] rounded-2xl py-4 pl-12 pr-4 text-[#0d1117] font-bold text-sm outline-none focus:border-indigo-500/30 focus:bg-white transition-all"
                     />
-                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 group-focus-within:text-secondary" />
+                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748b] w-4 h-4 group-focus-within:text-secondary" />
                   </div>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
+                <label className="text-xs font-black text-[#64748b] tracking-widest ml-1">Email address</label>
                 <div className="relative group">
                   <input
                     type="email"
                     required
                     readOnly
                     value={form.email}
-                    className="w-full glass-card-light border-2 border-white/[0.08] rounded-2xl py-4 pl-12 pr-4 text-slate-400 font-bold text-sm outline-none cursor-not-allowed"
+                    className="w-full bg-white border-2 border-[#eaeef2] rounded-2xl py-4 pl-12 pr-4 text-[#64748b] font-bold text-sm outline-none cursor-not-allowed"
                   />
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748b] w-4 h-4" />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Residential Address</label>
+                <label className="text-xs font-black text-[#64748b] tracking-widest ml-1">Residential address</label>
                 <div className="relative group">
                   <textarea
                     rows={3}
                     value={form.address}
                     onChange={(e) => setForm({ ...form, address: e.target.value })}
-                    className="w-full glass-card-light border-2 border-white/[0.08] rounded-2xl py-4 pl-12 pr-4 text-white font-bold text-sm outline-none focus:border-indigo-500/30 focus:glass-card-light transition-all resize-none"
+                    className="w-full bg-white border-2 border-[#eaeef2] rounded-2xl py-4 pl-12 pr-4 text-[#0d1117] font-bold text-sm outline-none focus:border-indigo-500/30 focus:bg-white transition-all resize-none"
                   />
-                  <MapPin className="absolute left-4 top-5 text-slate-400 w-4 h-4 group-focus-within:text-secondary" />
+                  <MapPin className="absolute left-4 top-5 text-[#64748b] w-4 h-4 group-focus-within:text-secondary" />
                 </div>
               </div>
 
               <div className="pt-6 border-t border-slate-50 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-slate-400 text-[10px] font-bold">
+                <div className="flex items-center gap-2 text-[#64748b] text-[10px] font-bold">
                   <Shield className="w-3.5 h-3.5 text-emerald-500" />
-                  SECURED CONNECTION
+                  Secured connection
                 </div>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="bg-indigo-600 text-white px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-secondary/90 hover:scale-105 transition-all flex items-center gap-2 shadow-xl shadow-indigo-500/20 disabled:opacity-50"
+                  className="bg-[#0d1117] text-[#fff] px-10 py-4 rounded-2xl font-black text-xs tracking-widest hover:bg-secondary/90 hover:scale-105 transition-all flex items-center gap-2 shadow-xl shadow-slate-200/50 disabled:opacity-50"
                 >
                   {loading ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
                   ) : (
                     <Save className="w-4 h-4" />
                   )}
-                  Update Account
+                  Update account
                 </button>
               </div>
             </form>

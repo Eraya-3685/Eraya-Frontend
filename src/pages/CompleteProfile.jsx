@@ -70,10 +70,10 @@ const CompleteProfile = () => {
         animate={{ y: 0, opacity: 1 }}
         className="mb-8 flex flex-col items-center gap-2 z-10"
       >
-        <div className="w-16 h-16 glass-card-light rounded-2xl flex items-center justify-center overflow-hidden shadow-xl shadow-slate-200/50 border border-white/[0.08] p-2 text-secondary">
+        <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center overflow-hidden shadow-xl shadow-slate-200/50 border border-[#eaeef2] p-2 text-secondary">
           <Command className="w-8 h-8" />
         </div>
-        <h1 className="text-2xl font-bold tracking-tight text-white">ERAYA</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-[#0d1117]">ERAYA</h1>
       </motion.div>
 
       <motion.div
@@ -81,15 +81,15 @@ const CompleteProfile = () => {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md z-10"
       >
-        <div className="glass-card-light p-8 md:p-10 rounded-3xl border border-white/[0.08] shadow-xl shadow-slate-200/50">
-          <h2 className="text-2xl font-bold text-white mb-2">Almost there!</h2>
-          <p className="text-slate-500 text-sm mb-8">We just need a few more details to complete your registration.</p>
+        <div className="bg-white p-8 md:p-10 rounded-3xl border border-[#eaeef2] shadow-xl shadow-slate-200/50">
+          <h2 className="text-2xl font-bold text-[#0d1117] mb-2">Almost there!</h2>
+          <p className="text-[#94a3b8] text-sm mb-8">We just need a few more details to complete your registration.</p>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-200 uppercase tracking-widest ml-1">Phone Number</label>
+              <label className="text-xs font-bold text-[#4b5563] uppercase tracking-widest ml-1">Phone Number</label>
               <div className="relative group">
-                <Phone className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors ${errors.phone ? 'text-red-400' : 'text-slate-400 group-focus-within:text-secondary'}`} />
+                <Phone className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors ${errors.phone ? 'text-red-400' : 'text-[#64748b] group-focus-within:text-secondary'}`} />
                 <input
                   type="tel"
                   value={phone}
@@ -98,7 +98,7 @@ const CompleteProfile = () => {
                     setPhone(val);
                     if (errors.phone) setErrors({...errors, phone: null});
                   }}
-                  className={`w-full glass-card-light border rounded-xl py-3.5 pl-12 pr-4 text-white font-medium outline-none transition-all ${errors.phone ? 'border-red-200 bg-red-50/30' : 'border-white/[0.1] focus:border-indigo-500 focus:glass-card-light'}`}
+                  className={`w-full bg-white border rounded-xl py-3.5 pl-12 pr-4 text-[#0d1117] font-medium outline-none transition-all ${errors.phone ? 'border-red-200 bg-red-50/30' : 'border-[#eaeef2] focus:border-indigo-500 focus:bg-white'}`}
                   placeholder="01XXXXXXXXX"
                 />
               </div>
@@ -106,9 +106,9 @@ const CompleteProfile = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-200 uppercase tracking-widest ml-1">Delivery Address</label>
+              <label className="text-xs font-bold text-[#4b5563] uppercase tracking-widest ml-1">Delivery Address</label>
               <div className="relative group">
-                <MapPin className={`absolute left-4 top-4 w-5 h-5 transition-colors ${errors.address ? 'text-red-400' : 'text-slate-400 group-focus-within:text-secondary'}`} />
+                <MapPin className={`absolute left-4 top-4 w-5 h-5 transition-colors ${errors.address ? 'text-red-400' : 'text-[#64748b] group-focus-within:text-secondary'}`} />
                 <textarea
                   value={address}
                   onChange={(e) => {
@@ -116,7 +116,7 @@ const CompleteProfile = () => {
                     if (errors.address) setErrors({...errors, address: null});
                   }}
                   rows="3"
-                  className={`w-full glass-card-light border rounded-xl py-3.5 pl-12 pr-4 text-white font-medium outline-none transition-all resize-none ${errors.address ? 'border-red-200 bg-red-50/30' : 'border-white/[0.1] focus:border-indigo-500 focus:glass-card-light'}`}
+                  className={`w-full bg-white border rounded-xl py-3.5 pl-12 pr-4 text-[#0d1117] font-medium outline-none transition-all resize-none ${errors.address ? 'border-red-200 bg-red-50/30' : 'border-[#eaeef2] focus:border-indigo-500 focus:bg-white'}`}
                   placeholder="e.g. Rupatoli, Barishal"
                 />
               </div>
@@ -126,9 +126,9 @@ const CompleteProfile = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 bg-secondary text-white rounded-xl font-bold text-lg flex items-center justify-center gap-2 hover:bg-secondary/90 transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-50"
+              className="w-full py-4 bg-secondary text-[#0d1117] rounded-xl font-bold text-lg flex items-center justify-center gap-2 hover:bg-secondary/90 transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-50"
             >
-              {loading ? <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : (
+              {loading ? <div className="w-5 h-5 border-2 border-[#eaeef2] border-t-white rounded-full animate-spin" /> : (
                 <>
                   Complete Registration
                   <ArrowRight className="w-5 h-5" />
@@ -139,7 +139,7 @@ const CompleteProfile = () => {
         </div>
       </motion.div>
       
-      <div className="absolute bottom-8 flex items-center gap-2 text-slate-300 font-bold text-[10px] uppercase tracking-widest">
+      <div className="absolute bottom-8 flex items-center gap-2 text-[#64748b] font-bold text-[10px] uppercase tracking-widest">
         <ShieldCheck className="w-4 h-4" />
         Secure SSL Encryption
       </div>

@@ -39,19 +39,19 @@ const BeautifulCalendar = ({ selectedDate, onSelect, onClose }) => {
       initial={{ opacity: 0, scale: 0.95, y: 10 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95, y: 10 }}
-      className="absolute top-full left-0 right-0 mt-4 glass-card-light rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-white/[0.08] p-6 z-[310] overflow-hidden"
+      className="absolute top-full left-0 right-0 mt-4 bg-white rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-[#eaeef2] p-6 z-[310] overflow-hidden"
     >
       <div className="flex items-center justify-between mb-6">
         <button 
           onClick={(e) => { e.stopPropagation(); setViewDate(new Date(year, month - 1)); }}
-          className="w-8 h-8 rounded-xl hover:glass-card-light flex items-center justify-center text-slate-400 transition-colors"
+          className="w-8 h-8 rounded-xl hover:bg-white flex items-center justify-center text-[#64748b] transition-colors"
         >
           <ChevronDown className="w-4 h-4 rotate-90" />
         </button>
-        <h4 className="text-xs font-black text-white uppercase tracking-widest">{months[month]} {year}</h4>
+        <h4 className="text-xs font-black text-[#0d1117] uppercase tracking-widest">{months[month]} {year}</h4>
         <button 
           onClick={(e) => { e.stopPropagation(); setViewDate(new Date(year, month + 1)); }}
-          className="w-8 h-8 rounded-xl hover:glass-card-light flex items-center justify-center text-slate-400 transition-colors"
+          className="w-8 h-8 rounded-xl hover:bg-white flex items-center justify-center text-[#64748b] transition-colors"
         >
           <ChevronDown className="w-4 h-4 -rotate-90" />
         </button>
@@ -59,7 +59,7 @@ const BeautifulCalendar = ({ selectedDate, onSelect, onClose }) => {
 
       <div className="grid grid-cols-7 gap-1 mb-2">
         {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => (
-          <div key={d} className="text-[8px] font-black text-slate-300 text-center uppercase tracking-widest py-2">{d}</div>
+          <div key={d} className="text-[8px] font-black text-[#64748b] text-center uppercase tracking-widest py-2">{d}</div>
         ))}
       </div>
 
@@ -79,8 +79,8 @@ const BeautifulCalendar = ({ selectedDate, onSelect, onClose }) => {
                 onClose();
               }}
               className={`aspect-square rounded-xl text-[10px] font-black transition-all flex items-center justify-center relative group
-                ${isSelected ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 
-                  isToday ? 'text-indigo-400 bg-secondary/5' : 'text-slate-300 hover:glass-card-light hover:text-white'}
+                ${isSelected ? 'bg-indigo-600 text-[#0d1117] shadow-lg shadow-indigo-500/20' : 
+                  isToday ? 'text-[#6366f1] bg-secondary/5' : 'text-[#64748b] hover:bg-white hover:text-[#0d1117]'}
               `}
             >
               {day}
@@ -109,22 +109,22 @@ const StatusUpdateModal = ({ isOpen, onClose, onConfirm, status, currentStatus }
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-[#0d1117]/40 backdrop-blur-sm"
       />
       <motion.div 
         initial={{ scale: 0.9, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.9, opacity: 0, y: 20 }}
-        className="relative glass-card-light rounded-[2.5rem] shadow-2xl w-full max-w-md border border-white/[0.08]"
+        className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md border border-[#eaeef2]"
       >
         <div className="p-8 space-y-6">
           <div className="text-center space-y-2">
             <div className="w-16 h-16 bg-indigo-500/10 rounded-3xl flex items-center justify-center mx-auto mb-4">
               <CalendarDays className="w-8 h-8 text-secondary" />
             </div>
-            <h3 className="text-xl font-black text-white tracking-tight">Update Order Status</h3>
-            <p className="text-sm text-slate-500">
-              Moving order from <span className="font-bold text-white">{currentStatus}</span> to <span className="font-bold text-secondary">{status === 'Confirmed' ? 'Accepted' : status}</span>.
+            <h3 className="text-xl font-black text-[#0d1117] tracking-tight">Update Order Status</h3>
+            <p className="text-sm text-[#94a3b8]">
+              Moving order from <span className="font-bold text-[#0d1117]">{currentStatus}</span> to <span className="font-bold text-secondary">{status === 'Confirmed' ? 'Accepted' : status}</span>.
             </p>
           </div>
 
@@ -136,14 +136,14 @@ const StatusUpdateModal = ({ isOpen, onClose, onConfirm, status, currentStatus }
             
             return (
               <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[#64748b] px-1">
                   Estimated {nextStepLabel} Date (Optional)
                 </label>
                 <div className="relative" ref={calendarRef}>
                   <div className="relative group">
                     <button 
                       onClick={() => setShowCalendar(!showCalendar)}
-                      className={`absolute inset-y-0 left-0 pl-4 flex items-center transition-colors text-slate-400 hover:text-indigo-400 z-10 ${showCalendar ? 'text-indigo-400' : ''}`}
+                      className={`absolute inset-y-0 left-0 pl-4 flex items-center transition-colors text-[#64748b] hover:text-[#6366f1] z-10 ${showCalendar ? 'text-[#6366f1]' : ''}`}
                       type="button"
                     >
                       <CalendarDays className="w-4 h-4" />
@@ -153,7 +153,7 @@ const StatusUpdateModal = ({ isOpen, onClose, onConfirm, status, currentStatus }
                       placeholder={`e.g. 25 Apr 2024 or "Tomorrow"`}
                       value={estimatedDate}
                       onChange={(e) => setEstimatedDate(e.target.value)}
-                      className="w-full pl-12 pr-4 py-4 glass-card-light border-2 border-transparent rounded-2xl text-sm focus:glass-card-light focus:border-indigo-500 outline-none transition-all font-bold placeholder:font-normal placeholder:text-slate-300"
+                      className="w-full pl-12 pr-4 py-4 bg-white border-2 border-transparent rounded-2xl text-sm focus:bg-white focus:border-indigo-500 outline-none transition-all font-bold placeholder:font-normal placeholder:text-[#64748b]"
                     />
                   </div>
                   
@@ -167,7 +167,7 @@ const StatusUpdateModal = ({ isOpen, onClose, onConfirm, status, currentStatus }
                     )}
                   </AnimatePresence>
                 </div>
-                <p className="text-[10px] text-slate-400 px-1 italic text-center">Click icon for calendar or type manually</p>
+                <p className="text-[10px] text-[#64748b] px-1 italic text-center">Click icon for calendar or type manually</p>
               </div>
             );
           })()}
@@ -175,13 +175,13 @@ const StatusUpdateModal = ({ isOpen, onClose, onConfirm, status, currentStatus }
           <div className="flex gap-3 pt-2">
             <button 
               onClick={onClose}
-              className="flex-1 px-6 py-4 rounded-2xl glass-card-light text-slate-300 text-xs font-black uppercase tracking-widest hover:bg-slate-100 transition-colors"
+              className="flex-1 px-6 py-4 rounded-2xl bg-white text-[#64748b] text-xs font-black uppercase tracking-widest hover:bg-slate-100 transition-colors"
             >
               Cancel
             </button>
             <button 
               onClick={() => onConfirm(estimatedDate)}
-              className="flex-[1.5] px-6 py-4 rounded-2xl bg-indigo-600 text-white text-xs font-black uppercase tracking-widest hover:bg-secondary/90 shadow-lg shadow-indigo-500/20 transition-all hover:-translate-y-0.5 active:translate-y-0"
+              className="flex-[1.5] px-6 py-4 rounded-2xl bg-indigo-600 text-[#0d1117] text-xs font-black uppercase tracking-widest hover:bg-secondary/90 shadow-lg shadow-indigo-500/20 transition-all hover:-translate-y-0.5 active:translate-y-0"
             >
               Confirm Update
             </button>
@@ -267,14 +267,14 @@ const StatusDropdown = ({ currentStatus, onUpdate, disabled }) => {
 
         return (
           <div className="flex items-center gap-3 w-full">
-            <div className={`w-8 h-8 rounded-lg flex items-center justify-center bg-${colorBase}-50 text-${colorBase}-500 group-hover:bg-${colorBase}-500 group-hover:text-white transition-all`}>
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center bg-${colorBase}-50 text-${colorBase}-500 group-hover:bg-${colorBase}-500 group-hover:text-[#0d1117] transition-all`}>
               <Icon className="w-4 h-4" />
             </div>
             <div className="text-left">
-              <p className="text-[10px] font-black uppercase tracking-widest leading-none mb-1 group-hover:text-white transition-colors">
+              <p className="text-[10px] font-black uppercase tracking-widest leading-none mb-1 group-hover:text-[#0d1117] transition-colors">
                 {opt === 'Confirmed' ? 'Accepted' : opt}
               </p>
-              <p className="text-[9px] text-slate-400 font-medium leading-none truncate max-w-[120px]">
+              <p className="text-[9px] text-[#64748b] font-medium leading-none truncate max-w-[120px]">
                 {config?.desc}
               </p>
             </div>
@@ -420,49 +420,49 @@ const AdminOrders = () => {
       
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
         <div>
-          <h1 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
+          <h1 className="text-3xl font-black text-[#0d1117] tracking-tight flex items-center gap-3">
             <ShoppingCart className="w-8 h-8 text-secondary" />
             Order Management
           </h1>
-          <p className="text-xs text-slate-500 mt-1 font-medium">Track and manage customer fulfillment across Eraya.</p>
+          <p className="text-xs text-[#94a3b8] mt-1 font-medium">Track and manage customer fulfillment across Eraya.</p>
         </div>
         
-        <div className="flex items-center gap-4 glass-card-light p-1.5 rounded-2xl border border-white/[0.08] shadow-sm w-full md:w-auto">
+        <div className="flex items-center gap-4 bg-white p-1.5 rounded-2xl border border-[#eaeef2] shadow-sm w-full md:w-auto">
           <div className="relative flex-grow md:w-64">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#64748b] w-4 h-4" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by ID or address..."
-              className="w-full glass-card-light border-none rounded-xl py-2.5 pl-10 pr-4 text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+              className="w-full bg-white border-none rounded-xl py-2.5 pl-10 pr-4 text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
             />
           </div>
-          <button onClick={fetchOrders} className="p-2.5 hover:glass-card-light rounded-xl transition-colors">
-            <RefreshCcw className={`w-4 h-4 text-slate-400 ${loading ? 'animate-spin' : ''}`} />
+          <button onClick={fetchOrders} className="p-2.5 hover:bg-white rounded-xl transition-colors">
+            <RefreshCcw className={`w-4 h-4 text-[#64748b] ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
       </header>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
         {['Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered'].map(s => (
-          <div key={s} className="glass-card-light p-4 rounded-3xl border border-white/[0.08] shadow-sm">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{s}</p>
-            <p className="text-xl font-black text-white">{orders.filter(o => o.order_status === s).length}</p>
+          <div key={s} className="bg-white p-4 rounded-3xl border border-[#eaeef2] shadow-sm">
+            <p className="text-[10px] font-black text-[#64748b] uppercase tracking-widest mb-1">{s}</p>
+            <p className="text-xl font-black text-[#0d1117]">{orders.filter(o => o.order_status === s).length}</p>
           </div>
         ))}
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-6 mb-8">
-        <div className="flex flex-wrap gap-2 glass-card-light/50 p-2 rounded-[2rem] border border-white/[0.08]/50 w-fit shadow-sm">
+        <div className="flex flex-wrap gap-2 bg-white p-2 rounded-[2rem] border border-[#eaeef2]/50 w-fit shadow-sm">
           {statusOptions.map((s) => (
             <button
               key={s}
               onClick={() => setStatusFilter(s)}
               className={`px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all border ${
                 statusFilter === s
-                  ? 'bg-slate-900 text-white border-slate-900 shadow-lg shadow-slate-200'
-                  : 'bg-transparent text-slate-400 border-transparent hover:glass-card-light hover:text-slate-300'
+                  ? 'bg-[#0d1117] text-[#0d1117] border-slate-900 shadow-lg shadow-slate-200'
+                  : 'bg-transparent text-[#64748b] border-transparent hover:bg-white hover:text-[#64748b]'
               }`}
             >
               {s === 'Confirmed' ? 'Accepted' : s}
@@ -471,13 +471,13 @@ const AdminOrders = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-4">
-          <div className="flex glass-card-light rounded-2xl border border-white/[0.08] p-1 shadow-sm">
+          <div className="flex bg-white rounded-2xl border border-[#eaeef2] p-1 shadow-sm">
             {['All', 'bKash', 'COD'].map((p) => (
               <button
                 key={p}
                 onClick={() => setPaymentFilter(p)}
                 className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
-                  paymentFilter === p ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20' : 'text-slate-400 hover:text-slate-300'
+                  paymentFilter === p ? 'bg-indigo-600 text-[#0d1117] shadow-md shadow-indigo-500/20' : 'text-[#64748b] hover:text-[#64748b]'
                 }`}
               >
                 {p}
@@ -515,14 +515,14 @@ const AdminOrders = () => {
               const config = labels[opt] || labels.Newest;
               return (
                 <div className="flex items-center gap-3 w-full">
-                  <div className="w-8 h-8 rounded-lg glass-card-light flex items-center justify-center text-slate-400 group-hover:bg-indigo-500/10 group-hover:text-indigo-400 transition-all">
+                  <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-[#64748b] group-hover:bg-indigo-500/10 group-hover:text-[#6366f1] transition-all">
                     <config.icon className="w-4 h-4" />
                   </div>
                   <div className="text-left">
-                    <p className="text-[10px] font-black uppercase tracking-widest leading-none mb-1 group-hover:text-white transition-colors">
+                    <p className="text-[10px] font-black uppercase tracking-widest leading-none mb-1 group-hover:text-[#0d1117] transition-colors">
                       {config.label}
                     </p>
-                    <p className="text-[9px] text-slate-300 font-medium leading-none">
+                    <p className="text-[9px] text-[#64748b] font-medium leading-none">
                       {config.desc}
                     </p>
                   </div>
@@ -536,19 +536,19 @@ const AdminOrders = () => {
       <AnimatePresence mode="wait">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-32 gap-4">
-             <div className="w-12 h-12 border-4 border-white/[0.08] border-t-secondary rounded-full animate-spin" />
-             <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Loading Orders...</p>
+             <div className="w-12 h-12 border-4 border-[#eaeef2] border-t-secondary rounded-full animate-spin" />
+             <p className="text-xs font-black text-[#64748b] uppercase tracking-widest">Loading Orders...</p>
           </div>
         ) : filtered.length === 0 ? (
           <motion.div 
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-            className="text-center py-32 glass-card-light rounded-[3rem] border border-white/[0.08] shadow-sm"
+            className="text-center py-32 bg-white rounded-[3rem] border border-[#eaeef2] shadow-sm"
           >
-            <div className="w-20 h-20 glass-card-light rounded-[32px] flex items-center justify-center mx-auto mb-6">
-              <Package className="w-10 h-10 text-slate-200" />
+            <div className="w-20 h-20 bg-white rounded-[32px] flex items-center justify-center mx-auto mb-6">
+              <Package className="w-10 h-10 text-[#4b5563]" />
             </div>
-            <h3 className="text-xl font-bold text-white">No orders found</h3>
-            <p className="text-slate-400 text-sm">Try adjusting your filters or search query.</p>
+            <h3 className="text-xl font-bold text-[#0d1117]">No orders found</h3>
+            <p className="text-[#64748b] text-sm">Try adjusting your filters or search query.</p>
           </motion.div>
         ) : (
           <div className="space-y-4">
@@ -558,39 +558,39 @@ const AdminOrders = () => {
                 layout
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`glass-card-light rounded-[2.5rem] shadow-sm border border-white/[0.08] transition-all duration-500 hover:shadow-xl hover:shadow-slate-200/40 ${expandedId === order.id ? 'ring-2 ring-indigo-500/10' : ''}`}
+                className={`bg-white rounded-[2.5rem] shadow-sm border border-[#eaeef2] transition-all duration-500 hover:shadow-xl hover:shadow-slate-200/40 ${expandedId === order.id ? 'ring-2 ring-indigo-500/10' : ''}`}
               >
                 <div className="p-3 md:p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                   <div className="flex items-start gap-4">
                     <button
                       onClick={() => setExpandedId(expandedId === order.id ? null : order.id)}
-                      className={`mt-1 w-8 h-8 rounded-lg flex items-center justify-center transition-all ${expandedId === order.id ? 'bg-indigo-500/10 text-secondary' : 'glass-card-light text-slate-400 hover:bg-slate-100'}`}
+                      className={`mt-1 w-8 h-8 rounded-lg flex items-center justify-center transition-all ${expandedId === order.id ? 'bg-indigo-500/10 text-secondary' : 'bg-white text-[#64748b] hover:bg-slate-100'}`}
                     >
                       <ChevronDown className={`w-4 h-4 transition-transform duration-500 ${expandedId === order.id ? 'rotate-180' : ''}`} />
                     </button>
                     
                     <div>
                       <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <span className="text-base font-black text-white tracking-tight">Order #{order.id}</span>
+                        <span className="text-base font-black text-[#0d1117] tracking-tight">Order #{order.id}</span>
                          <div className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full border text-[8px] font-black uppercase tracking-widest ${statusConfigs[order.order_status]?.color}`}>
                             {React.createElement(statusConfigs[order.order_status]?.icon || AlertCircle, { className: 'w-2.5 h-2.5' })}
                             {order.order_status === 'Confirmed' ? 'Accepted' : order.order_status}
                          </div>
-                         <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg glass-card-light border border-white/[0.08]">
-                           <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">Pay</span>
-                           <span className={`text-[8px] font-black uppercase tracking-wider ${paymentColors[order.payment_status] || 'text-slate-500'}`}>
+                         <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-white border border-[#eaeef2]">
+                           <span className="text-[7px] font-black text-[#64748b] uppercase tracking-widest">Pay</span>
+                           <span className={`text-[8px] font-black uppercase tracking-wider ${paymentColors[order.payment_status] || 'text-[#94a3b8]'}`}>
                              {order.payment_status}
                            </span>
                          </div>
                       </div>
                       
-                      <div className="flex flex-wrap items-center gap-3 text-[10px] font-bold text-slate-300">
-                        <span className="text-indigo-400">{order.user?.full_name}</span>
+                      <div className="flex flex-wrap items-center gap-3 text-[10px] font-bold text-[#64748b]">
+                        <span className="text-[#6366f1]">{order.user?.full_name}</span>
                         <span className="w-1 h-1 bg-slate-300 rounded-full" />
                         <span className="max-w-[120px] truncate">{order.user?.email}</span>
                         <span className="w-1 h-1 bg-slate-300 rounded-full" />
                         <div className="flex items-center gap-1.5 px-2 py-0.5 bg-indigo-50/50 rounded-lg border border-indigo-100/30">
-                           <Package className="w-2.5 h-2.5 text-indigo-400" />
+                           <Package className="w-2.5 h-2.5 text-[#6366f1]" />
                            <span className="text-indigo-600 font-black">
                              {order.items?.length || 0} {order.items?.length === 1 ? 'Item' : 'Items'}: 
                              <span className="ml-1 opacity-70 font-bold">
@@ -602,14 +602,14 @@ const AdminOrders = () => {
                         <span className="w-1 h-1 bg-slate-200 rounded-full" />
                         <span>{new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                         <span className="w-1 h-1 bg-slate-200 rounded-full" />
-                        <span className={`flex items-center gap-1 truncate px-2 py-0.5 rounded-md ${order.payment_method?.toLowerCase() === 'bkash' ? 'bg-[#D12053]/10 text-[#D12053]' : 'text-slate-300'}`}>
+                        <span className={`flex items-center gap-1 truncate px-2 py-0.5 rounded-md ${order.payment_method?.toLowerCase() === 'bkash' ? 'bg-[#D12053]/10 text-[#D12053]' : 'text-[#64748b]'}`}>
                            <CreditCard className="w-2.5 h-2.5" /> 
                            {order.payment_method?.toLowerCase() === 'cod' ? 'Cash on Delivery' : order.payment_method}
                         </span>
                       </div>
                       
                         {order.shipping_address && (
-                          <p className="text-[11px] font-medium text-slate-400 mt-2 flex items-center gap-1.5">
+                          <p className="text-[11px] font-medium text-[#64748b] mt-2 flex items-center gap-1.5">
                             <MapPin className="w-3 h-3" /> {order.shipping_address}
                           </p>
                         )}
@@ -619,13 +619,13 @@ const AdminOrders = () => {
 
                   <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-6 md:pt-0 border-slate-50">
                     <div className="text-right">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Total Amount</p>
-                      <p className="text-2xl font-black text-indigo-400 tracking-tighter">৳{order.total_price.toLocaleString()}</p>
+                      <p className="text-[10px] font-black text-[#64748b] uppercase tracking-widest mb-0.5">Total Amount</p>
+                      <p className="text-2xl font-black text-[#6366f1] tracking-tighter">৳{order.total_price.toLocaleString()}</p>
                     </div>
 
                     {order.processing_at && order.order_status !== 'Delivered' && order.order_status !== 'Cancelled' && (
-                      <div className="hidden lg:block text-right border-l border-white/[0.08] pl-6">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Estimated For Next Step</p>
+                      <div className="hidden lg:block text-right border-l border-[#eaeef2] pl-6">
+                        <p className="text-[10px] font-black text-[#64748b] uppercase tracking-widest mb-0.5">Estimated For Next Step</p>
                         <p className="text-xs font-black text-indigo-600">
                           {new Date(order.processing_at).toLocaleDateString(undefined, { 
                             month: 'short', 
@@ -650,7 +650,7 @@ const AdminOrders = () => {
 
                       <button 
                         onClick={() => setDeleteConfirm(order.id)}
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all"
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-[#64748b] hover:text-red-500 hover:bg-red-50 transition-all"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -667,24 +667,24 @@ const AdminOrders = () => {
                       exit={{ height: 0, opacity: 0 }}
                       className="border-t border-slate-50 overflow-hidden"
                     >
-                      <div className="p-8 md:p-10 glass-card-light/30">
+                      <div className="p-8 md:p-10 bg-white">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                            {/* Items List */}
                            <div>
-                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Line Items ({order.items?.length || 0})</p>
+                              <p className="text-[10px] font-black text-[#64748b] uppercase tracking-[0.2em] mb-6">Line Items ({order.items?.length || 0})</p>
                               <div className="space-y-4">
                                 {order.items?.map((item) => (
-                                  <div key={item.id} className="flex items-center justify-between p-4 glass-card-light rounded-2xl border border-white/[0.08] shadow-sm">
+                                  <div key={item.id} className="flex items-center justify-between p-4 bg-white rounded-2xl border border-[#eaeef2] shadow-sm">
                                     <div className="flex items-center gap-4">
-                                       <div className="w-12 h-12 glass-card-light rounded-xl flex items-center justify-center font-black text-indigo-400 text-sm">
+                                       <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center font-black text-[#6366f1] text-sm">
                                           {item.quantity}×
                                        </div>
                                        <div>
-                                          <p className="text-sm font-bold text-white">{item.product?.name || `Product ID: ${item.product_id}`}</p>
-                                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Unit Price: ৳{item.price_at_purchase.toLocaleString()}</p>
+                                          <p className="text-sm font-bold text-[#0d1117]">{item.product?.name || `Product ID: ${item.product_id}`}</p>
+                                          <p className="text-[10px] font-bold text-[#64748b] uppercase tracking-widest mt-0.5">Unit Price: ৳{item.price_at_purchase.toLocaleString()}</p>
                                        </div>
                                     </div>
-                                    <p className="text-sm font-black text-white">৳{(item.price_at_purchase * item.quantity).toLocaleString()}</p>
+                                    <p className="text-sm font-black text-[#0d1117]">৳{(item.price_at_purchase * item.quantity).toLocaleString()}</p>
                                   </div>
                                 ))}
                               </div>
@@ -692,17 +692,17 @@ const AdminOrders = () => {
 
                            {/* Timeline / Additional Info */}
                            <div className="space-y-6">
-                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Fulfillment Details</p>
-                              <div className="glass-card-light p-6 rounded-[2rem] border border-white/[0.08] shadow-sm space-y-6">
+                              <p className="text-[10px] font-black text-[#64748b] uppercase tracking-[0.2em] mb-6">Fulfillment Details</p>
+                              <div className="bg-white p-6 rounded-[2rem] border border-[#eaeef2] shadow-sm space-y-6">
                                  <div className="flex gap-4">
                                     <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
                                        <Truck className="w-5 h-5" />
                                     </div>
                                     <div>
-                                       <p className="text-xs font-bold text-white">Delivery Information</p>
-                                       <p className="text-[11px] font-medium text-slate-500 mt-1">Standard Shipping via Eraya Express.</p>
+                                       <p className="text-xs font-bold text-[#0d1117]">Delivery Information</p>
+                                       <p className="text-[11px] font-medium text-[#94a3b8] mt-1">Standard Shipping via Eraya Express.</p>
                                        {order.tracking_number && (
-                                          <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 glass-card-light rounded-lg text-[10px] font-black text-slate-500 border border-white/[0.08]">
+                                          <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg text-[10px] font-black text-[#94a3b8] border border-[#eaeef2]">
                                              TRACKING: {order.tracking_number}
                                           </div>
                                        )}
@@ -714,15 +714,15 @@ const AdminOrders = () => {
                                        <Star className="w-5 h-5" />
                                     </div>
                                     <div>
-                                       <p className="text-xs font-bold text-white">Order Instructions</p>
-                                       <p className="text-[11px] font-medium text-slate-500 mt-1">No special instructions provided by the buyer.</p>
+                                       <p className="text-xs font-bold text-[#0d1117]">Order Instructions</p>
+                                       <p className="text-[11px] font-medium text-[#94a3b8] mt-1">No special instructions provided by the buyer.</p>
                                     </div>
                                  </div>
 
                                  {order.payment_method?.toLowerCase() === 'bkash' && (
                                     <div className="mt-6 p-6 bg-[#D12053]/5 border-2 border-dashed border-[#D12053]/10 rounded-[2rem] space-y-4">
                                        <div className="flex items-center gap-3 mb-2">
-                                          <div className="w-8 h-8 glass-card-light rounded-lg flex items-center justify-center shadow-sm">
+                                          <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
                                              <img src="https://www.logo.wine/a/logo/BKash/BKash-bKash-Logo.wine.svg" className="w-6 h-6 object-contain" alt="bKash" />
                                           </div>
                                           <p className="text-xs font-black text-[#D12053] uppercase tracking-widest">bKash Payment Details</p>
@@ -730,16 +730,16 @@ const AdminOrders = () => {
                                        
                                        <div className="grid grid-cols-2 gap-4">
                                           <div>
-                                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Transaction ID</p>
-                                             <p className="text-sm font-black text-white tracking-tight select-all cursor-copy">{order.trx_id || 'N/A'}</p>
+                                             <p className="text-[8px] font-black text-[#64748b] uppercase tracking-widest mb-1">Transaction ID</p>
+                                             <p className="text-sm font-black text-[#0d1117] tracking-tight select-all cursor-copy">{order.trx_id || 'N/A'}</p>
                                           </div>
                                           <div>
-                                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Sender Number</p>
-                                             <p className="text-sm font-black text-white tracking-tight">{order.sender_number || 'N/A'}</p>
+                                             <p className="text-[8px] font-black text-[#64748b] uppercase tracking-widest mb-1">Sender Number</p>
+                                             <p className="text-sm font-black text-[#0d1117] tracking-tight">{order.sender_number || 'N/A'}</p>
                                           </div>
                                           <div className="col-span-2 pt-2 border-t border-[#D12053]/5">
-                                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Verified Amount</p>
-                                             <p className="text-lg font-black text-indigo-400 tracking-tight">৳{order.paid_amount?.toLocaleString() || '0'}</p>
+                                             <p className="text-[8px] font-black text-[#64748b] uppercase tracking-widest mb-1">Verified Amount</p>
+                                             <p className="text-lg font-black text-[#6366f1] tracking-tight">৳{order.paid_amount?.toLocaleString() || '0'}</p>
                                           </div>
                                        </div>
                                     </div>

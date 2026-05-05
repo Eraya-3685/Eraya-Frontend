@@ -1,67 +1,38 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Star, ShoppingCart, Shield, Truck, RotateCcw, Plus, Minus, Heart, MapPin, Info, ChevronRight, HelpCircle, X } from 'lucide-react';
+import { Star, ShoppingBag, Shield, Truck, RotateCcw, Plus, Minus, Heart, MapPin, Info, ChevronRight, X, Bookmark, Share2 } from 'lucide-react';
 import api, { getImageUrl } from '../api/axios';
 import useCartStore from '../store/useCartStore';
 import useAuthStore from '../store/useAuthStore';
 import useWishlistStore from '../store/useWishlistStore';
 import toast from 'react-hot-toast';
-import useClickOutside from '../hooks/useClickOutside';
 import useSettingsStore from '../store/useSettingsStore';
+import ProductCard from '../components/ProductCard';
+
+const C = {
+  t900:'#0d1117', t700:'#1f2937', t500:'#6b7280', t300:'#adb5bd',
+  bSoft:'rgba(0,0,0,0.07)', bLine:'#edf0f4',
+  bgPage:'#f7f8fa', bgCard:'#fff', bgMuted:'#f3f5f8',
+  lime:'#cbff00', blue:'#3b82f6', rose:'#f43f5e', green:'#22c55e', orange:'#f97316',
+};
 
 const ProductDetails = () => {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const [product, setProduct] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
-  const [activeTab, setActiveTab] = useState('description');
-  const [reviews, setReviews] = useState([]);
   const [addingToCart, setAddingToCart] = useState(false);
   const [buyingNow, setBuyingNow] = useState(false);
-  const [addingToWishlist, setAddingToWishlist] = useState(false);
+  const [similarProducts, setSimilarProducts] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [fetchingReviews, setFetchingReviews] = useState(false);
+  
   const addItem = useCartStore((state) => state.addItem);
   const { toggleWishlist, isInWishlist } = useWishlistStore();
   const { user } = useAuthStore();
-  const { settings, fetchSettings } = useSettingsStore();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    fetchSettings();
-  }, [fetchSettings]);
-
-  // Delivery Address State
-  const [deliveryAddress, setDeliveryAddress] = useState({
-    city: 'Barishal',
-    area: 'Rupatoli'
-  });
-  const [showAddressModal, setShowAddressModal] = useState(false);
-  const [tempAddress, setTempAddress] = useState(deliveryAddress);
-  const [activeSelector, setActiveSelector] = useState(null); // 'city' or 'area' or null
-  const cityDropdownRef = useRef(null);
-  const areaDropdownRef = useRef(null);
-
-  useClickOutside(cityDropdownRef, () => {
-    if (activeSelector === 'city') setActiveSelector(null);
-  });
-  useClickOutside(areaDropdownRef, () => {
-    if (activeSelector === 'area') setActiveSelector(null);
-  });
-
-  // Simple Mock Data for Bangladesh Address (Flattened to City > Area)
-  const BD_DATA = {
-    'Barishal': ['Rupatoli', 'Amtala', 'Natullabad', 'Sadary Road', 'Chowmatha'],
-    'Dhaka - North': ['Gulshan 1', 'Gulshan 2', 'Banani', 'Uttara', 'Bashundhara R/A'],
-    'Dhaka - South': ['Dhanmondi', 'Motijheel', 'Old Dhaka', 'Lalbagh', 'Mohammadpur'],
-    'Chittagong': ['Panchlaish', 'Double Mooring', 'Agrabad', 'GEC Circle'],
-    'Sylhet': ['Zindabazar', 'Ambarkhana', 'Shahjalal Uposhahar'],
-    'Cox\'s Bazar': ['Teknaf', 'Ukhia', 'Laboni Beach Area'],
-    'Gazipur': ['Sreepur', 'Kaliakair', 'Board Bazar'],
-    'Narayanganj': ['Chashara', 'Fatullah'],
-    'Rajshahi': ['Shaheb Bazar', 'Motihar'],
-    'Khulna': ['Khalishpur', 'Daulatpur']
-  };
 
   useEffect(() => {
     fetchProduct();
@@ -76,10 +47,17 @@ const ProductDetails = () => {
         const primary = response.data.images.find((img) => img.is_primary) || response.data.images[0];
         setSelectedImage(primary.image_url);
       }
-      if (response.data.id) {
-        const reviewsRes = await api.get(`/reviews/${response.data.id}`);
-        setReviews(reviewsRes.data || []);
-      }
+      
+      // Fetch reviews
+      setFetchingReviews(true);
+      api.get(`/reviews/${response.data.id}`)
+        .then(r => setReviews(r.data || []))
+        .catch(e => console.error('Reviews fail', e))
+        .finally(() => setFetchingReviews(false));
+
+      // Fetch similar products
+      const similarRes = await api.get(`/products?category_id=${response.data.categories?.[0]?.id || ''}&limit=6`);
+      setSimilarProducts(similarRes.data.data?.filter(p => p.id !== response.data.id) || []);
     } catch (error) {
       console.error('Failed to fetch product', error);
       toast.error('Product not found');
@@ -89,609 +67,242 @@ const ProductDetails = () => {
   };
 
   const handleAddToCart = async () => {
+    if (product.stock_count <= 0) return;
     setAddingToCart(true);
-    // Add a slight delay for premium feel
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    // Normalize image_url for the cart
-    const cartProduct = {
-      ...product,
-      image_url: selectedImage || (product.images?.length > 0 ? product.images[0].image_url : null)
-    };
-    
-    addItem(cartProduct, quantity);
+    await new Promise(r => setTimeout(r, 600));
+    addItem({ ...product, image_url: selectedImage || product.images?.[0]?.image_url }, quantity);
     setAddingToCart(false);
-    toast.success(`${product.name} added to cart`);
+    toast.success('Added to cart');
+  };
+
+  const handleBuyNow = async () => {
+    if (product.stock_count <= 0) return;
+    setBuyingNow(true);
+    await new Promise(r => setTimeout(r, 600));
+    addItem({ ...product, image_url: selectedImage || product.images?.[0]?.image_url }, quantity);
+    navigate('/checkout');
   };
 
   if (loading) return (
-    <div className="h-screen flex flex-col items-center justify-center gap-6">
-      <div className="relative">
-        <div className="w-20 h-20 border-4 border-secondary/10 border-t-secondary rounded-full animate-spin" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-12 h-12 bg-indigo-500/20 rounded-full flex items-center justify-center">
-            <span className="text-[10px] font-black text-indigo-300 tracking-tighter">ERAYA</span>
-          </div>
-        </div>
-      </div>
-      <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em] animate-pulse">Experience loading...</p>
+    <div style={{ height:'80vh', display:'flex', alignItems:'center', justifyContent:'center' }}>
+       <div style={{ width:40, height:40, border:`3px solid ${C.bSoft}`, borderTopColor:C.t900, borderRadius:'50%', animation:'spin 0.8s linear infinite' }} />
+       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 
   if (!product) return (
-    <div className="h-[60vh] flex flex-col items-center justify-center gap-4">
-      <p className="text-slate-500 text-xl font-bold uppercase tracking-widest">Product not found</p>
-      <Link to="/products" className="text-secondary font-black hover:underline uppercase text-xs tracking-widest">← Back to Collection</Link>
+    <div style={{ height:'60vh', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:'1rem' }}>
+      <h2 style={{ fontSize:'1.5rem', fontWeight:800, color:C.t900 }}>Product not found</h2>
+      <Link to="/products" style={{ color:C.blue, fontWeight:700, textDecoration:'none' }}>← Back to Shop</Link>
     </div>
   );
 
+  const outOfStock = product.stock_count <= 0;
+  const avgRating = product.average_rating || 5.0;
+
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8">
+    <div style={{ minHeight: '100vh', paddingBottom: '4rem' }}>
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-slate-400 mb-8 overflow-x-auto whitespace-nowrap scrollbar-hide">
-        <Link to="/" className="hover:text-secondary transition-colors">Home</Link>
-        <ChevronRight className="w-3 h-3 shrink-0" />
-        <Link to="/products" className="hover:text-secondary transition-colors">Collection</Link>
-        {product.categories && product.categories.length > 0 && (
-          <>
-            <ChevronRight className="w-3 h-3 shrink-0" />
-            <Link
-              to={`/products?category=${product.categories[0].id}`}
-              className="hover:text-secondary transition-colors"
-            >
-              {product.categories[0].name}
-            </Link>
-          </>
-        )}
-        <ChevronRight className="w-3 h-3 shrink-0" />
-        <span className="text-secondary font-black">{product.name}</span>
+      <div style={{ display: 'flex', gap: '0.5rem', fontSize: '0.7rem', color: C.t300, marginBottom: '1.25rem', fontWeight: 600 }}>
+        <Link to="/" style={{ color: 'inherit', textDecoration: 'none' }}>Home</Link>
+        <span style={{ opacity: 0.5 }}>/</span>
+        <Link to="/products" style={{ color: 'inherit', textDecoration: 'none' }}>Collection</Link>
+        <span style={{ opacity: 0.5 }}>/</span>
+        <span style={{ color: C.t900 }}>{product.name}</span>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 mb-20">
-        {/* Left Column: Image Gallery (4 cols) */}
-        <div className="lg:col-span-4 space-y-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="aspect-square glass-card-light rounded-[2.5rem] overflow-hidden border border-white/[0.08] relative"
-          >
-            <img
-              src={getImageUrl(selectedImage)}
-              className="w-full h-full object-cover hover:scale-110 transition-transform duration-700"
-              alt={product.name}
-            />
-            {product.stock_count <= 0 && (
-              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-10 pointer-events-none">
-                <div className="badge-rose px-8 py-4 text-sm font-black -rotate-12">
-                  Stock Out
-                </div>
+      {/* Main Container - Compact Card */}
+      <div style={{ 
+        background: '#fff', border: `1px solid ${C.bSoft}`, borderRadius: '2rem', 
+        padding: '2rem', boxShadow: '0 8px 30px rgba(0,0,0,0.02)',
+        marginBottom: '2.5rem', maxWidth: '1400px', margin: '0 auto 2.5rem'
+      }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '0.9fr 1.1fr', gap: '3rem' }}>
+          
+          {/* Left: Gallery */}
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            {/* Thumbnails */}
+            {product.images?.length > 1 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', width: 50 }}>
+                {product.images.map((img) => (
+                  <div 
+                    key={img.id}
+                    onClick={() => setSelectedImage(img.image_url)}
+                    style={{ 
+                      aspectRatio: '1/1', 
+                      borderRadius: '0.5rem', 
+                      overflow: 'hidden', 
+                      cursor: 'pointer',
+                      border: `2px solid ${selectedImage === img.image_url ? C.t900 : 'transparent'}`,
+                      transition: 'all 0.2s',
+                      background: C.bgMuted
+                    }}
+                  >
+                    <img src={getImageUrl(img.image_url)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
+                  </div>
+                ))}
               </div>
             )}
-          </motion.div>
-          {product.images?.length > 1 && (
-            <div className="grid grid-cols-4 gap-4">
-              {product.images.map((img) => (
-                <button
-                  key={img.id}
-                  onClick={() => setSelectedImage(img.image_url)}
-                  className={`aspect-square glass-input rounded-2xl overflow-hidden transition-all border ${selectedImage === img.image_url ? 'border-indigo-500 ring-4 ring-indigo-500/20' : 'border-white/[0.10] hover:border-white/20'
-                    }`}
-                >
-                  <img src={getImageUrl(img.image_url)} className="w-full h-full object-cover" alt="" />
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Center Column: Product Main Info (5 cols) */}
-        <div className="lg:col-span-5 flex flex-col">
-          <div className="mb-8">
-            <h1 className="text-3xl font-black text-white tracking-tight mb-4 leading-tight">
-              {product.name}
-            </h1>
-
-            <div className="flex flex-wrap items-center gap-4 mb-6">
-              <div className="flex items-center gap-1.5 glass-input px-3 py-1.5 rounded-full border border-white/[0.10]">
-                <div className="flex gap-0.5">
-                  {[1, 2, 3, 4, 5].map(i => (
-                    <Star key={i} className={`w-3.5 h-3.5 ${i <= Math.round(product.average_rating) ? 'text-amber-400 fill-amber-400' : 'text-slate-200'}`} />
-                  ))}
-                </div>
-                <span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">{product.total_reviews} Ratings</span>
-              </div>
-              <div className="flex items-center gap-1.5 glass-input px-3 py-1.5 rounded-full border border-white/[0.10]">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Brand:</span>
-                <span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">Eraya Official</span>
-              </div>
-            </div>
-
-            <div className="p-8 glass-card-light rounded-[2.5rem] relative overflow-hidden">
-              <div className="flex items-center gap-4 mb-2">
-                <span className="text-4xl font-black text-white tracking-tighter">৳{product.base_price.toLocaleString()}</span>
-                {product.discount_price && (
-                  <span className="text-slate-500 line-through text-xl font-bold">৳{product.discount_price.toLocaleString()}</span>
-                )}
-              </div>
-              {product.discount_percentage && (
-                <div className="inline-flex items-center gap-1.5 bg-secondary text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-lg shadow-secondary/20">
-                  <ChevronRight className="w-3 h-3 rotate-180" /> {product.discount_percentage}% OFF
+            {/* Main Image */}
+            <div style={{ flex: 1, position: 'relative', borderRadius: '1.5rem', overflow: 'hidden', background: C.bgMuted, minHeight: 380, border: `1px solid ${C.bSoft}` }}>
+              <img src={getImageUrl(selectedImage)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt={product.name} />
+              {outOfStock && (
+                <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ background: C.t900, color: '#fff', padding: '0.4rem 1.25rem', borderRadius: 9999, fontWeight: 900, fontSize: '0.75rem' }}>Out of Stock</span>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Promotions */}
-          <div className="mb-8 p-6 bg-amber-500/10 rounded-3xl border border-amber-500/20 flex items-center justify-between group cursor-pointer hover:bg-amber-500/15 transition-colors">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-amber-500/20 rounded-2xl flex items-center justify-center">
-                <Truck className="w-5 h-5 text-amber-500" />
+          {/* Right: Details */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', paddingTop: '0.25rem' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginBottom: '0.5rem' }}>
+                {[1,2,3,4,5].map(i => (
+                  <Star key={i} style={{ width: 10, height: 10, fill: i <= Math.round(avgRating) ? '#fbbf24' : 'none', color: i <= Math.round(avgRating) ? '#fbbf24' : C.t300 }} />
+                ))}
+                <span style={{ fontSize: '0.7rem', fontWeight: 800, marginLeft: '0.4rem', color: C.t900 }}>{avgRating.toFixed(1)} / 5.0</span>
               </div>
-              <div>
-                <div className="text-[9px] font-black text-amber-500 uppercase tracking-[0.2em] mb-0.5">Promotions</div>
-                <span className="text-xs font-bold text-slate-200">Free shipping on orders above ৳{settings.free_shipping_threshold.toLocaleString()}</span>
-              </div>
-            </div>
-            <ChevronRight className="w-5 h-5 text-amber-300 group-hover:text-amber-500 transition-colors" />
-          </div>
-
-          <div className="space-y-8 mb-10">
-            {!['admin', 'moderator'].includes(user?.role?.toLowerCase()) && (
-              <>
-                <div className="flex items-center gap-10">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] w-16">Quantity</span>
-                   <div className="flex items-center gap-5">
-                     <div className={`flex items-center gap-3 glass-input rounded-2xl p-1.5 w-fit border border-white/[0.10] ${product.stock_count <= 0 ? 'opacity-30 pointer-events-none' : ''}`}>
-                       <button
-                         onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                         disabled={product.stock_count <= 0}
-                         className="w-10 h-10 flex items-center justify-center hover:glass-card-light/[0.10] rounded-xl transition-all"
-                       >
-                         <Minus className="w-4 h-4 text-slate-300" />
-                       </button>
-                       <span className="font-black w-8 text-center text-sm text-white">{quantity}</span>
-                       <button
-                         onClick={() => setQuantity((q) => Math.min(product.stock_count, q + 1))}
-                         disabled={product.stock_count <= 0}
-                         className="w-10 h-10 flex items-center justify-center hover:glass-card-light/[0.10] rounded-xl transition-all"
-                       >
-                         <Plus className="w-4 h-4 text-slate-300" />
-                       </button>
-                     </div>
-                     {product.stock_count > 0 ? (
-                       <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">{product.stock_count} Available</span>
-                     ) : (
-                       <span className="text-[10px] font-black text-red-500 uppercase tracking-widest">Out of Stock</span>
-                     )}
-                   </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <button
-                    onClick={async () => {
-                      setBuyingNow(true);
-                      await new Promise(resolve => setTimeout(resolve, 600));
-
-                      // Save selected address for Checkout
-                      const formattedAddress = `${deliveryAddress.area}, ${deliveryAddress.city}`;
-                      localStorage.setItem('checkout_shipping_address', formattedAddress);
-
-                      addItem(product, quantity);
-                      navigate('/checkout');
-                    }}
-                    disabled={product.stock_count <= 0 || buyingNow}
-                    className="btn-primary flex-grow py-5 flex items-center justify-center gap-3 disabled:opacity-50"
-                  >
-                    {buyingNow ? (
-                      <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                    ) : product.stock_count <= 0 ? 'Out of Stock' : 'Buy Now'}
-                  </button>
-                  <button
-                    onClick={handleAddToCart}
-                    disabled={product.stock_count <= 0 || addingToCart}
-                    className="btn-ghost flex-grow py-5 flex items-center justify-center gap-3 disabled:opacity-50"
-                  >
-                    {addingToCart ? (
-                      <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                    ) : product.stock_count <= 0 ? 'Sold Out' : (
-                      <>
-                        <ShoppingCart className="w-4 h-4" />
-                        Add to Cart
-                      </>
-                    )}
-                  </button>
-                  <button
-                    onClick={async () => {
-                      if (!user) {
-                        toast.error('Please login to add items to wishlist');
-                        return;
-                      }
-                      setAddingToWishlist(true);
-                      await new Promise(resolve => setTimeout(resolve, 600));
-                      const added = await toggleWishlist(product, !!user);
-                      setAddingToWishlist(false);
-                      if (added) toast.success('Added to Wishlist');
-                      else toast.success('Removed from Wishlist');
-                    }}
-                    disabled={addingToWishlist}
-                    className={`w-16 h-16 rounded-2xl flex items-center justify-center border transition-all shrink-0 ${isInWishlist(product.id)
-                        ? 'bg-amber-500/20 border-amber-500/30 text-amber-400'
-                        : 'glass-input border-white/[0.10] text-slate-400 hover:text-amber-400 hover:bg-amber-500/10'
-                      }`}
-                  >
-                    {addingToWishlist ? (
-                      <div className="w-4 h-4 border-2 border-amber-500/20 border-t-amber-500 rounded-full animate-spin" />
-                    ) : (
-                      <Heart className={`w-6 h-6 ${isInWishlist(product.id) ? 'fill-amber-500 text-amber-500' : ''}`} />
-                    )}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Right Column: Delivery & Seller Info (3 cols) */}
-        <div className="lg:col-span-3 space-y-6">
-          {/* Delivery Options Box */}
-          <div className="glass-card p-8 space-y-8">
-            <div className="flex items-center justify-between">
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Delivery Options</h4>
-              <HelpCircle className="w-4 h-4 text-slate-200" />
+              <h1 style={{ fontSize: '1.6rem', fontWeight: 900, color: C.t900, margin: '0 0 0.4rem', letterSpacing: '-0.02em', lineHeight: 1.1 }}>{product.name}</h1>
+              <p style={{ fontSize: '1.35rem', fontWeight: 900, color: C.t900, margin: 0 }}>৳{product.base_price?.toLocaleString()}</p>
             </div>
 
-            <div className="space-y-6">
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 glass-input rounded-xl flex items-center justify-center shrink-0 border border-white/[0.08]">
-                  <MapPin className="w-5 h-5 text-slate-400" />
-                </div>
-                <div className="flex-grow min-w-0">
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <p className="text-xs font-black text-white truncate tracking-tight">{deliveryAddress.city}</p>
-                    {!['admin', 'moderator'].includes(user?.role?.toLowerCase()) && (
-                      <button
-                        onClick={() => {
-                          setTempAddress(deliveryAddress);
-                          setShowAddressModal(true);
-                        }}
-                        className="text-[10px] font-black text-secondary uppercase hover:underline shrink-0"
-                      >
-                        Edit
-                      </button>
-                    )}
-                  </div>
-                  <p className="text-[10px] font-bold text-slate-400">{deliveryAddress.area}</p>
-                </div>
-              </div>
+            <div style={{ height: 1, background: C.bSoft }} />
 
-              <div className="flex items-start gap-4 pt-6 border-t border-white/[0.06]">
-                <div className="w-10 h-10 glass-input rounded-xl flex items-center justify-center shrink-0 border border-white/[0.08]">
-                  <Truck className="w-5 h-5 text-slate-400" />
-                </div>
-                <div className="flex-grow">
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-[10px] font-black text-slate-200 tracking-widest">Standard Delivery</p>
-                    <span className="text-xs font-black text-white">৳{settings.standard_delivery_fee}</span>
-                  </div>
-                  <p className="text-[10px] font-bold text-slate-400 tracking-tight">Delivered in 2-5 days</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4 pt-6 border-t border-white/[0.06]">
-                <div className="w-10 h-10 glass-input rounded-xl flex items-center justify-center shrink-0 border border-white/[0.08]">
-                  <div className="text-[10px] font-black text-slate-400 italic">৳</div>
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-slate-200 tracking-widest">Cash on Delivery</p>
-                  <p className="text-[10px] font-bold text-green-500 tracking-tight mt-1">Available</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Service & Warranty Box */}
-          <div className="glass-card-light p-8 space-y-8">
-            <div className="flex items-center justify-between">
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Service Guarantee</h4>
-              <Shield className="w-4 h-4 text-slate-200" />
+            {/* Description Preview */}
+            <div>
+              <p style={{ fontSize: '0.8rem', color: C.t700, lineHeight: 1.5, margin: 0 }}>
+                {product.description || 'This premium collection features refined materials and minimalist design, offering both form and function at an exceptional point.'}
+              </p>
             </div>
 
-            <div className="space-y-6">
-              <div className="flex items-start gap-4">
-                <RotateCcw className="w-5 h-5 text-slate-400 shrink-0" />
-                <div>
-                  <p className="text-[11px] font-black text-slate-200 tracking-widest">7 Days Return</p>
-                  <p className="text-[10px] font-bold text-slate-400 tracking-tight mt-1">Original Condition</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-4 pt-6 border-t border-white/[0.06]">
-                <Shield className="w-5 h-5 text-slate-400 shrink-0" />
-                <div>
-                  <p className="text-[11px] font-black text-slate-200 tracking-widest">Official Warranty</p>
-                  <p className="text-[10px] font-bold text-slate-400 tracking-tight mt-1">Not Applicable</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Seller Info Box */}
-          <div className="glass-card p-8">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em] mb-1">Verified Seller</p>
-                <h5 className="font-black text-white text-sm tracking-tight">Eraya Official Store</h5>
-              </div>
-              <div className="w-12 h-12 bg-secondary/10 rounded-2xl flex items-center justify-center">
-                <Info className="w-5 h-5 text-secondary" />
-              </div>
+            {/* Quantity Selector */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+               <p style={{ fontSize: '0.75rem', fontWeight: 900, color: C.t900, margin: 0 }}>Quantity</p>
+               <div style={{ display: 'flex', alignItems: 'center', background: C.bgMuted, borderRadius: '9999px', padding: '0.2rem' }}>
+                  <button onClick={() => setQuantity(q => Math.max(1, q-1))} style={{ width: 28, height: 28, borderRadius: '50%', border: 'none', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}><Minus style={{ width: 9 }} /></button>
+                  <span style={{ width: 30, textAlign: 'center', fontWeight: 800, fontSize: '0.8rem' }}>{quantity}</span>
+                  <button onClick={() => setQuantity(q => q+1)} style={{ width: 28, height: 28, borderRadius: '50%', border: 'none', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}><Plus style={{ width: 9 }} /></button>
+               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <p className="text-xl font-black text-white">92%</p>
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Positive</p>
-              </div>
-              <div className="border-l border-white/[0.06] pl-6">
-                <p className="text-xl font-black text-white">100%</p>
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">On Time</p>
-              </div>
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <button 
+                onClick={handleAddToCart}
+                disabled={outOfStock || addingToCart}
+                style={{ 
+                  flex: 1, height: 36, border: 'none', background: C.t900, color: '#fff', 
+                  borderRadius: '0.65rem', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer',
+                  transition: 'all 0.2s', opacity: outOfStock ? 0.5 : 1, whiteSpace: 'nowrap'
+                }}
+                onMouseEnter={e => { if(!outOfStock) e.currentTarget.style.background = '#000'; }}
+                onMouseLeave={e => e.currentTarget.style.background = C.t900}
+              >
+                {addingToCart ? '...' : 'Add to Cart'}
+              </button>
+              
+              <button 
+                onClick={handleBuyNow}
+                disabled={outOfStock || buyingNow}
+                className="btn-lime"
+                style={{ 
+                  flex: 1.2, height: 36, padding: '0 0.75rem', borderRadius: '0.65rem', fontSize: '0.75rem',
+                  display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.4rem',
+                  opacity: outOfStock ? 0.5 : 1, whiteSpace: 'nowrap'
+                }}
+              >
+                {buyingNow ? '...' : 'Checkout'}
+                <div className="icon-circle" style={{ width: '1.15rem', height: '1.15rem' }}><ChevronRight style={{ width: 11 }} /></div>
+              </button>
+
+              <button 
+                onClick={() => toggleWishlist(product)}
+                style={{ 
+                  width: 36, height: 36, border: `1px solid ${C.bSoft}`, background: '#fff',
+                  borderRadius: '0.65rem', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                  transition: 'all 0.2s', flexShrink: 0
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = C.bgMuted}
+                onMouseLeave={e => e.currentTarget.style.background = '#fff'}
+              >
+                <Heart style={{ width: 14, height: 14, color: isInWishlist(product.id) ? C.rose : C.t300, fill: isInWishlist(product.id) ? C.rose : 'none' }} />
+              </button>
             </div>
 
-            <button className="btn-ghost w-full mt-8 py-3 text-[10px]">
-              Visit Store
-            </button>
+            <div style={{ display: 'flex', gap: '1.25rem', marginTop: '0.15rem' }}>
+               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: C.t500, fontSize: '0.7rem', fontWeight: 700 }}>
+                 <Truck style={{ width: 12, color: C.t900 }} /> Fast Shipping
+               </div>
+               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: C.t500, fontSize: '0.7rem', fontWeight: 700 }}>
+                 <Shield style={{ width: 12, color: C.t900 }} /> 2 Year Warranty
+               </div>
+            </div>
           </div>
         </div>
       </div>
-
-      {/* Tabs */}
-      <div className="border-b border-white/[0.06] mb-12 flex items-center justify-center gap-16">
-        {['description', 'reviews'].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`pb-6 text-xs font-black uppercase tracking-[0.3em] transition-all relative ${activeTab === tab ? 'text-indigo-400' : 'text-slate-500 hover:text-slate-300'
-              }`}
-          >
-            {tab === 'reviews' ? `Customer Reviews (${product.total_reviews})` : tab}
-            {activeTab === tab && (
-              <motion.div layoutId="tab-indicator" className="absolute bottom-0 left-[-20%] right-[-20%] h-1 bg-indigo-400 rounded-full" />
-            )}
-          </button>
-        ))}
-      </div>
-
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          className="min-h-[300px] max-w-4xl mx-auto"
-        >
-          {activeTab === 'description' && (
-            <div className="text-slate-400 text-base leading-relaxed space-y-6 text-center lg:text-left">
-              {product.description || 'This product is part of our signature collection. Hand-finished and inspected for premium quality.'}
+      {/* Reviews & Similar Section (Swapped Layout) */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '2.5rem' }}>
+        
+        {/* Reviews (Now on the Left) */}
+        <div style={{ background: '#fff', border: `1px solid ${C.bSoft}`, borderRadius: '2rem', padding: '2.5rem', boxShadow: '0 8px 30px rgba(0,0,0,0.02)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+            <h2 style={{ fontSize: '1.35rem', fontWeight: 900, margin: 0, letterSpacing: '-0.02em' }}>Customer Reviews</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.85rem', background: C.bgMuted, borderRadius: '9999px' }}>
+              <Star style={{ width: 14, height: 14, fill: '#fbbf24', color: '#fbbf24' }} />
+              <span style={{ fontSize: '0.85rem', fontWeight: 900 }}>4.8 / 5.0</span>
             </div>
-          )}
-
-          {activeTab === 'reviews' && (
-            <div className="space-y-16">
-              <div className="flex flex-col md:flex-row justify-between items-center gap-8 glass-card-light p-10 rounded-[3rem]">
-                <div className="text-center md:text-left">
-                  <h3 className="text-2xl font-black text-white tracking-tight mb-2">Verified Feedback</h3>
-                  <p className="text-slate-400 text-sm font-medium">Real experiences from our collectors.</p>
-                </div>
-                <div className="flex items-center gap-6">
-                  <div className="flex gap-1">
-                    {[1, 2, 3, 4, 5].map(s => (
-                      <Star key={s} className={`w-5 h-5 ${s <= Math.round(product.average_rating) ? 'text-amber-400 fill-amber-400' : 'text-slate-200'}`} />
-                    ))}
-                  </div>
-                  <div className="w-px h-10 glass-card-light/20" />
-                  <span className="text-2xl font-black text-white">{product.average_rating?.toFixed(1) || '0.0'}</span>
-                </div>
-              </div>
-
-              {reviews.length === 0 ? (
-                <div className="text-center py-32 glass-card-light rounded-[3rem]">
-                  <Star className="w-16 h-16 text-slate-200 mx-auto mb-6" />
-                  <p className="text-slate-400 font-black text-sm uppercase tracking-widest">No reviews yet for this piece.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {reviews.map((review) => (
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      key={review.id}
-                      className="glass-card p-8 hover:shadow-[0_20px_60px_rgba(99,102,241,0.15)] transition-all duration-500"
-                    >
-                      <div className="flex justify-between items-start mb-8">
-                        <div className="flex items-center gap-5">
-                          <div className="w-14 h-14 bg-indigo-500/20 rounded-2xl flex items-center justify-center font-black text-indigo-300 border border-indigo-500/30 text-lg">
-                            {review.user?.full_name?.charAt(0).toUpperCase() || 'C'}
-                          </div>
-                          <div>
-                            <h4 className="font-black text-white text-sm tracking-tight">{review.user?.full_name || 'Verified Collector'}</h4>
-                            <div className="flex gap-0.5 mt-1">
-                              {[1, 2, 3, 4, 5].map((s) => (
-                                <Star key={s} className={`w-3 h-3 ${s <= review.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200'}`} />
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">
-                          {new Date(review.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                        </span>
-                      </div>
-                      {review.comment && (
-                        <div className="p-6 glass-card-light rounded-2xl border border-white/[0.06] text-sm text-slate-400 leading-relaxed italic relative">
-                          <span className="absolute top-2 left-3 text-4xl text-slate-300 font-serif">"</span>
-                          {review.comment}
-                        </div>
-                      )}
-                      {review.is_verified && (
-                        <div className="mt-6 flex items-center gap-2 text-[9px] font-black text-emerald-500 uppercase tracking-[0.2em]">
-                          <Shield className="w-3.5 h-3.5" /> Authenticity Guaranteed
-                        </div>
-                      )}
-                    </motion.div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </motion.div>
-      </AnimatePresence>
-
-      {/* Address Selection Side Drawer */}
-      <AnimatePresence>
-        {showAddressModal && (
-          <div className="fixed inset-0 z-[200] flex justify-end">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowAddressModal(false)}
-              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="relative bg-[#1e293b] w-full max-w-[400px] h-full shadow-2xl flex flex-col border-l border-white/[0.08]"
-            >
-              <div className="p-8 border-b border-white/[0.06] flex items-center justify-between">
-                <div>
-                  <h3 className="text-xl font-black text-white tracking-tight">Delivery Region</h3>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Select your location</p>
-                </div>
-                <button
-                  onClick={() => setShowAddressModal(false)}
-                  className="w-10 h-10 rounded-xl glass-input flex items-center justify-center text-slate-400 hover:text-white transition-all border border-white/[0.10]"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="flex-grow overflow-y-auto p-8 space-y-8 custom-scrollbar">
-                {/* Minimal Location Card */}
-                <div className="p-6 glass-input rounded-[2.5rem] border border-white/[0.10]">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-amber-500/20 rounded-2xl flex items-center justify-center">
-                      <MapPin className="w-6 h-6 text-secondary" />
+          </div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            {fetchingReviews ? (
+              <p style={{ fontSize: '0.8rem', color: C.t300 }}>Loading reviews...</p>
+            ) : reviews.length > 0 ? reviews.map(rev => (
+              <div key={rev.id} style={{ paddingBottom: '1.5rem', borderBottom: `1px solid ${C.bSoft}` }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{ width: 34, height: 34, borderRadius: '50%', background: C.bgMuted, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: C.t300, fontSize: '0.65rem' }}>
+                      {rev.user?.first_name?.[0] || 'U'}
                     </div>
                     <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Current Region</p>
-                      <p className="text-sm font-black text-white tracking-tight">{tempAddress.area}, {tempAddress.city}</p>
+                      <p style={{ fontSize: '0.85rem', fontWeight: 900, color: C.t900, margin: 0 }}>{rev.user?.first_name} {rev.user?.last_name}</p>
+                      <div style={{ display: 'flex', gap: '0.1rem', marginTop: '0.1rem' }}>
+                        {[1,2,3,4,5].map(s => <Star key={s} style={{ width: 8, height: 8, fill: s <= rev.rating ? '#fbbf24' : 'none', color: s <= rev.rating ? '#fbbf24' : C.t300 }} />)}
+                      </div>
                     </div>
                   </div>
+                  <span style={{ fontSize: '0.7rem', color: C.t300, fontWeight: 600 }}>{new Date(rev.created_at).toLocaleDateString()}</span>
                 </div>
-
-                <div className="space-y-6">
-                  {/* Custom City Dropdown */}
-                  <div className="space-y-3">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">01. Select City</label>
-                    <div className="relative" ref={cityDropdownRef}>
-                      <button
-                        onClick={() => setActiveSelector(activeSelector === 'city' ? null : 'city')}
-                        className="w-full glass-input py-4 px-6 text-sm flex items-center justify-between"
-                      >
-                        {tempAddress.city}
-                        <ChevronRight className={`w-4 h-4 text-slate-300 transition-transform ${activeSelector === 'city' ? 'rotate-90 text-secondary' : ''}`} />
-                      </button>
-
-                      <AnimatePresence>
-                        {activeSelector === 'city' && (
-                          <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 10 }}
-                            className="absolute top-full left-0 right-0 mt-2 bg-[#1e293b] rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.5)] border border-white/[0.10] overflow-hidden z-10 p-2"
-                          >
-                            <div className="max-h-[200px] overflow-y-auto custom-scrollbar">
-                              {Object.keys(BD_DATA).map((city) => (
-                                <button
-                                  key={city}
-                                  onClick={() => {
-                                    setTempAddress({ city: city, area: BD_DATA[city][0] });
-                                    setActiveSelector(null);
-                                  }}
-                                  className={`w-full text-left px-5 py-3.5 rounded-xl text-xs font-bold transition-all ${tempAddress.city === city ? 'bg-indigo-500/20 text-indigo-300' : 'text-slate-400 hover:glass-card-light/[0.08]'
-                                    }`}
-                                >
-                                  {city}
-                                </button>
-                              ))}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  </div>
-
-                  {/* Custom Area Dropdown */}
-                  <div className="space-y-3">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">02. Select Area</label>
-                    <div className="relative" ref={areaDropdownRef}>
-                      <button
-                        onClick={() => setActiveSelector(activeSelector === 'area' ? null : 'area')}
-                        className="w-full glass-input py-4 px-6 text-sm flex items-center justify-between"
-                      >
-                        {tempAddress.area}
-                        <ChevronRight className={`w-4 h-4 text-slate-300 transition-transform ${activeSelector === 'area' ? 'rotate-90 text-secondary' : ''}`} />
-                      </button>
-
-                      <AnimatePresence>
-                        {activeSelector === 'area' && (
-                          <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 10 }}
-                            className="absolute top-full left-0 right-0 mt-2 bg-[#1e293b] rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.5)] border border-white/[0.10] overflow-hidden z-10 p-2"
-                          >
-                            <div className="max-h-[200px] overflow-y-auto custom-scrollbar">
-                              {BD_DATA[tempAddress.city].map((area) => (
-                                <button
-                                  key={area}
-                                  onClick={() => {
-                                    setTempAddress({ ...tempAddress, area: area });
-                                    setActiveSelector(null);
-                                  }}
-                                  className={`w-full text-left px-5 py-3.5 rounded-xl text-xs font-bold transition-all ${tempAddress.area === area ? 'bg-indigo-500/20 text-indigo-300' : 'text-slate-400 hover:glass-card-light/[0.08]'
-                                    }`}
-                                >
-                                  {area}
-                                </button>
-                              ))}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  </div>
-                </div>
+                <p style={{ fontSize: '0.8rem', color: C.t700, lineHeight: 1.6, margin: 0 }}>
+                  {rev.comment}
+                </p>
               </div>
-
-              <div className="p-8 border-t border-white/[0.06]">
-                <button
-                  onClick={() => {
-                    setDeliveryAddress(tempAddress);
-                    setShowAddressModal(false);
-                    toast.success('Delivery location updated');
-                  }}
-                  className="w-full bg-secondary text-white py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-secondary/20 hover:scale-[1.02] active:scale-95 transition-all"
-                >
-                  Confirm Location
-                </button>
+            )) : (
+              <div style={{ padding: '2rem 0', textAlign: 'center' }}>
+                <p style={{ fontSize: '0.85rem', color: C.t300, margin: 0 }}>No reviews yet for this product.</p>
               </div>
-            </motion.div>
+            )}
           </div>
-        )}
-      </AnimatePresence>
+        </div>
+
+        {/* Similar Items (Now on the Right) */}
+        <div style={{ background: '#fff', border: `1px solid ${C.bSoft}`, borderRadius: '2rem', padding: '2.5rem', boxShadow: '0 8px 30px rgba(0,0,0,0.02)' }}>
+          <h2 style={{ fontSize: '1.35rem', fontWeight: 900, marginBottom: '2rem', letterSpacing: '-0.02em' }}>Similar items</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
+            {similarProducts.length > 0 ? similarProducts.map(p => (
+              <ProductCard 
+                key={p.id} 
+                product={p} 
+                onCart={addItem} 
+                onWishlist={toggleWishlist} 
+                inWishlist={isInWishlist(p.id)} 
+              />
+            )) : (
+              <p style={{ fontSize: '0.75rem', color: C.t300 }}>Exploring similar pieces...</p>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

@@ -2,6 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldCheck, RefreshCcw, X, Mail } from 'lucide-react';
 
+const C = {
+  t900: '#0d1117', t700: '#1f2937', t500: '#6b7280', t300: '#adb5bd',
+  bSoft: 'rgba(0,0,0,0.07)', bMed: 'rgba(0,0,0,0.12)',
+  bgCard: '#ffffff', bgPage: '#edf0f4', bgMuted: '#f3f5f8',
+  lime: '#cbff00', blue: '#3b82f6', rose: '#f43f5e', amber: '#f59e0b',
+  rSm: '0.85rem', rMd: '1.25rem', rLg: '1.5rem', r2xl: '2.5rem'
+};
+
 const maskEmail = (email) => {
   if (!email) return '';
   const [user, domain] = email.split('@');
@@ -24,9 +32,7 @@ const OTPModal = ({
   const [resendCooldown, setResendCooldown] = useState(0);
 
   useEffect(() => {
-    if (!isOpen) {
-      setOtp('');
-    }
+    if (!isOpen) { setOtp(''); }
   }, [isOpen]);
 
   useEffect(() => {
@@ -53,96 +59,110 @@ const OTPModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[500] flex items-center justify-center p-4">
+    <div style={{ position: 'fixed', inset: 0, zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
       <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         onClick={onClose}
-        className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+        style={{ position: 'absolute', inset: 0, background: 'rgba(13,17,23,0.6)', backdropFilter: 'blur(12px)' }}
       />
       <motion.div 
-        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        initial={{ scale: 0.95, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.9, opacity: 0, y: 20 }}
-        className="relative glass-card-light rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden border border-white/[0.08]"
+        exit={{ scale: 0.95, opacity: 0, y: 20 }}
+        style={{
+          position: 'relative', background: '#fff', borderRadius: C.r2xl,
+          boxShadow: '0 30px 60px -12px rgba(0,0,0,0.3)',
+          width: '100%', maxWidth: 420, overflow: 'hidden', border: `1px solid ${C.bSoft}`
+        }}
       >
-        <div className="absolute top-6 right-6">
-          <button 
-            onClick={onClose}
-            className="w-10 h-10 rounded-full glass-card-light flex items-center justify-center text-slate-400 hover:text-white hover:glass-input transition-all"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+        <button onClick={onClose} style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'none', border: 'none', color: C.t300, cursor: 'pointer' }}>
+          <X size={20} />
+        </button>
 
-        <div className="p-8 pt-12 space-y-8">
-          <div className="text-center space-y-4">
-            <div className="w-20 h-20 bg-secondary/10 rounded-[2.5rem] flex items-center justify-center mx-auto mb-2 relative">
-              <ShieldCheck className="w-10 h-10 text-secondary" />
-              <div className="absolute -top-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full border-4 border-white flex items-center justify-center">
-                <div className="w-1.5 h-1.5 glass-card-light rounded-full animate-ping" />
-              </div>
+        <div style={{ padding: '3rem 2.5rem' }}>
+          <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+            <div style={{ 
+              width: 80, height: 80, background: '#eff6ff', borderRadius: '1.5rem',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: C.blue, margin: '0 auto 1.5rem', position: 'relative'
+            }}>
+              <ShieldCheck size={40} />
+              <div style={{ position: 'absolute', top: -5, right: -5, width: 20, height: 20, background: '#10b981', borderRadius: '50%', border: '4px solid #fff' }} />
             </div>
             
-            <div className="space-y-2">
-              <h3 className="text-2xl font-black text-white tracking-tight">{title}</h3>
-              <p className="text-sm text-slate-500 leading-relaxed px-4">{description}</p>
-            </div>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: C.t900, margin: '0 0 0.5rem', letterSpacing: '-0.03em' }}>{title}</h3>
+            <p style={{ fontSize: '0.85rem', color: C.t500, fontWeight: 500, lineHeight: 1.6, margin: '0 auto', maxWidth: 300 }}>{description}</p>
 
             {email && (
-              <div className="inline-flex items-center gap-2 px-4 py-2 glass-card-light rounded-2xl border border-white/[0.08]">
-                <Mail className="w-3.5 h-3.5 text-slate-400" />
-                <span className="text-[11px] font-black text-slate-300 tracking-wider font-mono">
+              <div style={{ 
+                display: 'inline-flex', alignItems: 'center', gap: '0.5rem', 
+                padding: '0.5rem 1rem', background: C.bgMuted, borderRadius: '0.75rem', 
+                marginTop: '1.5rem', border: `1px solid ${C.bSoft}` 
+              }}>
+                <Mail size={14} color={C.t300} />
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: C.t700, fontFamily: 'monospace' }}>
                   {maskEmail(email)}
                 </span>
               </div>
             )}
           </div>
 
-          <div className="space-y-6">
-            <div className="relative group">
-              <input
-                type="text"
-                maxLength={6}
-                placeholder="000000"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, ''))}
-                className="w-full px-6 py-5 glass-card-light border-2 border-transparent rounded-3xl text-center text-3xl font-black tracking-[0.5em] focus:glass-card-light focus:border-indigo-500 outline-none transition-all placeholder:text-slate-200"
-                autoFocus
-              />
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <button 
-                onClick={() => onConfirm(otp)}
-                disabled={loading || otp.length < 6}
-                className="w-full py-5 rounded-3xl bg-indigo-600 text-white text-xs font-black uppercase tracking-[0.2em] hover:bg-secondary/90 shadow-xl shadow-secondary/20 transition-all disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-3 hover:-translate-y-0.5 active:translate-y-0"
-              >
-                {loading ? <RefreshCcw className="w-4 h-4 animate-spin" /> : 'Verify & Proceed'}
-              </button>
-              
-              {onResend && (
-                <button 
-                  onClick={handleResend}
-                  disabled={resendCooldown > 0 || resendLoading}
-                  className="text-xs font-black text-slate-400 hover:text-indigo-400 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 py-2"
-                >
-                  {resendLoading ? (
-                    <RefreshCcw className="w-3 h-3 animate-spin" />
-                  ) : resendCooldown > 0 ? (
-                    `Resend code in ${resendCooldown}s`
-                  ) : (
-                    "Didn't receive code? Resend"
-                  )}
-                </button>
-              )}
-            </div>
+          <div style={{ marginBottom: '2rem' }}>
+            <input
+              type="text"
+              maxLength={6}
+              placeholder="000000"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, ''))}
+              style={{
+                width: '100%', padding: '1.25rem', background: C.bgMuted,
+                border: `2px solid transparent`, borderRadius: C.rMd,
+                textAlign: 'center', fontSize: '2.5rem', fontWeight: 900,
+                letterSpacing: '0.5em', color: C.t900, outline: 'none',
+                transition: 'all 0.2s'
+              }}
+              onFocus={e => e.currentTarget.style.borderColor = C.t900}
+              onBlur={e => e.currentTarget.style.borderColor = 'transparent'}
+              autoFocus
+            />
           </div>
 
-          <p className="text-[10px] text-center text-slate-400 font-medium italic">
-            Secure verification powered by Eraya Shield.
-          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <button 
+              onClick={() => onConfirm(otp)}
+              disabled={loading || otp.length < 6}
+              style={{
+                width: '100%', padding: '1.1rem', borderRadius: C.rMd,
+                background: C.t900, color: '#fff', border: 'none',
+                fontSize: '0.85rem', fontWeight: 800, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem',
+                opacity: (loading || otp.length < 6) ? 0.5 : 1,
+                transition: 'all 0.2s'
+              }}
+            >
+              {loading ? <RefreshCcw size={18} className="animate-spin" /> : 'Verify & Proceed'}
+            </button>
+            
+            {onResend && (
+              <button 
+                onClick={handleResend}
+                disabled={resendCooldown > 0 || resendLoading}
+                style={{
+                  background: 'none', border: 'none', fontSize: '0.75rem', fontWeight: 700,
+                  color: resendCooldown > 0 ? C.t300 : C.blue, cursor: 'pointer',
+                  textAlign: 'center'
+                }}
+              >
+                {resendLoading ? (
+                  <RefreshCcw size={14} className="animate-spin" />
+                ) : resendCooldown > 0 ? (
+                  `Resend code in ${resendCooldown}s`
+                ) : (
+                  "Didn't receive code? Resend"
+                )}
+              </button>
+            )}
+          </div>
         </div>
       </motion.div>
     </div>

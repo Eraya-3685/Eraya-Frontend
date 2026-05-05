@@ -71,12 +71,12 @@ const SecureRoleModal = ({ isOpen, onClose, onConfirm, targetRole, targetIds, in
     <>
       <AnimatePresence>
         {step !== 2 && (
-          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-[#0d1117]/60 backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="glass-card-light rounded-[32px] shadow-2xl w-full max-w-md overflow-hidden border border-white/[0.08]"
+              className="bg-white rounded-[32px] shadow-2xl w-full max-w-md overflow-hidden border border-[#eaeef2]"
             >
               <div className="p-8">
                 <div className="flex justify-between items-start mb-6">
@@ -84,32 +84,32 @@ const SecureRoleModal = ({ isOpen, onClose, onConfirm, targetRole, targetIds, in
                     <ShieldAlert className="w-7 h-7 text-red-500" />
                   </div>
                   <button onClick={resetAndClose} className="p-2 hover:bg-slate-100 rounded-xl transition-colors">
-                    <X className="w-5 h-5 text-slate-400" />
+                    <X className="w-5 h-5 text-[#64748b]" />
                   </button>
                 </div>
 
                 <AnimatePresence mode="wait">
                   {step === 1 ? (
                     <motion.div key="confirm" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                      <h2 className="text-2xl font-black text-white tracking-tight mb-2">Confirm Role Change</h2>
-                      <p className="text-slate-500 font-medium leading-relaxed">
-                        Changing <span className="text-white font-bold">{targetIds?.length} user(s)</span> to
+                      <h2 className="text-2xl font-black text-[#0d1117] tracking-tight mb-2">Confirm Role Change</h2>
+                      <p className="text-[#94a3b8] font-medium leading-relaxed">
+                        Changing <span className="text-[#0d1117] font-bold">{targetIds?.length} user(s)</span> to
                         <span className="mx-1.5 px-2 py-0.5 rounded-lg text-xs font-black bg-emerald-50 text-emerald-600 uppercase tracking-wider">{targetRole}</span>
                       </p>
 
                       {targetRole === 'moderator' && (
                         <div className="mt-6">
-                          <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-4 ml-1">Module Permissions</label>
+                          <label className="block text-xs font-black text-[#64748b] uppercase tracking-widest mb-4 ml-1">Module Permissions</label>
                           <div className="grid grid-cols-2 gap-2">
                             {availableModules.map((module) => (
                               <button
                                 key={module.id}
                                 onClick={() => togglePermission(module.id)}
-                                className={`flex items-center gap-2.5 p-2.5 rounded-2xl border-2 transition-all ${permissions.includes(module.id) ? 'bg-amber-50 border-amber-200' : 'glass-card-light/50 border-white/[0.08] opacity-60'
+                                className={`flex items-center gap-2.5 p-2.5 rounded-2xl border-2 transition-all ${permissions.includes(module.id) ? 'bg-amber-50 border-amber-200' : 'bg-white border-[#eaeef2] opacity-60'
                                   }`}
                               >
                                 <div className={`shrink-0 w-5 h-5 rounded-md flex items-center justify-center ${permissions.includes(module.id) ? 'bg-amber-500' : 'bg-slate-200'}`}>
-                                  {permissions.includes(module.id) && <Check className="w-3 h-3 text-white" />}
+                                  {permissions.includes(module.id) && <Check className="w-3 h-3 text-[#0d1117]" />}
                                 </div>
                                 <span className="text-[10px] font-black uppercase tracking-wider truncate">{module.label}</span>
                               </button>
@@ -120,18 +120,18 @@ const SecureRoleModal = ({ isOpen, onClose, onConfirm, targetRole, targetIds, in
                     </motion.div>
                   ) : (
                     <motion.div key="password" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                      <h2 className="text-2xl font-black text-white tracking-tight mb-2">Final Confirmation</h2>
-                      <p className="text-slate-500 font-medium mb-6 leading-relaxed">Security code verified. Please enter your admin password to complete the update.</p>
+                      <h2 className="text-2xl font-black text-[#0d1117] tracking-tight mb-2">Final Confirmation</h2>
+                      <p className="text-[#94a3b8] font-medium mb-6 leading-relaxed">Security code verified. Please enter your admin password to complete the update.</p>
                       <div className="space-y-4">
-                        <label className="block text-xs font-bold text-slate-400 mb-2 ml-1 text-left uppercase tracking-widest">Admin Password</label>
+                        <label className="block text-xs font-bold text-[#64748b] mb-2 ml-1 text-left uppercase tracking-widest">Admin Password</label>
                         <div className="relative group">
-                          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary transition-colors" />
+                          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748b] group-focus-within:text-primary transition-colors" />
                           <input
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder="••••••••"
-                            className="w-full glass-card-light border-2 border-white/[0.08] rounded-2xl py-3.5 pl-11 pr-5 text-sm font-bold text-white outline-none focus:border-primary transition-all"
+                            className="w-full bg-white border-2 border-[#eaeef2] rounded-2xl py-3.5 pl-11 pr-5 text-sm font-bold text-[#0d1117] outline-none focus:border-primary transition-all"
                             autoComplete="new-password"
                             autoFocus
                           />
@@ -142,12 +142,12 @@ const SecureRoleModal = ({ isOpen, onClose, onConfirm, targetRole, targetIds, in
                 </AnimatePresence>
               </div>
 
-              <div className="p-8/50 border-t border-white/[0.08] flex gap-4">
-                <button onClick={resetAndClose} className="flex-1 px-6 py-4 rounded-2xl text-sm font-bold text-slate-400 hover:text-slate-300 transition-all">Cancel</button>
+              <div className="p-8/50 border-t border-[#eaeef2] flex gap-4">
+                <button onClick={resetAndClose} className="flex-1 px-6 py-4 rounded-2xl text-sm font-bold text-[#64748b] hover:text-[#64748b] transition-all">Cancel</button>
                 <button
                   onClick={step === 1 ? handleNextToOTP : () => onConfirm(otp, targetIds, password, permissions)}
                   disabled={requestingOTP || (step === 3 && !password) || (targetRole === 'moderator' && permissions.length === 0)}
-                  className="flex-[1.5] px-6 py-4 rounded-2xl text-sm font-bold text-white bg-slate-900 hover:bg-primary transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="flex-[1.5] px-6 py-4 rounded-2xl text-sm font-bold text-[#0d1117] bg-[#0d1117] hover:bg-primary transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {requestingOTP ? <RefreshCcw className="w-4 h-4 animate-spin" /> : (step === 1 ? 'Send Security Code' : 'Confirm & Update')}
                   <ArrowRight className="w-4 h-4" />
@@ -177,27 +177,27 @@ const UserProfileModal = ({ isOpen, onClose, user }) => {
   if (!isOpen || !user) return null;
 
   const DetailRow = ({ icon: Icon, label, value, color = "indigo" }) => (
-    <div className="flex items-center gap-4 p-4 rounded-2xl glass-card-light/50 border border-white/[0.08] hover:border-indigo-100 transition-all group">
+    <div className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-[#eaeef2] hover:border-indigo-100 transition-all group">
       <div className={`w-10 h-10 rounded-xl bg-${color}-50 flex items-center justify-center shrink-0`}>
         <Icon className={`w-5 h-5 text-${color}-500`} />
       </div>
       <div className="min-w-0">
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">{label}</p>
-        <p className="text-sm font-bold text-white truncate">{value || 'Not provided'}</p>
+        <p className="text-[10px] font-black text-[#64748b] uppercase tracking-widest leading-none mb-1.5">{label}</p>
+        <p className="text-sm font-bold text-[#0d1117] truncate">{value || 'Not provided'}</p>
       </div>
     </div>
   );
 
   return (
-    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-[#0d1117]/60 backdrop-blur-sm">
       <motion.div
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-        className="glass-card-light rounded-[40px] shadow-2xl w-full max-w-lg overflow-hidden border border-white/[0.08] relative"
+        className="bg-white rounded-[40px] shadow-2xl w-full max-w-lg overflow-hidden border border-[#eaeef2] relative"
       >
         <button onClick={onClose} className="absolute right-6 top-6 p-2 hover:bg-slate-100 rounded-2xl transition-colors z-10">
-          <X className="w-5 h-5 text-slate-400" />
+          <X className="w-5 h-5 text-[#64748b]" />
         </button>
 
         <div className="h-32 bg-gradient-to-br from-slate-900 to-slate-800 relative overflow-hidden">
@@ -206,7 +206,7 @@ const UserProfileModal = ({ isOpen, onClose, user }) => {
 
         <div className="px-8 pb-10">
           <div className="relative -mt-16 mb-6 flex flex-col items-center">
-            <div className="w-32 h-32 rounded-[40px] border-8 border-white glass-card-light shadow-xl overflow-hidden mb-4">
+            <div className="w-32 h-32 rounded-[40px] border-8 border-white bg-white shadow-xl overflow-hidden mb-4">
               {user.avatar_url ? (
                 <img src={getImageUrl(user.avatar_url)} className="w-full h-full object-cover" alt="" />
               ) : (
@@ -215,7 +215,7 @@ const UserProfileModal = ({ isOpen, onClose, user }) => {
                 </div>
               )}
             </div>
-            <h2 className="text-2xl font-black text-white tracking-tight">{user.full_name}</h2>
+            <h2 className="text-2xl font-black text-[#0d1117] tracking-tight">{user.full_name}</h2>
             <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-wider">
               <CheckCircle2 className="w-3 h-3" />
               {user.role}
@@ -229,14 +229,14 @@ const UserProfileModal = ({ isOpen, onClose, user }) => {
             <DetailRow icon={User} label="User ID" value={`#${user.id}`} color="rose" />
           </div>
 
-          <div className="p-5 rounded-3xl bg-slate-900 text-white shadow-xl">
+          <div className="p-5 rounded-3xl bg-[#0d1117] text-[#0d1117] shadow-xl">
              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 glass-card-light/10 rounded-xl">
-                   <Lock className="w-4 h-4 text-indigo-400" />
+                <div className="p-2 bg-white rounded-xl">
+                   <Lock className="w-4 h-4 text-[#6366f1]" />
                 </div>
                 <span className="text-xs font-black uppercase tracking-widest">Address Information</span>
              </div>
-             <p className="text-sm font-medium text-slate-300 leading-relaxed italic">
+             <p className="text-sm font-medium text-[#64748b] leading-relaxed italic">
                 "{user.address || 'No address provided in profile settings.'}"
              </p>
           </div>
@@ -348,7 +348,7 @@ const AdminUsers = () => {
               e.stopPropagation();
               handleRoleChange(user.id, 'moderator');
             }}
-            className="p-1.5 bg-slate-100 text-slate-400 hover:bg-amber-100 hover:text-amber-600 rounded-lg transition-all"
+            className="p-1.5 bg-slate-100 text-[#64748b] hover:bg-amber-100 hover:text-amber-600 rounded-lg transition-all"
             title="Edit Permissions"
           >
             <Settings className="w-3.5 h-3.5" />
@@ -369,43 +369,43 @@ const AdminUsers = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
         <div>
-          <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
+          <h1 className="text-2xl font-black text-[#0d1117] tracking-tight flex items-center gap-2.5">
             <UserCog className="w-6 h-6 text-primary" />
             User Management
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5 font-medium">Configure roles and permissions across Eraya.</p>
+          <p className="text-xs text-[#94a3b8] mt-0.5 font-medium">Configure roles and permissions across Eraya.</p>
         </div>
 
         <div className="relative group max-w-xs w-full">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-primary transition-colors" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748b] group-focus-within:text-primary transition-colors" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search users..."
-            className="w-full glass-card-light border border-white/[0.1] rounded-xl py-2.5 pl-10 pr-4 text-sm text-white outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all shadow-sm"
+            className="w-full bg-white border border-[#eaeef2] rounded-xl py-2.5 pl-10 pr-4 text-sm text-[#0d1117] outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all shadow-sm"
           />
         </div>
       </div>
 
       {/* Users Table */}
-      <div className="glass-card-light rounded-3xl border border-white/[0.08] shadow-xl shadow-slate-200/40 overflow-hidden">
+      <div className="bg-white rounded-3xl border border-[#eaeef2] shadow-xl shadow-slate-200/40 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="glass-card-light/50 border-b border-white/[0.08]">
+              <tr className="bg-white border-b border-[#eaeef2]">
                 <th className="px-6 py-4 w-12 text-center">
                   <input
                     type="checkbox"
                     checked={filteredUsers.length > 0 && selectedIds.length === filteredUsers.length}
                     onChange={toggleSelectAll}
-                    className="w-5 h-5 rounded-lg border-2 border-white/[0.1] text-primary focus:ring-4 focus:ring-primary/5 cursor-pointer transition-all"
+                    className="w-5 h-5 rounded-lg border-2 border-[#eaeef2] text-primary focus:ring-4 focus:ring-primary/5 cursor-pointer transition-all"
                   />
                 </th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Profile</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Contact</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Role</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Actions</th>
+                <th className="px-6 py-4 text-[10px] font-black text-[#64748b] uppercase tracking-[0.2em]">Profile</th>
+                <th className="px-6 py-4 text-[10px] font-black text-[#64748b] uppercase tracking-[0.2em]">Contact</th>
+                <th className="px-6 py-4 text-[10px] font-black text-[#64748b] uppercase tracking-[0.2em]">Role</th>
+                <th className="px-6 py-4 text-[10px] font-black text-[#64748b] uppercase tracking-[0.2em]">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -414,7 +414,7 @@ const AdminUsers = () => {
                   Array(5).fill(0).map((_, i) => (
                     <tr key={i} className="animate-pulse">
                       <td className="px-6 py-5" colSpan={5}>
-                        <div className="h-10 glass-card-light rounded-xl w-full" />
+                        <div className="h-10 bg-white rounded-xl w-full" />
                       </td>
                     </tr>
                   ))
@@ -422,11 +422,11 @@ const AdminUsers = () => {
                   <tr>
                     <td colSpan={5} className="px-6 py-24 text-center">
                       <div className="flex flex-col items-center gap-4">
-                        <div className="w-20 h-20 glass-card-light rounded-[32px] flex items-center justify-center">
-                          <AlertCircle className="w-10 h-10 text-slate-200" />
+                        <div className="w-20 h-20 bg-white rounded-[32px] flex items-center justify-center">
+                          <AlertCircle className="w-10 h-10 text-[#4b5563]" />
                         </div>
-                        <h3 className="text-xl font-bold text-white">No users found</h3>
-                        <p className="text-slate-400 font-medium">Try checking your spelling or clearing filters.</p>
+                        <h3 className="text-xl font-bold text-[#0d1117]">No users found</h3>
+                        <p className="text-[#64748b] font-medium">Try checking your spelling or clearing filters.</p>
                       </div>
                     </td>
                   </tr>
@@ -438,14 +438,14 @@ const AdminUsers = () => {
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
                       key={u.id}
-                      className={`hover:glass-card-light/80 transition-all duration-300 group ${selectedIds.includes(u.id) ? 'bg-primary/5' : ''}`}
+                      className={`hover:bg-white transition-all duration-300 group ${selectedIds.includes(u.id) ? 'bg-primary/5' : ''}`}
                     >
                       <td className="px-6 py-2.5 text-center">
                         <input
                           type="checkbox"
                           checked={selectedIds.includes(u.id)}
                           onChange={() => toggleSelect(u.id)}
-                          className="w-3.5 h-3.5 rounded-lg border-2 border-white/[0.1] text-primary focus:ring-4 focus:ring-primary/5 cursor-pointer transition-all"
+                          className="w-3.5 h-3.5 rounded-lg border-2 border-[#eaeef2] text-primary focus:ring-4 focus:ring-primary/5 cursor-pointer transition-all"
                         />
                       </td>
                       <td className="px-6 py-2.5">
@@ -460,8 +460,8 @@ const AdminUsers = () => {
                             )}
                           </div>
                           <div>
-                            <p className="font-bold text-white text-[13px] tracking-tight leading-tight">{u.full_name}</p>
-                            <div className="flex items-center gap-1 text-[8px] text-slate-400 font-black uppercase tracking-widest mt-0.5 opacity-60">
+                            <p className="font-bold text-[#0d1117] text-[13px] tracking-tight leading-tight">{u.full_name}</p>
+                            <div className="flex items-center gap-1 text-[8px] text-[#64748b] font-black uppercase tracking-widest mt-0.5 opacity-60">
                               <Calendar className="w-2.5 h-2.5" />
                               Joined {new Date(u.created_at).toLocaleDateString()}
                             </div>
@@ -470,13 +470,13 @@ const AdminUsers = () => {
                       </td>
                       <td className="px-6 py-2.5">
                         <div className="space-y-0">
-                          <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-300 group-hover:text-white transition-colors">
-                            <Mail className="w-3 h-3 text-slate-300" />
+                          <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#64748b] group-hover:text-[#0d1117] transition-colors">
+                            <Mail className="w-3 h-3 text-[#64748b]" />
                             {u.email}
                           </div>
                           {u.phone && (
-                            <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 group-hover:text-slate-300 transition-colors">
-                              <Phone className="w-2.5 h-2.5 text-slate-200" />
+                            <div className="flex items-center gap-1.5 text-[9px] font-bold text-[#64748b] group-hover:text-[#64748b] transition-colors">
+                              <Phone className="w-2.5 h-2.5 text-[#4b5563]" />
                               {u.phone}
                             </div>
                           )}
@@ -489,7 +489,7 @@ const AdminUsers = () => {
                         <div className="flex items-center gap-4">
                           <button
                             onClick={() => setSelectedUser(u)}
-                            className="p-2 glass-card-light text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-all"
+                            className="p-2 bg-white text-[#64748b] hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-all"
                             title="View Profile"
                           >
                             <RefreshCcw className="w-3.5 h-3.5" /> 
@@ -515,7 +515,7 @@ const AdminUsers = () => {
                                     <div className={`w-6 h-6 rounded-lg bg-${role.color}-50 flex items-center justify-center`}>
                                       <role.icon className={`w-3 h-3 text-${role.color}-500`} />
                                     </div>
-                                    <span className={`text-[10px] font-black uppercase tracking-widest ${isSelected ? `text-${role.color}-600` : 'text-slate-300'}`}>{role.label}</span>
+                                    <span className={`text-[10px] font-black uppercase tracking-widest ${isSelected ? `text-${role.color}-600` : 'text-[#64748b]'}`}>{role.label}</span>
                                   </div>
                                   {isSelected && <Check className={`w-3.5 h-3.5 text-${role.color}-500`} />}
                                 </div>
@@ -540,15 +540,15 @@ const AdminUsers = () => {
             initial={{ y: 100, opacity: 0, x: '-50%' }}
             animate={{ y: 0, opacity: 1, x: '-50%' }}
             exit={{ y: 100, opacity: 0, x: '-50%' }}
-            className="fixed bottom-6 left-1/2 bg-slate-900 text-white px-6 py-4 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.3)] z-[999] flex items-center gap-8 border border-white/10 backdrop-blur-xl"
+            className="fixed bottom-6 left-1/2 bg-[#0d1117] text-[#0d1117] px-6 py-4 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.3)] z-[999] flex items-center gap-8 border border-[#eaeef2] backdrop-blur-xl"
           >
-            <div className="flex items-center gap-4 pr-8 border-r border-white/10">
+            <div className="flex items-center gap-4 pr-8 border-r border-[#eaeef2]">
               <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center font-black text-base animate-pulse">
                 {selectedIds.length}
               </div>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30">Selected</p>
-                <p className="text-sm font-bold text-white">Users to modify</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#0d1117]/30">Selected</p>
+                <p className="text-sm font-bold text-[#0d1117]">Users to modify</p>
               </div>
             </div>
 
@@ -571,10 +571,10 @@ const AdminUsers = () => {
                   Make {role}
                 </button>
               ))}
-              <div className="w-px h-8 glass-card-light/10 mx-2" />
+              <div className="w-px h-8 bg-white mx-2" />
               <button
                 onClick={() => setSelectedIds([])}
-                className="text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors"
+                className="text-[10px] font-black uppercase tracking-widest text-[#0d1117]/40 hover:text-[#0d1117] transition-colors"
               >
                 Cancel
               </button>

@@ -11,12 +11,12 @@ import useDocumentTitle from '../hooks/useDocumentTitle';
 import { Toaster } from 'react-hot-toast';
 
 const statusMap = {
-  Pending: { color: 'amber', icon: Clock, label: 'Order Received', desc: 'We have received your order and it is awaiting confirmation.' },
-  Confirmed: { color: 'indigo', icon: Package, label: 'Order Accepted', desc: 'Good news! Your order has been accepted and is being prepared.' },
-  Processing: { color: 'blue', icon: Zap, label: 'Processing', desc: 'Your order is currently being carefully packed for shipment.' },
-  Shipped: { color: 'purple', icon: Truck, label: 'In Transit', desc: 'Great news! Your package is on its way to your destination.' },
-  Delivered: { color: 'emerald', icon: CheckCircle2, label: 'Delivered', desc: 'Excellent! Your order has been successfully delivered.' },
-  Cancelled: { color: 'red', icon: XCircle, label: 'Cancelled', desc: 'This order has been cancelled and will not be fulfilled.' },
+  Pending: { color: '#f59e0b', bg: '#fef3c7', icon: Clock, label: 'Order Received', desc: 'We have received your order and it is awaiting confirmation.' },
+  Confirmed: { color: '#6366f1', bg: '#e0e7ff', icon: Package, label: 'Order Accepted', desc: 'Good news! Your order has been accepted and is being prepared.' },
+  Processing: { color: '#3b82f6', bg: '#dbeafe', icon: Zap, label: 'Processing', desc: 'Your order is currently being carefully packed for shipment.' },
+  Shipped: { color: '#a855f7', bg: '#f3e8ff', icon: Truck, label: 'In Transit', desc: 'Great news! Your package is on its way to your destination.' },
+  Delivered: { color: '#10b981', bg: '#d1fae5', icon: CheckCircle2, label: 'Delivered', desc: 'Excellent! Your order has been successfully delivered.' },
+  Cancelled: { color: '#ef4444', bg: '#fee2e2', icon: XCircle, label: 'Cancelled', desc: 'This order has been cancelled and will not be fulfilled.' },
 };
 
 const OrderTrackbar = ({ status }) => {
@@ -26,53 +26,58 @@ const OrderTrackbar = ({ status }) => {
 
   if (isCancelled) {
     return (
-      <div className="py-10 px-6 bg-red-50 rounded-[2.5rem] border border-red-100 flex flex-col items-center text-center gap-4">
-        <XCircle className="w-12 h-12 text-red-500" />
+      <div style={{ padding: '2.5rem', background: '#fef2f2', borderRadius: '2rem', border: '1px solid #fee2e2', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '1rem' }}>
+        <XCircle style={{ width: 48, height: 48, color: '#ef4444' }} />
         <div>
-          <h3 className="text-lg font-black text-red-900 uppercase tracking-widest">Order Cancelled</h3>
-          <p className="text-xs font-medium text-red-400 mt-1 max-w-xs">This transaction has been terminated. If this was a mistake, please contact support.</p>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#991b1b', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Order Cancelled</h3>
+          <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#f87171', marginTop: '0.4rem', maxWidth: 280 }}>This transaction has been terminated. If this was a mistake, please contact support.</p>
         </div>
       </div>
     );
   }
 
-  const currentThemeColor = statusMap[status]?.color || 'amber';
+  const currentTheme = statusMap[status] || statusMap.Pending;
 
   return (
-    <div className="py-12">
-      <div className="relative flex justify-between">
-        <div className="absolute top-1/2 left-0 right-0 h-1.5 glass-input -translate-y-1/2 z-0 rounded-full" />
-        <motion.div 
-          initial={{ width: 0 }}
-          animate={{ width: `${(currentIndex / (steps.length - 1)) * 100}%` }}
-          className={`absolute top-1/2 left-0 h-1.5 bg-${currentThemeColor}-500 -translate-y-1/2 z-0 rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(var(--color-rgb),0.3)]`}
-        />
+    <div style={{ padding: '2rem 0' }}>
+      <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        {/* Progress Line */}
+        <div style={{ position: 'absolute', top: 28, left: 0, right: 0, height: 4, background: '#f1f5f9', borderRadius: 99 }}>
+           <motion.div 
+             initial={{ width: 0 }}
+             animate={{ width: `${(currentIndex / (steps.length - 1)) * 100}%` }}
+             style={{ height: '100%', background: currentTheme.color, borderRadius: 99, transition: 'all 1s cubic-bezier(0.4, 0, 0.2, 1)' }}
+           />
+        </div>
 
         {steps.map((step, index) => {
           const isActive = index <= currentIndex;
           const isCurrent = index === currentIndex;
           const config = statusMap[step];
-          const color = config.color;
           const Icon = config.icon;
 
           return (
-            <div key={step} className="relative z-10 flex flex-col items-center gap-4">
-              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border-4 transition-all duration-700 ${
-                isActive 
-                  ? `bg-${color}-500 border-white text-white shadow-xl shadow-${color}-200 scale-110` 
-                  : 'glass-card-light border-slate-50 text-slate-200'
-              }`}>
-                <Icon className={`w-6 h-6 ${isCurrent ? 'animate-pulse' : ''}`} strokeWidth={2.5} />
+            <div key={step} style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+              <div style={{ 
+                width: 56, height: 56, borderRadius: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: isActive ? config.color : '#fff',
+                color: isActive ? '#fff' : '#cbd5e1',
+                border: `4px solid ${isActive ? '#fff' : '#f8fafc'}`,
+                boxShadow: isActive ? `0 10px 25px -5px ${config.color}44` : 'none',
+                transition: 'all 0.5s ease',
+                transform: isCurrent ? 'scale(1.15)' : 'scale(1)'
+              }}>
+                <Icon style={{ width: 24, height: 24 }} strokeWidth={2.5} />
               </div>
-              <div className="text-center">
-                <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${isActive ? `text-${color}-600` : 'text-slate-300'}`}>
+              <div style={{ textAlign: 'center', maxWidth: 80 }}>
+                <p style={{ fontSize: '0.65rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0, color: isActive ? '#0d1117' : '#94a3b8' }}>
                   {step === 'Confirmed' ? 'Accepted' : step}
                 </p>
                 {isCurrent && (
                    <motion.div 
-                     initial={{ opacity: 0, y: 5 }}
-                     animate={{ opacity: 1, y: 0 }}
-                     className={`w-2 h-2 bg-${color}-500 rounded-full mx-auto`}
+                     initial={{ opacity: 0, scale: 0 }}
+                     animate={{ opacity: 1, scale: 1 }}
+                     style={{ width: 6, height: 6, background: config.color, borderRadius: '50%', margin: '0.4rem auto 0' }}
                    />
                 )}
               </div>
@@ -102,8 +107,7 @@ const OrderTracking = () => {
       const response = await api.get(`/orders/${id}`);
       setOrder(response.data);
     } catch (err) {
-      console.error('Failed to fetch order', err);
-      setError(err.response?.data?.error || 'Order not found or unauthorized access.');
+      setError(err.response?.data?.error || 'Order not found.');
     } finally {
       setLoading(false);
     }
@@ -111,13 +115,10 @@ const OrderTracking = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f8fafc]">
-        <div className="flex flex-col items-center gap-6">
-          <div className="relative w-20 h-20">
-             <div className="absolute inset-0 border-4 border-white/[0.08] rounded-full" />
-             <div className="absolute inset-0 border-4 border-t-indigo-600 rounded-full animate-spin" />
-          </div>
-          <p className="text-xs font-black text-slate-400 uppercase tracking-[0.3em] animate-pulse">Syncing with Logistics...</p>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fcfcfe' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ width: 64, height: 64, border: '4px solid #f1f5f9', borderTopColor: '#0d1117', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 1.5rem' }} />
+          <p style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.2em' }}>Locating Package...</p>
         </div>
       </div>
     );
@@ -125,19 +126,14 @@ const OrderTracking = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f8fafc] p-6">
-        <div className="max-w-md w-full glass-card-light rounded-[3rem] shadow-2xl p-12 text-center border border-white/[0.08]">
-          <div className="w-20 h-20 bg-red-50 rounded-3xl flex items-center justify-center mx-auto mb-8">
-            <AlertCircle className="w-10 h-10 text-red-500" />
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fcfcfe', padding: '1.5rem' }}>
+        <div style={{ maxWidth: 400, width: '100%', background: '#fff', borderRadius: '2.5rem', boxShadow: '0 30px 60px rgba(0,0,0,0.08)', padding: '3rem', textAlign: 'center', border: '1px solid rgba(0,0,0,0.05)' }}>
+          <div style={{ width: 72, height: 72, background: '#fef2f2', borderRadius: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2rem' }}>
+            <AlertCircle style={{ width: 36, height: 36, color: '#ef4444' }} />
           </div>
-          <h2 className="text-2xl font-black text-white tracking-tight mb-4">Tracking Error</h2>
-          <p className="text-slate-500 text-sm leading-relaxed mb-10">{error}</p>
-          <button 
-            onClick={() => navigate('/profile')}
-            className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200"
-          >
-            Back to My Orders
-          </button>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0d1117', marginBottom: '1rem' }}>Tracking Issue</h2>
+          <p style={{ fontSize: '0.85rem', color: '#64748b', lineHeight: 1.6, marginBottom: '2.5rem' }}>{error}</p>
+          <button onClick={() => navigate('/profile')} style={{ width: '100%', padding: '1rem', background: '#0d1117', color: '#fff', borderRadius: '1.25rem', border: 'none', fontWeight: 800, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer' }}>Back to Orders</button>
         </div>
       </div>
     );
@@ -145,145 +141,130 @@ const OrderTracking = () => {
 
   const currentStatus = order.order_status;
   const config = statusMap[currentStatus] || statusMap.Pending;
-  const statusColor = config.color;
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] pb-24 pt-12 px-4 md:px-6">
-      <div className="max-w-4xl mx-auto">
+    <div style={{ minHeight: '100vh', background: '#fcfcfe', padding: '2rem 1rem 6rem', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         
-        <Link to="/profile" className="inline-flex items-center gap-2 text-slate-400 hover:text-white font-black text-[10px] uppercase tracking-widest mb-10 transition-colors group">
-          <div className="p-2 rounded-xl glass-card-light border border-white/[0.08] shadow-sm group-hover:bg-slate-900 group-hover:text-white transition-all">
-            <ChevronLeft className="w-4 h-4" />
+        <button onClick={() => navigate('/profile')} style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', marginBottom: '3rem', padding: 0 }}>
+          <div style={{ width: 40, height: 40, background: '#fff', border: '1px solid #f1f5f9', borderRadius: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+            <ChevronLeft style={{ width: 18, height: 18, color: '#0d1117' }} />
           </div>
-          Back to Profile
-        </Link>
+          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Return to Account</span>
+        </button>
 
-        {/* Header Information */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12">
-          <div>
-            <div className="flex items-center gap-3 mb-4">
-               <div className={`px-4 py-1.5 bg-${statusColor}-50 text-${statusColor}-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-${statusColor}-100`}>
-                 Live Tracking
-               </div>
-               <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Order ID: #{order.id}</span>
+        {/* Header Section */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-end', gap: '2rem', marginBottom: '3rem' }}>
+          <div style={{ flex: '1 1 500px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem' }}>
+               <span style={{ background: config.bg, color: config.color, padding: '0.4rem 1rem', borderRadius: '2rem', fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Live Update</span>
+               <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8' }}>ID: #{order.id}</span>
             </div>
-            <h1 className="text-4xl font-black text-white tracking-tighter">Your order is <span className={`text-${statusColor}-500`}>{config.label}</span></h1>
-            <p className="text-slate-500 text-sm font-medium mt-2 max-w-md">{config.desc}</p>
+            <h1 style={{ fontSize: '3rem', fontWeight: 900, color: '#0d1117', margin: 0, letterSpacing: '-0.04em', lineHeight: 1.1 }}>
+              Your order is <span style={{ color: config.color }}>{config.label}</span>
+            </h1>
+            <p style={{ fontSize: '0.95rem', fontWeight: 600, color: '#64748b', marginTop: '1rem', maxWidth: 450 }}>{config.desc}</p>
           </div>
-          <div className="text-right hidden md:block">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Placed On</p>
-            <p className="text-xl font-black text-white">{new Date(order.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+          <div style={{ textAlign: 'right' }}>
+            <p style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>Order Placed</p>
+            <p style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0d1117', margin: 0 }}>{new Date(order.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
           </div>
         </div>
 
-        {/* The Trackbar */}
-        <div className="glass-card-light rounded-[3.5rem] border border-white/[0.08] shadow-[0_20px_50px_rgba(0,0,0,0.02)] p-10 mb-10 overflow-x-auto md:overflow-x-visible">
-           <OrderTrackbar status={currentStatus} />
+        {/* Trackbar Container */}
+        <div style={{ background: '#fff', borderRadius: '3rem', border: '1px solid #f1f5f9', padding: '3rem', marginBottom: '3rem', boxShadow: '0 20px 50px rgba(0,0,0,0.03)', overflowX: 'auto' }}>
+           <div style={{ minWidth: 600 }}>
+             <OrderTrackbar status={currentStatus} />
+           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-           {/* Details Column */}
-           <div className="md:col-span-7 space-y-8">
-              {/* Order Items */}
-              <div className="glass-card-light rounded-[3rem] border border-white/[0.08] shadow-sm p-8">
-                 <h2 className="text-xs font-black text-white uppercase tracking-widest mb-8 flex items-center gap-3">
-                    <ShoppingBag className="w-4 h-4 text-indigo-500" />
-                    Purchase Summary
-                 </h2>
-                 <div className="space-y-4">
-                    {order.items?.map((item) => (
-                       <div key={item.id} className="flex items-center justify-between gap-4 p-4 glass-card-light/50 rounded-2xl border border-slate-50 group hover:border-indigo-100 transition-colors">
-                          <div className="flex items-center gap-4 flex-grow">
-                             <div className="w-16 h-16 glass-card-light rounded-xl overflow-hidden border border-white/[0.08] shadow-sm p-2 flex items-center justify-center">
-                                <img src={getImageUrl(item.product?.image_url)} className="w-full h-full object-contain" alt={item.product?.name} />
-                             </div>
-                             <div className="min-w-0">
-                                <p className="text-sm font-bold text-white truncate">{item.product?.name}</p>
-                                <p className="text-[10px] font-black text-slate-400 mt-1 uppercase tracking-widest">{item.quantity} × ৳{item.price_at_purchase.toLocaleString()}</p>
-                             </div>
-                          </div>
-                          <div className="text-right">
-                             <p className="text-sm font-black text-white">৳{(item.price_at_purchase * item.quantity).toLocaleString()}</p>
-                          </div>
-                       </div>
-                    ))}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2.5rem' }}>
+           {/* Left: Summary */}
+           <div style={{ background: '#fff', borderRadius: '2.5rem', border: '1px solid #f1f5f9', padding: '2.5rem', boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2.5rem' }}>
+                 <div style={{ width: 36, height: 36, background: '#f8fafc', borderRadius: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <ShoppingBag style={{ width: 16, height: 16, color: '#0d1117' }} />
                  </div>
+                 <h2 style={{ fontSize: '0.75rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#0d1117', margin: 0 }}>Package Contents</h2>
+              </div>
 
-                 <div className="mt-10 pt-8 border-t border-dashed border-white/[0.10] space-y-3">
-                    <div className="flex justify-between items-center text-[11px] font-bold text-slate-400">
-                       <span className="uppercase tracking-widest">Subtotal</span>
-                       <span className="text-white">৳{order.items?.reduce((sum, i) => sum + (i.price_at_purchase * i.quantity), 0).toLocaleString()}</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                 {order.items?.map((item) => (
+                    <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', borderRadius: '1.5rem', background: '#fcfcfe', border: '1px solid transparent', transition: 'all 0.2s' }}>
+                       <div style={{ width: 64, height: 64, borderRadius: '1rem', overflow: 'hidden', background: '#fff', border: '1px solid #f1f5f9', flexShrink: 0 }}>
+                          <img src={getImageUrl(item.product?.image_url)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
+                       </div>
+                       <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 700, color: '#0d1117', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.product?.name}</p>
+                          <p style={{ margin: '0.25rem 0 0', fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Qty: {item.quantity}</p>
+                       </div>
+                       <div style={{ textAlign: 'right' }}>
+                          <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 900, color: '#0d1117' }}>৳{(item.price_at_purchase * item.quantity).toLocaleString()}</p>
+                       </div>
                     </div>
-                    <div className="flex justify-between items-center text-[11px] font-bold text-slate-400">
-                       <span className="uppercase tracking-widest">Shipping Fee</span>
-                       <span className="text-indigo-600">+ ৳{(order.total_price - order.items?.reduce((sum, i) => sum + (i.price_at_purchase * i.quantity), 0)).toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between items-center pt-4">
-                       <span className="text-[11px] font-black text-white uppercase tracking-widest">Total Amount Paid</span>
-                       <span className="text-2xl font-black text-indigo-600 tracking-tighter">৳{order.total_price.toLocaleString()}</span>
-                    </div>
+                 ))}
+              </div>
+
+              <div style={{ marginTop: '2.5rem', paddingTop: '2rem', borderTop: '1px dashed #f1f5f9' }}>
+                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8' }}>Subtotal</span>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0d1117' }}>৳{order.items?.reduce((sum, i) => sum + (i.price_at_purchase * i.quantity), 0).toLocaleString()}</span>
+                 </div>
+                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8' }}>Shipping</span>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#10b981' }}>Free</span>
+                 </div>
+                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 900, color: '#0d1117', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Paid</span>
+                    <span style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0d1117', letterSpacing: '-0.02em' }}>৳{order.total_price.toLocaleString()}</span>
                  </div>
               </div>
            </div>
 
-           {/* Info Column */}
-           <div className="md:col-span-5 space-y-8">
-              {/* Delivery Details */}
-              <div className="bg-slate-900 text-white rounded-[3rem] p-8 relative overflow-hidden">
-                 <div className="relative z-10">
-                    <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-8">Fulfillment Details</h2>
-                    <div className="space-y-8">
-                       <div className="flex gap-4">
-                          <div className="w-10 h-10 rounded-2xl glass-card-light/5 flex items-center justify-center text-secondary border border-white/10">
-                             <MapPin className="w-5 h-5" />
-                          </div>
-                          <div>
-                             <p className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-1">Shipping Address</p>
-                             <p className="text-xs font-bold text-white/90 leading-relaxed">{order.shipping_address}</p>
-                          </div>
+           {/* Right: Info Cards */}
+           <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
+              <div style={{ background: '#0d1117', borderRadius: '2.5rem', padding: '2.5rem', color: '#fff', position: 'relative', overflow: 'hidden' }}>
+                 <h2 style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.4)', marginBottom: '2rem' }}>Fulfillment Details</h2>
+                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                    <div style={{ display: 'flex', gap: '1.25rem' }}>
+                       <div style={{ width: 44, height: 44, background: 'rgba(255,255,255,0.08)', borderRadius: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <MapPin style={{ width: 18, height: 18, color: '#fff' }} />
                        </div>
-
-                       <div className="flex gap-4">
-                          <div className="w-10 h-10 rounded-2xl glass-card-light/5 flex items-center justify-center text-indigo-400 border border-white/10">
-                             <CreditCard className="w-5 h-5" />
-                          </div>
-                          <div>
-                             <p className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-1">Payment Method</p>
-                             <p className="text-xs font-bold text-white/90 uppercase tracking-wider">{order.payment_method === 'cod' || order.payment_method === 'COD' ? 'Cash on Delivery' : order.payment_method}</p>
-                          </div>
+                       <div>
+                          <p style={{ margin: 0, fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.4rem' }}>Delivery Address</p>
+                          <p style={{ margin: 0, fontSize: '0.82rem', fontWeight: 600, color: 'rgba(255,255,255,0.85)', lineHeight: 1.5 }}>{order.shipping_address}</p>
                        </div>
+                    </div>
 
-                       {order.tracking_number && (
-                         <div className="flex gap-4">
-                            <div className="w-10 h-10 rounded-2xl bg-secondary/10 flex items-center justify-center text-secondary border border-secondary/20">
-                               <Truck className="w-5 h-5" />
-                            </div>
-                            <div>
-                               <p className="text-[10px] font-black uppercase tracking-widest text-secondary/50 mb-1">Courier Tracking ID</p>
-                               <p className="text-sm font-black text-white tracking-widest uppercase">{order.tracking_number}</p>
-                            </div>
-                         </div>
-                       )}
+                    <div style={{ display: 'flex', gap: '1.25rem' }}>
+                       <div style={{ width: 44, height: 44, background: 'rgba(255,255,255,0.08)', borderRadius: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <CreditCard style={{ width: 18, height: 18, color: '#fff' }} />
+                       </div>
+                       <div>
+                          <p style={{ margin: 0, fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.4rem' }}>Payment Method</p>
+                          <p style={{ margin: 0, fontSize: '0.82rem', fontWeight: 800, color: '#fff', textTransform: 'uppercase' }}>{order.payment_method === 'cod' ? 'Cash on Delivery' : order.payment_method}</p>
+                       </div>
                     </div>
                  </div>
-                 <div className="absolute top-0 right-0 w-64 h-64 glass-card-light/5 rounded-full blur-3xl -mr-32 -mt-32" />
+                 {/* Decorative background element */}
+                 <div style={{ position: 'absolute', bottom: '-2rem', right: '-2rem', width: 140, height: 140, background: 'linear-gradient(135deg, rgba(255,255,255,0.05), transparent)', borderRadius: '50%' }} />
               </div>
 
-              {/* Support Card */}
-              <div className="glass-card-light rounded-[3rem] border border-white/[0.08] shadow-sm p-10 text-center">
-                 <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Package className="w-8 h-8 text-indigo-600" />
+              <div style={{ background: '#fff', borderRadius: '2.5rem', border: '1px solid #f1f5f9', padding: '2.5rem', textAlign: 'center' }}>
+                 <div style={{ width: 56, height: 56, background: '#f8fafc', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
+                    <AlertCircle style={{ width: 24, height: 24, color: '#0d1117' }} />
                  </div>
-                 <h3 className="text-lg font-black text-white tracking-tight mb-2">Need Assistance?</h3>
-                 <p className="text-xs font-medium text-slate-400 leading-relaxed mb-8 px-4">Our artisan support team is available 24/7 for any questions regarding your package.</p>
-                 <button className="w-full py-4 glass-card-light hover:bg-slate-900 hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-white transition-all">
-                    Contact Support
-                 </button>
+                 <h3 style={{ fontSize: '1rem', fontWeight: 900, color: '#0d1117', marginBottom: '0.75rem' }}>Need Assistance?</h3>
+                 <p style={{ fontSize: '0.8rem', color: '#64748b', lineHeight: 1.6, marginBottom: '2rem' }}>Our artisan support team is ready to help with any shipping inquiries.</p>
+                 <button style={{ width: '100%', padding: '0.85rem', background: '#fff', border: '1.5px solid #0d1117', borderRadius: '1rem', color: '#0d1117', fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer', transition: 'all 0.2s' }}>Live Support</button>
               </div>
            </div>
         </div>
 
       </div>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   );
 };

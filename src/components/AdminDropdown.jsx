@@ -94,7 +94,7 @@ const AdminDropdown = ({
             width: coords.width,
             zIndex: 9999
           }}
-          className="fixed mt-2 min-w-[200px] glass-card-light rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.2)] border border-white/[0.08] p-2 overflow-hidden"
+          className="fixed mt-2 min-w-[200px] bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.2)] border border-[#eaeef2] p-2 overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           {searchable && (
@@ -105,7 +105,7 @@ const AdminDropdown = ({
                 placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full glass-card-light border border-white/[0.08] rounded-xl py-2 px-3 text-[10px] font-bold uppercase tracking-widest outline-none focus:ring-2 focus:ring-secondary/20 transition-all"
+                className="w-full bg-white border border-[#eaeef2] rounded-xl py-2 px-3 text-[10px] font-bold uppercase tracking-widest outline-none focus:ring-2 focus:ring-secondary/20 transition-all"
               />
             </div>
           )}
@@ -116,12 +116,12 @@ const AdminDropdown = ({
                 type="button"
                 onClick={() => handleSelect(option)}
                 className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all group text-left ${
-                  isSelected(option) ? 'bg-secondary/10' : 'hover:glass-card-light'
+                  isSelected(option) ? 'bg-secondary/10' : 'hover:bg-white'
                 }`}
               >
                 {renderOption ? renderOption(option, isSelected(option)) : (
                   <span className={`text-[10px] font-black uppercase tracking-widest ${
-                    isSelected(option) ? 'text-secondary' : 'text-slate-300 group-hover:text-secondary'
+                    isSelected(option) ? 'text-secondary' : 'text-[#64748b] group-hover:text-secondary'
                   }`}>
                     {typeof option === 'object' ? (option.label || option.name) : option}
                   </span>
@@ -129,7 +129,7 @@ const AdminDropdown = ({
               </button>
             )) : (
               <div className="p-4 text-center">
-                <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">No options found</p>
+                <p className="text-[10px] font-black text-[#64748b] uppercase tracking-widest">No options found</p>
               </div>
             )}
           </div>
@@ -146,8 +146,8 @@ const AdminDropdown = ({
         disabled={disabled}
         className={`w-full flex items-center justify-between gap-3 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border shadow-sm ${
           isOpen 
-            ? 'glass-card-light border-indigo-500 text-indigo-400 ring-4 ring-secondary/5' 
-            : (buttonClassName || 'glass-card-light text-slate-300 border-white/[0.08] hover:border-white/[0.1]')
+            ? 'bg-white border-indigo-500 text-[#6366f1] ring-4 ring-secondary/5' 
+            : (buttonClassName || 'bg-white text-[#64748b] border-[#eaeef2] hover:border-[#eaeef2]')
         } ${disabled ? 'opacity-70 cursor-not-allowed grayscale-[0.2]' : ''}`}
       >
         <div className="flex items-center gap-2 truncate">
@@ -160,7 +160,7 @@ const AdminDropdown = ({
             </span>
           )}
         </div>
-        <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-500 shrink-0 ${isOpen ? 'rotate-180 text-secondary' : 'text-slate-300'}`} />
+        <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-500 shrink-0 ${isOpen ? 'rotate-180 text-secondary' : 'text-[#64748b]'}`} />
       </button>
 
       {createPortal(dropdownMenu, document.body)}

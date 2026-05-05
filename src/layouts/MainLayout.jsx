@@ -7,39 +7,31 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const MainLayout = ({ children }) => {
   const location = useLocation();
-  const isAuthPage = location.pathname === '/login' || location.pathname === '/signup';
+  const isAuthPage = ['/login', '/signup'].includes(location.pathname);
+
+  if (isAuthPage) {
+    return <>{children}</>;
+  }
 
   return (
-    <div className="min-h-screen flex flex-col relative bg-[#020617]">
-      {/* Dynamic Background Elements */}
-      <div className="orb-container">
-        <div className="orb orb-1" />
-        <div className="orb orb-2" />
-        <div className="orb orb-3" />
-      </div>
-      
-      {/* Realism Texture Overlay */}
-      <div className="noise-overlay" />
-
-      <div className="relative z-10 flex flex-col min-h-screen">
-        {!isAuthPage && <Navbar />}
-        
-        <AnimatePresence mode="wait">
-          <motion.main 
-            key={location.pathname}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            className={`flex-grow ${!isAuthPage ? 'pt-20' : ''}`}
-          >
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <Navbar />
+      <AnimatePresence mode="wait">
+        <motion.main
+          key={location.pathname}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.25 }}
+          style={{ flexGrow: 1, paddingTop: '4.5rem' }}
+        >
+          <div style={{ maxWidth: '1800px', margin: '0 auto', padding: '1.5rem 2.5rem 5rem' }}>
             {children}
-          </motion.main>
-        </AnimatePresence>
-
-        {!isAuthPage && <Footer />}
-        {!isAuthPage && <ChatWidget />}
-      </div>
+          </div>
+        </motion.main>
+      </AnimatePresence>
+      <Footer />
+      <ChatWidget />
     </div>
   );
 };

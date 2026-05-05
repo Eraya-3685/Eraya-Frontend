@@ -2,18 +2,46 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   User, Phone, MapPin, Save, ArrowLeft, ShieldCheck, 
-  Mail, Lock, X, RefreshCcw, Eye, EyeOff, AlertCircle, Plus, Activity 
+  Mail, Lock, X, RefreshCcw, Eye, EyeOff, AlertCircle, Plus, Activity, Settings
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/useAuthStore';
-import api from '../api/axios';
-import { getImageUrl } from '../api/axios';
+import api, { getImageUrl } from '../api/axios';
 import toast from 'react-hot-toast';
 import OTPModal from '../components/OTPModal';
 import ActionConfirmationModal from '../components/ActionConfirmationModal';
 import ErrorMsg from '../components/ErrorMsg';
 
+/* ── design tokens (consistent with Dashboard) ── */
+const C = {
+  t900: '#0d1117', t700: '#1f2937', t500: '#6b7280', t300: '#adb5bd',
+  bSoft: 'rgba(0,0,0,0.07)', bMed: 'rgba(0,0,0,0.12)',
+  bgCard: '#ffffff', bgPage: '#edf0f4', bgMuted: '#f3f5f8',
+  lime: '#cbff00', blue: '#3b82f6', rose: '#f43f5e', amber: '#f59e0b',
+  rSm: '0.85rem', rMd: '1.25rem', rLg: '1.5rem', r2xl: '2.5rem'
+};
 
+const fadeUp = (delay = 0) => ({
+  initial: { opacity: 0, y: 15 },
+  animate: { opacity: 1, y: 0 },
+  transition: { delay, duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+});
+
+/* ── helper components (outside to prevent focus loss) ── */
+const Label = ({ children }) => (
+  <label style={{ fontSize: '0.62rem', fontWeight: 800, color: C.t300, letterSpacing: '0.05em', marginBottom: '0.4rem', display: 'block', marginLeft: '0.5rem' }}>
+    {children}
+  </label>
+);
+
+const Input = (props) => (
+  <input {...props} style={{
+    width: '100%', padding: '0.85rem 1.25rem', borderRadius: C.rMd,
+    background: '#fff', border: `1px solid ${C.bSoft}`,
+    fontSize: '0.8rem', fontWeight: 700, color: C.t900, outline: 'none',
+    transition: 'all 0.2s', ...props.style
+  }} onFocus={e => e.currentTarget.style.borderColor = C.t900} onBlur={e => e.currentTarget.style.borderColor = C.bSoft} />
+);
 
 const EditProfile = () => {
   const { user, updateProfile, requestOTP, secureUpdate, uploadAvatar, loading } = useAuthStore();
@@ -25,8 +53,8 @@ const EditProfile = () => {
   const [errors, setErrors] = useState({});
   const [avatarLoading, setAvatarLoading] = useState(false);
 
-   const [otpModal, setOtpModal] = useState({ isOpen: false, purpose: '', targetData: null });
-   const [confirmModal, setConfirmModal] = useState({ isOpen: false, purpose: '', targetData: null });
+  const [otpModal, setOtpModal] = useState({ isOpen: false, purpose: '', targetData: null });
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, purpose: '', targetData: null });
 
   useEffect(() => {
     if (user) {
@@ -37,301 +65,233 @@ const EditProfile = () => {
 
   const handleAvatarChange = async (e) => {
     const file = e.target.files[0];
-    if (!file) return;
-    
+    if (!file || file.size > 2 * 1024 * 1024) return toast.error('Max 2MB allowed');
     setAvatarLoading(true);
     try {
-      const formData = new FormData();
-      formData.append('image', file);
-      const uploadRes = await api.post('/upload', formData);
-      await uploadAvatar(uploadRes.data.url);
-      toast.success('Avatar updated!');
-    } catch (error) {
-      toast.error('Failed to update avatar');
-    } finally {
-      setAvatarLoading(false);
+      await uploadAvatar(file);
+      toast.success('Photo updated');
+    } catch { 
+      toast.error('Upload failed'); 
+    } finally { 
+      setAvatarLoading(false); 
     }
   };
 
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
-    if (!profileData.full_name || profileData.full_name.trim().length < 3) {
-      newErrors.full_name = 'Name must be at least 3 characters';
-    }
-    if (!profileData.address || profileData.address.trim().length < 5) {
-      newErrors.address = 'Please enter a valid address';
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
+    if (!profileData.full_name?.trim() || profileData.full_name.length < 3) newErrors.full_name = 'Min 3 chars';
+    if (!profileData.address?.trim() || profileData.address.length < 5) newErrors.address = 'Min 5 chars';
+    if (Object.keys(newErrors).length > 0) return setErrors(newErrors);
 
     try {
       await updateProfile(profileData);
-      toast.success('Profile updated');
+      toast.success('Changes saved');
       setErrors({});
-    } catch (error) {
-      toast.error(error.response?.data || 'Failed to update');
-    }
+    } catch (err) { toast.error(err.response?.data || 'Failed to update'); }
   };
 
   const startSecureUpdate = async (purpose) => {
     const newErrors = {};
     if (purpose === 'password') {
-      if (sensitiveData.password.length < 6) newErrors.password = 'Min 6 characters required';
-      if (sensitiveData.password !== sensitiveData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
-    } else if (purpose === 'email') {
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sensitiveData.email)) {
-        newErrors.email = 'Invalid email format';
-      }
-    } else if (purpose === 'phone') {
-      if (!/^\d{11}$/.test(sensitiveData.phone)) {
-        newErrors.phone = 'Phone must be exactly 11 digits';
-      }
+      if (sensitiveData.password.length < 6) newErrors.password = 'Min 6 chars';
+      if (sensitiveData.password !== sensitiveData.confirmPassword) newErrors.confirmPassword = 'Mismatch';
+    } else if (purpose === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sensitiveData.email)) {
+      newErrors.email = 'Invalid email';
+    } else if (purpose === 'phone' && !/^\d{11}$/.test(sensitiveData.phone)) {
+      newErrors.phone = '11 digits required';
     }
 
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
+    if (Object.keys(newErrors).length > 0) return setErrors(newErrors);
 
     const targetData = purpose === 'password' ? { password: sensitiveData.password } :
-      purpose === 'email' ? { email: sensitiveData.email } :
-        { phone: sensitiveData.phone };
+      purpose === 'email' ? { email: sensitiveData.email } : { phone: sensitiveData.phone };
 
-    setConfirmModal({
-      isOpen: true,
-      purpose,
-      targetData
-    });
+    setConfirmModal({ isOpen: true, purpose, targetData });
     setErrors({});
   };
 
   const handleConfirmedSecureUpdate = async () => {
     const { purpose, targetData } = confirmModal;
     setConfirmModal({ isOpen: false, purpose: '', targetData: null });
-    
     try {
       await requestOTP(purpose);
-      setOtpModal({
-        isOpen: true,
-        purpose: purpose,
-        targetData: targetData
-      });
-    } catch (error) {
-      toast.error(error.response?.data || 'Failed to send OTP');
-    }
+      setOtpModal({ isOpen: true, purpose, targetData });
+    } catch (err) { toast.error(err.response?.data || 'OTP error'); }
   };
 
   const handleOTPVerify = async (code) => {
     try {
       await secureUpdate({ otp: code, purpose: otpModal.purpose, ...otpModal.targetData });
-      toast.success('Updated successfully');
+      toast.success('Security update successful');
       setOtpModal({ isOpen: false, purpose: '', targetData: null });
       if (otpModal.purpose === 'password') setSensitiveData(prev => ({ ...prev, password: '', confirmPassword: '' }));
       setErrors({});
-    } catch (error) {
-      const msg = error.response?.data;
-      if (typeof msg === 'string' && msg.includes('same as the current')) {
-        setErrors({ password: 'New password cannot be the same as your current one' });
+    } catch (err) {
+      const msg = err.response?.data;
+      if (typeof msg === 'string' && msg.includes('same')) {
+        setErrors({ password: 'Use a different password' });
         setOtpModal({ isOpen: false, purpose: '', targetData: null });
-      } else {
-        toast.error(msg || 'Verification failed');
-      }
+      } else toast.error(msg || 'Failed');
     }
   };
 
   if (!user) return null;
 
   return (
-    <div className="min-h-screen pt-32 pb-20 px-4 md:px-8">
-      <div className="max-w-6xl mx-auto">
-        <button onClick={() => navigate('/profile')} className="flex items-center gap-2 text-slate-500 font-bold text-sm mb-8 hover:text-secondary transition-colors group">
-          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Back to Profile
+    <div style={{ background: C.bgPage, minHeight: '100vh', padding: '5.2rem 1.5rem 4rem' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+        
+        <button onClick={() => navigate('/profile')} style={{
+          display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none',
+          fontSize: '0.75rem', fontWeight: 800, color: C.t300, cursor: 'pointer', marginBottom: '2rem'
+        }}>
+          <ArrowLeft style={{ width: 16, height: 16 }} /> Back to Dashboard
         </button>
 
-        <div className="flex flex-col lg:flex-row gap-10">
+        <div style={{ display: 'grid', gridTemplateColumns: '22rem 1fr', gap: '2rem', alignItems: 'start' }}>
           
-          {/* Left Side: Avatar & Identity */}
-          <aside className="w-full lg:w-1/3">
-             <motion.div 
-               initial={{ opacity: 0, x: -20 }} 
-               animate={{ opacity: 1, x: 0 }}
-               className="glass-card-light rounded-[2.5rem] border border-white/[0.08] shadow-xl p-10 text-center sticky top-32"
-             >
-                <div className="relative w-40 h-40 mx-auto mb-8 group">
-                   <div className="w-full h-full rounded-full border-4 border-slate-50 overflow-hidden bg-slate-100 shadow-2xl transition-transform duration-500 group-hover:scale-105">
-                      {user.avatar_url ? (
-                        <img src={getImageUrl(user.avatar_url)} alt="Avatar" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-4xl font-black text-slate-300">
-                          {user.full_name?.charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                      {avatarLoading && (
-                        <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center">
-                          <RefreshCcw className="w-8 h-8 text-white animate-spin" />
-                        </div>
-                      )}
-                   </div>
-                   <label className="absolute bottom-1 right-1 w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center cursor-pointer hover:bg-primary hover:scale-110 transition-all shadow-lg border-2 border-white">
-                      <Plus className="w-5 h-5" />
-                      <input type="file" className="hidden" accept="image/*" onChange={handleAvatarChange} disabled={avatarLoading} />
-                   </label>
+          {/* SIDEBAR */}
+          <motion.div {...fadeUp(0)} style={{
+            background: C.bgCard, borderRadius: C.r2xl, padding: '2.5rem',
+            border: `1px solid ${C.bSoft}`, textAlign: 'center', position: 'sticky', top: '7rem'
+          }}>
+            <div style={{ position: 'relative', width: 120, height: 120, margin: '0 auto 1.5rem' }}>
+              <div style={{ width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden', border: '4px solid #fff', boxShadow: '0 10px 30px -10px rgba(0,0,0,0.1)' }}>
+                {user.avatar_url ? (
+                  <img src={getImageUrl(user.avatar_url)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
+                ) : (
+                  <div style={{ width: '100%', height: '100%', background: C.bgMuted, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', fontWeight: 900, color: C.t300 }}>
+                    {user.full_name?.charAt(0)}
+                  </div>
+                )}
+                {avatarLoading && <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><RefreshCcw className="animate-spin" /></div>}
+              </div>
+              <label style={{
+                position: 'absolute', bottom: 5, right: 5, width: 32, height: 32,
+                background: C.t900, color: '#fff', borderRadius: '50%', border: '3px solid #fff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
+              }}>
+                <Plus style={{ width: 16, height: 16 }} />
+                <input type="file" hidden accept="image/*" onChange={handleAvatarChange} />
+              </label>
+            </div>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: C.t900, margin: '0 0 0.5rem' }}>{user.full_name}</h2>
+            <span style={{ fontSize: '0.6rem', fontWeight: 800, padding: '0.2rem 0.6rem', background: C.bgMuted, color: C.t500, borderRadius: 99 }}>{user.role} Member</span>
+
+            <div style={{ marginTop: '2.5rem', padding: '1.25rem', background: C.bgMuted, borderRadius: C.rMd, textAlign: 'left' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <ShieldCheck style={{ width: 18, height: 18, color: '#10b981' }} />
+                <div>
+                  <p style={{ fontSize: '0.62rem', fontWeight: 800, color: C.t300, margin: 0 }}>Security Status</p>
+                  <p style={{ fontSize: '0.72rem', fontWeight: 700, color: C.t700, margin: 0 }}>Fully Protected</p>
                 </div>
+              </div>
+            </div>
+          </motion.div>
 
-                <h2 className="text-2xl font-black text-white tracking-tight">{user.full_name}</h2>
-                <div className="flex items-center justify-center gap-2 mt-2">
-                   <span className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-100">
-                      {user.role}
-                   </span>
+          {/* FORM AREA */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <motion.div {...fadeUp(0.05)} style={{ background: C.bgCard, borderRadius: C.r2xl, padding: '2.5rem', border: `1px solid ${C.bSoft}` }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
+                <div style={{ width: 42, height: 42, background: C.bgMuted, borderRadius: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <User style={{ width: 20, height: 20, color: C.t900 }} />
                 </div>
-
-                <div className="mt-10 pt-10 border-t border-slate-50 space-y-4">
-                   <div className="flex items-center gap-4 text-left p-4 glass-card-light rounded-2xl">
-                      <Activity className="w-5 h-5 text-blue-500" />
-                      <div>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Account Status</p>
-                        <p className="text-sm font-bold text-white">Verified & Active</p>
-                      </div>
-                   </div>
+                <div>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: C.t900, margin: 0 }}>Basic Identity</h3>
+                  <p style={{ fontSize: '0.7rem', color: C.t300, fontWeight: 600, margin: 0 }}>Manage your primary profile information</p>
                 </div>
-             </motion.div>
-          </aside>
+              </div>
 
-          {/* Right Side: Settings Grid */}
-          <div className="flex-grow space-y-8">
-             
-             {/* Section 1: Basic Info */}
-             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card-light rounded-[2.5rem] border border-white/[0.08] shadow-xl p-8 md:p-10">
-                <div className="flex items-center gap-4 mb-8">
-                   <div className="w-12 h-12 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary">
-                      <User className="w-6 h-6" />
-                   </div>
-                   <div>
-                      <h2 className="text-xl font-bold text-white">Personal Details</h2>
-                      <p className="text-slate-500 text-xs">Manage your primary account identity</p>
-                   </div>
+              <form onSubmit={handleProfileSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                  <div>
+                    <Label>Full Name</Label>
+                    <Input value={profileData.full_name} onChange={e => setProfileData({...profileData, full_name: e.target.value})} />
+                    <AnimatePresence>{errors.full_name && <ErrorMsg message={errors.full_name} />}</AnimatePresence>
+                  </div>
+                  <div>
+                    <Label>Shipping Address</Label>
+                    <Input value={profileData.address} onChange={e => setProfileData({...profileData, address: e.target.value})} />
+                    <AnimatePresence>{errors.address && <ErrorMsg message={errors.address} />}</AnimatePresence>
+                  </div>
                 </div>
+                <button type="submit" disabled={loading} style={{
+                  padding: '1rem', background: C.t900, color: '#fff', border: 'none', borderRadius: C.rMd,
+                  fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
+                }}>
+                  {loading ? 'Saving...' : <><Save style={{ width: 14, height: 14 }} /> Save Identity Updates</>}
+                </button>
+              </form>
+            </motion.div>
 
-                <form onSubmit={handleProfileSubmit} className="space-y-6">
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
-                        <div className="relative">
-                          <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
-                          <input
-                            type="text"
-                            value={profileData.full_name}
-                            onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
-                            className="w-full glass-card-light border border-white/[0.08] rounded-2xl py-3.5 pl-11 pr-4 text-sm font-bold text-white focus:glass-card-light focus:border-indigo-500 transition-all outline-none"
-                          />
-                        </div>
-                        <AnimatePresence>{errors.full_name && <ErrorMsg message={errors.full_name} />}</AnimatePresence>
-                      </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+              
+              {/* CONTACT UPDATES */}
+              <motion.div {...fadeUp(0.1)} style={{ background: C.bgCard, borderRadius: C.r2xl, padding: '2rem', border: `1px solid ${C.bSoft}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                  <div style={{ width: 34, height: 34, background: '#eff6ff', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Mail style={{ width: 16, height: 16, color: C.blue }} />
+                  </div>
+                  <h4 style={{ fontSize: '0.9rem', fontWeight: 800, color: C.t900, margin: 0 }}>Secure Contact</h4>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <Label>Email</Label>
+                      <button onClick={() => startSecureUpdate('email')} style={{ background: 'none', border: 'none', color: C.blue, fontSize: '0.62rem', fontWeight: 800, cursor: 'pointer' }}>Change</button>
+                    </div>
+                    <Input value={sensitiveData.email} onChange={e => setSensitiveData({...sensitiveData, email: e.target.value})} />
+                    {errors.email && <span style={{ fontSize: '0.65rem', color: C.rose, fontWeight: 700, marginTop: '0.25rem', display: 'block' }}>{errors.email}</span>}
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <Label>Phone</Label>
+                      <button onClick={() => startSecureUpdate('phone')} style={{ background: 'none', border: 'none', color: C.blue, fontSize: '0.62rem', fontWeight: 800, cursor: 'pointer' }}>Change</button>
+                    </div>
+                    <Input value={sensitiveData.phone} onChange={e => setSensitiveData({...sensitiveData, phone: e.target.value.replace(/\D/g, '')})} />
+                    {errors.phone && <span style={{ fontSize: '0.65rem', color: C.rose, fontWeight: 700, marginTop: '0.25rem', display: 'block' }}>{errors.phone}</span>}
+                  </div>
+                </div>
+              </motion.div>
 
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Address Summary</label>
-                        <div className="relative">
-                          <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
-                          <input
-                            type="text"
-                            value={profileData.address}
-                            onChange={(e) => setProfileData({ ...profileData, address: e.target.value })}
-                            className="w-full glass-card-light border border-white/[0.08] rounded-2xl py-3.5 pl-11 pr-4 text-sm font-bold text-white focus:glass-card-light focus:border-indigo-500 transition-all outline-none"
-                          />
-                        </div>
-                        <AnimatePresence>{errors.address && <ErrorMsg message={errors.address} />}</AnimatePresence>
-                      </div>
-                   </div>
-
-                   <button type="submit" disabled={loading} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-primary transition-all shadow-lg disabled:opacity-50 mt-4">
-                      {loading ? <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : 'Save Personal Details'}
-                   </button>
-                </form>
-             </motion.div>
-
-             {/* Section 2: Contact & Security Split */}
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                
-                {/* Contact Details */}
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card-light rounded-[2.5rem] border border-white/[0.08] shadow-xl p-8">
-                   <div className="flex items-center gap-4 mb-8">
-                      <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-500">
-                         <Mail className="w-5 h-5" />
-                      </div>
-                      <h3 className="font-bold text-white">Contact Details</h3>
-                   </div>
-
-                   <div className="space-y-6">
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center px-1">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Email</label>
-                          <button onClick={() => startSecureUpdate('email')} className="text-[10px] font-black text-primary uppercase hover:underline">Change</button>
-                        </div>
-                        <input
-                          type="email"
-                          value={sensitiveData.email}
-                          onChange={(e) => setSensitiveData({ ...sensitiveData, email: e.target.value })}
-                          className="w-full glass-card-light border border-white/[0.08] rounded-xl py-3 px-4 text-xs font-bold text-white focus:glass-card-light focus:border-blue-500 outline-none"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center px-1">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Phone</label>
-                          <button onClick={() => startSecureUpdate('phone')} className="text-[10px] font-black text-primary uppercase hover:underline">Change</button>
-                        </div>
-                        <input
-                          type="tel"
-                          value={sensitiveData.phone}
-                          onChange={(e) => setSensitiveData({ ...sensitiveData, phone: e.target.value.replace(/\D/g, '') })}
-                          className="w-full glass-card-light border border-white/[0.08] rounded-xl py-3 px-4 text-xs font-bold text-white focus:glass-card-light focus:border-blue-500 outline-none"
-                        />
-                      </div>
-                   </div>
-                </motion.div>
-
-                {/* Password Management */}
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card-light rounded-[2.5rem] border border-white/[0.08] shadow-xl p-8">
-                   <div className="flex items-center gap-4 mb-8">
-                      <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center text-amber-500">
-                         <Lock className="w-5 h-5" />
-                      </div>
-                      <h3 className="font-bold text-white">Password</h3>
-                   </div>
-
-                   <div className="space-y-4">
-                      <div className="relative">
-                        <input
-                          type={showPassword ? "text" : "password"}
-                          placeholder="New Password"
-                          autoComplete="new-password"
-                          value={sensitiveData.password}
-                          onChange={(e) => setSensitiveData({ ...sensitiveData, password: e.target.value })}
-                          className="w-full glass-card-light border border-white/[0.08] rounded-xl py-3 pl-4 pr-10 text-xs font-bold text-white outline-none focus:border-amber-500"
-                        />
-                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300">
-                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                      </div>
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Confirm Password"
-                        autoComplete="new-password"
-                        value={sensitiveData.confirmPassword}
-                        onChange={(e) => setSensitiveData({ ...sensitiveData, confirmPassword: e.target.value })}
-                        className="w-full glass-card-light border border-white/[0.08] rounded-xl py-3 px-4 text-xs font-bold text-white outline-none focus:border-amber-500"
-                      />
-                      <button onClick={() => startSecureUpdate('password')} disabled={!sensitiveData.password} className="w-full py-3 bg-amber-500 text-white rounded-xl font-bold text-xs hover:bg-amber-600 transition-all disabled:opacity-20 mt-2">
-                        Set New Password
-                      </button>
-                   </div>
-                </motion.div>
-
-             </div>
+              {/* PASSWORD UPDATES */}
+              <motion.div {...fadeUp(0.15)} style={{ background: C.bgCard, borderRadius: C.r2xl, padding: '2rem', border: `1px solid ${C.bSoft}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                  <div style={{ width: 34, height: 34, background: '#fffbeb', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Lock style={{ width: 16, height: 16, color: C.amber }} />
+                  </div>
+                  <h4 style={{ fontSize: '0.9rem', fontWeight: 800, color: C.t900, margin: 0 }}>Update Password</h4>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={{ position: 'relative' }}>
+                    <Input 
+                      type={showPassword ? "text" : "password"} 
+                      placeholder="New Password" 
+                      value={sensitiveData.password} 
+                      onChange={e => setSensitiveData({...sensitiveData, password: e.target.value})} 
+                      autoComplete="new-password"
+                    />
+                    <button onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: C.t300, cursor: 'pointer' }}>
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                  {errors.password && <span style={{ fontSize: '0.65rem', color: C.rose, fontWeight: 700, marginLeft: '0.5rem' }}>{errors.password}</span>}
+                  <Input 
+                    type={showPassword ? "text" : "password"} 
+                    placeholder="Confirm New Password" 
+                    value={sensitiveData.confirmPassword} 
+                    onChange={e => setSensitiveData({...sensitiveData, confirmPassword: e.target.value})} 
+                    autoComplete="new-password"
+                  />
+                  {errors.confirmPassword && <span style={{ fontSize: '0.65rem', color: C.rose, fontWeight: 700, marginLeft: '0.5rem' }}>{errors.confirmPassword}</span>}
+                  <button onClick={() => startSecureUpdate('password')} disabled={!sensitiveData.password} style={{
+                    padding: '0.85rem', background: C.amber, color: '#fff', border: 'none', borderRadius: C.rMd,
+                    fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer', opacity: !sensitiveData.password ? 0.3 : 1
+                  }}>Set Secure Password</button>
+                </div>
+              </motion.div>
+            </div>
 
           </div>
         </div>
@@ -341,11 +301,11 @@ const EditProfile = () => {
         isOpen={confirmModal.isOpen}
         onClose={() => setConfirmModal({ isOpen: false, purpose: '', targetData: null })}
         onConfirm={handleConfirmedSecureUpdate}
-        title={`Update ${confirmModal.purpose.charAt(0).toUpperCase() + confirmModal.purpose.slice(1)}?`}
-        description={`To change your ${confirmModal.purpose}, we need to send a verification code to your current email. Would you like to proceed?`}
-        confirmText="Confirm & Send OTP"
+        title={`Update your ${confirmModal.purpose}?`}
+        description={`We need to send a verification code to your email to confirm this change.`}
+        confirmText="Send OTP"
         type="warning"
-        icon={confirmModal.purpose === 'password' ? Lock : confirmModal.purpose === 'email' ? Mail : Phone}
+        icon={confirmModal.purpose === 'password' ? Lock : Mail}
       />
 
       <OTPModal
@@ -355,8 +315,8 @@ const EditProfile = () => {
         onResend={() => requestOTP(otpModal.purpose)}
         email={user?.email}
         loading={loading}
-        title={`Verify ${otpModal.purpose === 'password' ? 'Password' : otpModal.purpose === 'email' ? 'Email' : 'Phone'} Update`}
-        description={`A 6-digit verification code has been sent to your email to confirm the changes.`}
+        title="Verify Identity"
+        description="A 6-digit code has been sent to your email."
       />
     </div>
   );

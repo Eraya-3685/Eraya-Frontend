@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, Trash2, ShoppingCart, ArrowRight, ShoppingBag, AlertCircle, Star } from 'lucide-react';
+import { Heart, Trash2, ShoppingBag, ArrowRight, Star, X, RefreshCcw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import useWishlistStore from '../store/useWishlistStore';
 import useCartStore from '../store/useCartStore';
@@ -9,197 +9,156 @@ import api, { getImageUrl } from '../api/axios';
 import toast from 'react-hot-toast';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 import ConfirmModal from '../components/ConfirmModal';
+import ProductCard from '../components/ProductCard';
 
+const C = {
+  t900:'#0d1117', t700:'#1f2937', t500:'#6b7280', t300:'#adb5bd',
+  bSoft:'rgba(0,0,0,0.07)', bLine:'#edf0f4',
+  bgCard:'#fff', bgMuted:'#f3f5f8',
+  lime:'#cbff00', rose:'#f43f5e', green:'#22c55e', blue:'#3b82f6',
+};
 
+const fadeUp = (delay = 0) => ({
+  initial: { opacity: 0, y: 14 },
+  animate: { opacity: 1, y: 0  },
+  exit:    { opacity: 0, scale: 0.95 },
+  transition: { delay, duration: 0.35, ease: [0.22, 1, 0.36, 1] },
+});
 
-const Wishlist = () => {
-  useDocumentTitle('My Wishlist');
+export default function Wishlist() {
+  useDocumentTitle('My Wishlist | Eraya');
   const { items, toggleWishlist, clearWishlist, syncWishlist } = useWishlistStore();
-  const { user } = useAuthStore();
-  const addItem = useCartStore((state) => state.addItem);
-  
+  const { user }    = useAuthStore();
+  const addItem     = useCartStore(s => s.addItem);
+
   const [itemToDelete, setItemToDelete] = useState(null);
   const [isDeletingItem, setIsDeletingItem] = useState(false);
-  const [isClearing, setIsClearing] = useState(false);
-  const [isClearingAll, setIsClearingAll] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showClearModal, setShowClearModal] = useState(false);
+  const [isClearing, setIsClearing]         = useState(false);
+  const [isRefreshing, setIsRefreshing]     = useState(false);
 
-  useEffect(() => {
-    refreshWishlistStock();
-  }, []);
+  useEffect(() => { refreshStock(); }, []);
 
-  const refreshWishlistStock = async () => {
-    if (items.length === 0) return;
+  const refreshStock = async () => {
+    if (!items.length) return;
     setIsRefreshing(true);
     try {
-      const updatedItems = await Promise.all(
-        items.map(async (item) => {
-          try {
-            const res = await api.get(`/products/${item.slug}`);
-            return { ...item, stock_count: res.data.stock_count };
-          } catch (err) {
-            return item;
-          }
-        })
-      );
-      if (syncWishlist) syncWishlist(updatedItems);
-    } finally {
-      setIsRefreshing(false);
-    }
+      const updated = await Promise.all(items.map(async item => {
+        try { const r = await api.get(`/products/${item.slug}`); return { ...item, stock_count: r.data.stock_count }; }
+        catch { return item; }
+      }));
+      if (syncWishlist) syncWishlist(updated);
+    } finally { setIsRefreshing(false); }
   };
 
   const handleAddToCart = (product) => {
+    const role = user?.role?.toLowerCase();
+    if (role === 'admin' || role === 'moderator') { toast.error('Admin accounts cannot add to cart'); return; }
     addItem(product);
     toast.success(`${product.name} added to cart`);
   };
 
-  const getPrimaryImage = (images) => {
-    if (!images || images.length === 0) return null;
-    const primary = images.find((img) => img.is_primary) || images[0];
-    return primary.image_url;
-  };
+  const primaryImg = (images) =>
+    images?.find(i => i.is_primary)?.image_url ?? images?.[0]?.image_url ?? null;
 
-  if (items.length === 0) {
-    return (
-      <div className="min-h-screen/[0.04] pt-16 pb-20 px-6">
-        <div className="max-w-xl mx-auto glass-card-light p-12 text-center rounded-[3rem] border border-white/[0.08] shadow-sm">
-          <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-8">
-            <Star className="w-10 h-10 text-amber-200" />
-          </div>
-          <h1 className="text-3xl font-black text-white mb-4 tracking-tight">Your Wishlist is Empty</h1>
-          <p className="text-slate-500 mb-10 text-sm font-medium leading-relaxed">
-            Looks like you haven't saved any pieces yet. Browse our collection to find something you love.
-          </p>
-          <Link 
-            to="/products" 
-            className="inline-flex items-center gap-2 px-8 py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-secondary transition-all shadow-xl shadow-slate-200"
-          >
-            Explore Collection <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
+  /* ── Empty State ── */
+  if (items.length === 0) return (
+    <div style={{ minHeight:'65vh', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:'1.5rem' }}>
+      <div style={{ width:80, height:80, background:'#fff1f2', borderRadius:'1.75rem', display:'flex', alignItems:'center', justifyContent:'center', border:'1.5px solid #fecdd3' }}>
+        <Heart style={{ width:36, height:36, color:C.rose }} />
       </div>
-    );
-  }
+      <div style={{ textAlign:'center' }}>
+        <h1 style={{ fontSize:'1.75rem', fontWeight:800, color:C.t900, margin:'0 0 0.5rem', letterSpacing:'-0.04em' }}>Wishlist is Empty</h1>
+        <p style={{ fontSize:'0.85rem', color:C.t500, margin:0, lineHeight:1.6 }}>
+          Browse our collection and save items you love.
+        </p>
+      </div>
+      <Link to="/products" className="btn-lime">
+        Explore Collection
+        <div className="icon-circle"><ArrowRight style={{ width:14, height:14, transform:'rotate(-45deg)' }} /></div>
+      </Link>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen/[0.04] pt-12 pb-20 px-4 md:px-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-16 border-b border-white/[0.1]/60 pb-8">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">
-                My Wishlist
-              </h1>
-              <span className="text-[10px] font-black bg-slate-900 text-white px-3 py-1 rounded-lg uppercase tracking-widest flex items-center gap-1.5">
-                {items.length} <span className="opacity-60 font-bold">{items.length === 1 ? 'Item' : 'Items'}</span>
-              </span>
-            </div>
-            <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em]">Your Curated Selection</p>
+    <div style={{ paddingBottom:'3rem' }}>
+
+      {/* Header */}
+      <div style={{ display:'flex', alignItems:'flex-end', justifyContent:'space-between', marginBottom:'2rem', flexWrap:'wrap', gap:'1rem' }}>
+        <div>
+          <p style={{ fontSize:'0.75rem', fontWeight:800, color:C.t300, margin:'0 0 0.3rem' }}>Your saved</p>
+          <div style={{ display:'flex', alignItems:'center', gap:'0.85rem' }}>
+            <h1 style={{ fontSize:'2rem', fontWeight:800, color:C.t900, margin:0, letterSpacing:'-0.04em' }}>Wishlist</h1>
+            <span style={{ background:C.t900, color:'#fff', fontSize:'0.75rem', fontWeight:800, padding:'0.25rem 0.75rem', borderRadius:9999 }}>
+              {items.length} {items.length === 1 ? 'item' : 'items'}
+            </span>
           </div>
-          <button 
-            onClick={() => setIsClearing(true)}
-            className="text-[10px] font-black text-red-400 uppercase tracking-[0.2em] hover:text-red-600 transition-colors glass-card-light px-4 py-2 rounded-full border border-white/[0.08] shadow-sm"
-          >
-            Clear All Items
-          </button>
         </div>
-
-        {/* Dense Grid with Smaller Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 md:gap-6">
-          <AnimatePresence mode="popLayout">
-            {items.map((product) => (
-              <motion.div
-                layout
-                key={product.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                className="group glass-card-light rounded-[2rem] border border-white/[0.08] overflow-hidden hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-500 flex flex-col"
-              >
-                  <div className="relative aspect-square glass-card-light/50 overflow-hidden">
-                    <Link to={`/products/${product.slug}`}>
-                      <img 
-                        src={getImageUrl(getPrimaryImage(product.images))} 
-                        className="w-full h-full object-contain p-4 group-hover:scale-110 transition-transform duration-700"
-                        alt={product.name} 
-                      />
-                    </Link>
-                    {product.stock_count <= 0 && (
-                      <div className="absolute inset-0 glass-card-light/40 backdrop-blur-[2px] flex items-center justify-center z-10 pointer-events-none">
-                        <div className="bg-slate-900 text-white px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-black/20 transform -rotate-12 border border-white/20">
-                          Stock Out
-                        </div>
-                      </div>
-                    )}
-                    <button 
-                      onClick={() => setItemToDelete(product)}
-                      className="absolute top-3 right-3 w-8 h-8 glass-card-light/80 backdrop-blur-md rounded-lg flex items-center justify-center text-red-500 shadow-sm hover:glass-card-light transition-all active:scale-90 z-20"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-
-                <div className="p-4 flex flex-col flex-grow">
-                  <Link to={`/products/${product.slug}`}>
-                    <h3 className="font-bold text-white text-xs mb-1 truncate group-hover:text-indigo-300 transition-colors">
-                      {product.name}
-                    </h3>
-                  </Link>
-                  <p className="text-sm font-black text-white tracking-tighter mb-4">৳{product.base_price.toLocaleString()}</p>
-                  
-                  <div className="flex gap-2 mt-auto">
-                    <button
-                      onClick={() => handleAddToCart(product)}
-                      disabled={product.stock_count <= 0}
-                      className="flex-grow py-2.5 bg-slate-900 text-white rounded-lg font-bold text-[9px] uppercase tracking-widest flex items-center justify-center gap-1.5 hover:bg-secondary transition-all active:scale-95 shadow-lg shadow-slate-100 disabled:opacity-50"
-                    >
-                      <ShoppingBag className="w-2.5 h-2.5" /> {product.stock_count <= 0 ? 'Out of Stock' : 'Add'}
-                    </button>
-                    <Link
-                      to={`/products/${product.slug}`}
-                      className="w-9 h-9 glass-card-light text-slate-400 rounded-lg flex items-center justify-center hover:glass-card-light hover:text-white border border-slate-50 transition-all"
-                    >
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
+        <div style={{ display:'flex', alignItems:'center', gap:'0.75rem' }}>
+          <button onClick={refreshStock} disabled={isRefreshing}
+            style={{ display:'flex', alignItems:'center', gap:'0.4rem', fontSize:'0.68rem', fontWeight:700, color:C.t300, background:'none', border:'none', cursor:'pointer', fontFamily:'inherit', opacity:isRefreshing?0.5:1 }}>
+            <RefreshCcw style={{ width:12, height:12, animation:isRefreshing?'spin 1s linear infinite':'none' }} />
+            Refresh
+          </button>
+          <button onClick={() => setShowClearModal(true)}
+            style={{ display:'flex', alignItems:'center', gap:'0.4rem', fontSize:'0.72rem', fontWeight:700, color:C.rose, background:'none', border:'none', cursor:'pointer', fontFamily:'inherit', padding:'0.5rem 0.75rem', borderRadius:'0.75rem', transition:'background .15s' }}
+            onMouseEnter={e => e.currentTarget.style.background='#fff1f2'}
+            onMouseLeave={e => e.currentTarget.style.background='transparent'}>
+            <X style={{ width:13, height:13 }} /> Clear All
+          </button>
         </div>
       </div>
 
+      {/* Grid */}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(220px, 1fr))', gap:'1.25rem' }}>
+        <AnimatePresence mode="popLayout">
+          {items.map((product, idx) => (
+            <motion.div key={product.id} layout {...fadeUp(Math.min(idx, 7) * 0.05)}>
+              <ProductCard 
+                product={product}
+                onCart={handleAddToCart}
+                onWishlist={() => toggleWishlist(product, !!user)}
+                inWishlist={true}
+              />
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+
+      {/* Modals */}
       <ConfirmModal
         isOpen={!!itemToDelete}
         onClose={() => setItemToDelete(null)}
         loading={isDeletingItem}
         onConfirm={async () => {
           setIsDeletingItem(true);
-          await new Promise(resolve => setTimeout(resolve, 800));
+          await new Promise(r => setTimeout(r, 600));
           toggleWishlist(itemToDelete, !!user);
           setIsDeletingItem(false);
           setItemToDelete(null);
         }}
-        title="Remove Item?"
-        message={`Are you sure you want to remove "${itemToDelete?.name}" from your wishlist?`}
+        title="Remove from Wishlist?"
+        message={`Remove "${itemToDelete?.name}" from your wishlist?`}
+        confirmText="Remove"
       />
 
       <ConfirmModal
-        isOpen={isClearing}
-        onClose={() => setIsClearing(false)}
-        loading={isClearingAll}
+        isOpen={showClearModal}
+        onClose={() => setShowClearModal(false)}
+        loading={isClearing}
         onConfirm={async () => {
-          setIsClearingAll(true);
-          await new Promise(resolve => setTimeout(resolve, 800));
+          setIsClearing(true);
+          await new Promise(r => setTimeout(r, 600));
           clearWishlist();
-          setIsClearingAll(false);
           setIsClearing(false);
+          setShowClearModal(false);
         }}
-        title="Clear All Items?"
-        message="Are you sure you want to remove all items from your wishlist? This action cannot be undone."
+        title="Clear Wishlist?"
+        message="Remove all saved items? This cannot be undone."
+        confirmText="Clear All"
       />
+
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
-};
-
-export default Wishlist;
+}

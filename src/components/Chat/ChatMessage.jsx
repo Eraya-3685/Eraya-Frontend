@@ -4,110 +4,109 @@ import { Send, Pencil, Trash2, MoreVertical } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import useChatStore from '../../store/useChatStore';
 
+const C = {
+  t900: '#0d1117', t700: '#1f2937', t500: '#6b7280', t300: '#adb5bd',
+  bSoft: 'rgba(0,0,0,0.07)', bMed: 'rgba(0,0,0,0.12)',
+  bgCard: '#ffffff', bgPage: '#edf0f4', bgMuted: '#f3f5f8',
+  lime: '#cbff00', blue: '#3b82f6', rose: '#f43f5e', amber: '#f59e0b',
+  rSm: '0.85rem', rMd: '1.25rem', rLg: '1.5rem', r2xl: '2.5rem'
+};
+
 const ChatMessage = ({ msg, isMe, onReply, showName, isAdminView, setConfirmModal, isSelectionMode, isSelected, onSelect }) => {
   const { deleteMessage, setEditingMessage } = useChatStore();
   const [showMenu, setShowMenu] = React.useState(false);
   const menuRef = React.useRef(null);
 
   React.useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setShowMenu(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    const h = (e) => { if (menuRef.current && !menuRef.current.contains(e.target)) setShowMenu(false); };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
   }, []);
 
   return (
-    <div
-      className={`flex items-center gap-4 w-full group/msg relative ${isSelectionMode ? 'cursor-pointer hover:glass-card-light/50 transition-colors px-4 rounded-2xl' : ''}`}
+    <div 
+      style={{ 
+        display: 'flex', alignItems: 'center', gap: '1rem', width: '100%', position: 'relative',
+        padding: isSelectionMode ? '0.5rem 1rem' : '0.25rem 0',
+        borderRadius: isSelectionMode ? C.rMd : 0,
+        background: isSelectionMode && isSelected ? 'rgba(59,130,246,0.05)' : 'transparent',
+        cursor: isSelectionMode ? 'pointer' : 'default'
+      }}
       onClick={() => isSelectionMode && onSelect(msg.id)}
     >
       {isSelectionMode && (
-        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${isSelected ? 'bg-indigo-600 border-indigo-600 shadow-lg shadow-indigo-600/20' : 'border-white/[0.12] glass-card-light'}`}>
-          {isSelected && <div className="w-1.5 h-1.5 glass-card-light rounded-full" />}
+        <div style={{ 
+          width: 20, height: 20, borderRadius: '50%', border: `2px solid ${isSelected ? C.blue : C.bMed}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', background: isSelected ? C.blue : '#fff',
+          flexShrink: 0
+        }}>
+          {isSelected && <div style={{ width: 6, height: 6, background: '#fff', borderRadius: '50%' }} />}
         </div>
       )}
-      <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} flex-grow min-w-0 relative py-1`}>
-        <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} ${isAdminView ? 'max-w-[70%]' : 'max-w-[85%]'} min-w-0 relative`}>
-          {/* Reply Button */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start', flex: 1, minWidth: 0 }}>
+        <div style={{ 
+          display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start', 
+          maxWidth: isAdminView ? '75%' : '85%', minWidth: 0, position: 'relative' 
+        }}>
+          {/* Reply Icon */}
           {!isSelectionMode && (
             <button
               onClick={() => onReply(msg)}
-              className={`absolute top-1/2 -translate-y-1/2 ${isMe ? (isAdminView ? '-left-10' : '-left-8') : (isAdminView ? '-right-10' : '-right-8')} p-1.5 rounded-full glass-card-light shadow-sm border border-white/[0.08] opacity-0 group-hover/msg:opacity-100 transition-all hover:glass-card-light text-slate-400 hover:text-white z-10`}
-              title="Reply"
+              className="reply-btn"
+              style={{
+                position: 'absolute', top: '50%', transform: 'translateY(-50%)',
+                [isMe ? 'left' : 'right']: '-2.5rem', width: 30, height: 30, borderRadius: '50%',
+                background: '#fff', border: `1px solid ${C.bSoft}`, display: 'flex', alignItems: 'center',
+                justifyContent: 'center', color: C.t500, cursor: 'pointer', opacity: 0, transition: '0.2s'
+              }}
             >
-              <Send className={`w-2.5 h-2.5 rotate-180 ${isAdminView ? 'w-3 h-3' : ''}`} />
+              <Send size={12} style={{ transform: isMe ? 'rotate(180deg)' : 'none' }} />
             </button>
           )}
 
-          {/* Replied Preview */}
           {msg.reply_to_id && (
-            <div className={`mb-1 p-2 rounded-xl bg-slate-100/50 border-l-2 border-white/[0.12] ${isAdminView ? 'text-[10px]' : 'text-[9px]'} opacity-70 line-clamp-1 max-w-full italic`}>
+            <div style={{ 
+              marginBottom: '0.25rem', padding: '0.4rem 0.75rem', borderRadius: C.rSm, 
+              background: 'rgba(0,0,0,0.04)', borderLeft: `3px solid ${C.bMed}`, 
+              fontSize: '0.65rem', color: C.t500, fontStyle: 'italic', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+            }}>
               {msg.reply_to_text}
             </div>
           )}
 
-          <div
-            className={`p-3 rounded-2xl ${isAdminView ? 'text-xs p-3.5' : 'text-[11px]'} font-semibold shadow-sm transition-all hover:shadow-md w-fit max-w-full ${isMe
-              ? 'bg-indigo-50/80 text-indigo-900 rounded-br-none border border-indigo-100/50'
-              : 'glass-card-light text-slate-200 rounded-bl-none border border-white/[0.08]'
-              }`}
-          >
-            <div className={`flex flex-wrap items-end ${isAdminView ? 'gap-x-4' : 'gap-x-3'} gap-y-1 min-w-0`}>
-              <div className="flex-grow whitespace-pre-wrap break-words [overflow-wrap:anywhere] min-w-0">
-                {msg.message_text}
-              </div>
-              <div className={`${isAdminView ? 'text-[9px]' : 'text-[8px]'} font-bold tracking-tight opacity-40 whitespace-nowrap ml-auto`}>
+          <div style={{ 
+            padding: '0.85rem 1.25rem', borderRadius: C.rMd, fontSize: '0.8rem', fontWeight: 600,
+            lineHeight: 1.5, position: 'relative',
+            background: isMe ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' : '#fff',
+            color: isMe ? '#fff' : C.t700,
+            border: isMe ? 'none' : `1px solid ${C.bSoft}`,
+            borderBottomRightRadius: isMe ? '0.25rem' : C.rMd,
+            borderBottomLeftRadius: isMe ? C.rMd : '0.25rem',
+            boxShadow: isMe ? '0 10px 25px -5px rgba(79, 70, 229, 0.3)' : '0 2px 8px rgba(0,0,0,0.04)',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+          }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: '0.75rem' }}>
+              <span style={{ wordBreak: 'break-word', flex: 1 }}>{msg.message_text}</span>
+              <span style={{ fontSize: '0.6rem', opacity: 0.5, fontWeight: 700, whiteSpace: 'nowrap', marginTop: '0.15rem' }}>
                 {msg.status === 'sending' ? 'Sending...' : format(new Date(msg.created_at || new Date()), 'hh:mm a')}
-              </div>
+              </span>
             </div>
           </div>
 
-          {/* Edit/Delete Controls for Admin */}
           {isAdminView && isMe && (
-            <div className={`absolute top-0 ${isMe ? 'left-full -ml-3' : 'left-full ml-2'} opacity-0 group-hover/msg:opacity-100 transition-all z-20`} ref={menuRef}>
-              <button
-                onClick={() => setShowMenu(!showMenu)}
-                className="p-1.5 rounded-full glass-card-light border border-white/[0.08] shadow-sm text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all"
-              >
-                <MoreVertical className="w-3.5 h-3.5" />
+            <div style={{ position: 'absolute', top: 0, [isMe ? 'right' : 'left']: '100%', margin: '0 0.5rem', opacity: 0, transition: '0.2s' }} className="msg-controls">
+              <button onClick={() => setShowMenu(!showMenu)} style={{ background: '#fff', border: `1px solid ${C.bSoft}`, borderRadius: '50%', padding: '0.4rem', cursor: 'pointer' }}>
+                <MoreVertical size={14} color={C.t500} />
               </button>
-
               <AnimatePresence>
                 {showMenu && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.9, x: 10 }}
-                    animate={{ opacity: 1, scale: 1, x: 0 }}
-                    exit={{ opacity: 0, scale: 0.9, x: 10 }}
-                    className="absolute bottom-0 right-full mr-2 w-36 glass-card-light/90 backdrop-blur-md rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.1)] border border-white/20 overflow-hidden z-30 p-1.5 flex flex-col gap-1"
-                  >
-                    <button
-                      onClick={() => { setEditingMessage(msg); setShowMenu(false); }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-[10px] font-bold text-slate-200 hover:bg-indigo-500 hover:text-white rounded-xl transition-all group/item"
-                    >
-                      <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center group-hover/item:glass-card-light/20 transition-colors">
-                        <Pencil className="w-3.5 h-3.5" />
-                      </div>
-                      Edit Message
+                  <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
+                    style={{ position: 'absolute', top: 0, [isMe ? 'right' : 'left']: '100%', margin: '0 0.5rem', width: 120, background: '#fff', borderRadius: C.rSm, boxShadow: '0 10px 30px rgba(0,0,0,0.1)', border: `1px solid ${C.bSoft}`, overflow: 'hidden', zIndex: 10 }}>
+                    <button onClick={() => { setEditingMessage(msg); setShowMenu(false); }} style={{ width: '100%', padding: '0.6rem 1rem', background: 'none', border: 'none', textAlign: 'left', fontSize: '0.65rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                      <Pencil size={12} /> Edit
                     </button>
-                    <button
-                      onClick={() => {
-                        setConfirmModal({
-                          show: true,
-                          title: 'Delete Message?',
-                          message: 'Are you sure you want to remove this message? This will delete it for everyone.',
-                          onConfirm: () => deleteMessage(msg.id)
-                        });
-                        setShowMenu(false);
-                      }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-[10px] font-bold text-rose-500 hover:bg-rose-500 hover:text-white rounded-xl transition-all group/item"
-                    >
-                      <div className="w-7 h-7 rounded-lg bg-rose-50 flex items-center justify-center group-hover/item:glass-card-light/20 transition-colors">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </div>
-                      Delete
+                    <button onClick={() => { setConfirmModal({ show: true, title: 'Delete?', message: 'Remove message?', onConfirm: () => deleteMessage(msg.id) }); setShowMenu(false); }} style={{ width: '100%', padding: '0.6rem 1rem', background: 'none', border: 'none', textAlign: 'left', fontSize: '0.65rem', fontWeight: 700, color: C.rose, display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                      <Trash2 size={12} /> Delete
                     </button>
                   </motion.div>
                 )}
@@ -116,27 +115,27 @@ const ChatMessage = ({ msg, isMe, onReply, showName, isAdminView, setConfirmModa
           )}
 
           {showName && (
-            <span className={`${isAdminView ? 'text-[7px]' : 'text-[6px]'} font-bold text-slate-400 mt-1 px-1 `}>
+            <span style={{ fontSize: '0.6rem', fontWeight: 700, color: C.t300, marginTop: '0.25rem' }}>
               {!isAdminView && !isMe ? 'Eraya Support' : msg.sender_name}
             </span>
           )}
         </div>
       </div>
+      <style>{`
+        .group/msg:hover .reply-btn { opacity: 1 !important; }
+        .group/msg:hover .msg-controls { opacity: 1 !important; }
+      `}</style>
     </div>
   );
 };
 
 export const DateSeparator = ({ date }) => {
   const msgDate = new Date(date);
-  let dateLabel = '';
-  if (isToday(msgDate)) dateLabel = 'Today';
-  else if (isYesterday(msgDate)) dateLabel = 'Yesterday';
-  else dateLabel = format(msgDate, 'MMMM d, yyyy');
-
+  let label = isToday(msgDate) ? 'Today' : isYesterday(msgDate) ? 'Yesterday' : format(msgDate, 'MMMM d, yyyy');
   return (
-    <div className="flex justify-center my-6">
-      <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[8px]  rounded-full shadow-sm">
-        {dateLabel}
+    <div style={{ display: 'flex', justifyContent: 'center', margin: '1.5rem 0' }}>
+      <span style={{ padding: '0.35rem 0.75rem', background: C.bgMuted, color: C.t300, fontSize: '0.65rem', fontWeight: 800, borderRadius: '1rem' }}>
+        {label}
       </span>
     </div>
   );

@@ -138,10 +138,10 @@ const RootAuthHandler = ({ children }) => {
   const isFetchingProfile = token && !user;
 
   if ((syncing && !token) || isFetchingProfile) return (
-    <div className="h-screen flex items-center justify-center glass-card-light">
+    <div className="h-screen flex items-center justify-center bg-white">
       <div className="flex flex-col items-center gap-4">
         <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-        <p className="text-sm font-bold text-slate-500 animate-pulse">
+        <p className="text-sm font-bold text-[#94a3b8] animate-pulse">
           {isFetchingProfile ? 'Authenticating...' : 'Syncing your account...'}
         </p>
       </div>
@@ -164,18 +164,11 @@ function App() {
             element={
               <AdminLayout>
                 <Routes>
-                  {/* Dashboard: Both Admin & Moderator */}
                   <Route path="/" element={<AdminGuard allowedRoles={['admin', 'moderator']}><AdminDashboard /></AdminGuard>} />
-
-                  {/* Inventory: Both Admin & Moderator */}
                   <Route path="/products" element={<AdminGuard allowedRoles={['admin', 'moderator']}><AdminProducts /></AdminGuard>} />
                   <Route path="/categories" element={<AdminGuard allowedRoles={['admin', 'moderator']}><AdminCategories /></AdminGuard>} />
                   <Route path="/chat" element={<AdminGuard allowedRoles={['admin', 'moderator']}><AdminChat /></AdminGuard>} />
-
-                  {/* Users: ONLY Admin */}
                   <Route path="/users" element={<AdminGuard allowedRoles={['admin']}><AdminUsers /></AdminGuard>} />
-
-                  {/* Orders & Settings: ONLY Admin (Settings), Admin/Mod (Orders) */}
                   <Route path="/orders" element={<AdminGuard allowedRoles={['admin', 'moderator']}><AdminOrders /></AdminGuard>} />
                   <Route path="/store-settings" element={<AdminGuard allowedRoles={['admin', 'moderator']}><AdminSettings /></AdminGuard>} />
                   <Route path="/settings" element={<AdminGuard allowedRoles={['admin', 'moderator']}><AdminSettings /></AdminGuard>} />

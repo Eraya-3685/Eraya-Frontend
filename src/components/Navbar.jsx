@@ -1,429 +1,303 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ShoppingBag, User, Search, Menu, X, Command, Star, ChevronDown, LogOut, UserCircle, LayoutDashboard, Settings, Heart, Truck, ArrowRight } from 'lucide-react';
-import useCartStore from '../store/useCartStore';
-import useAuthStore from '../store/useAuthStore';
-import useWishlistStore from '../store/useWishlistStore';
-import api, { ASSETS_URL, getImageUrl } from '../api/axios';
+import { Link, useNavigate } from 'react-router-dom';
+import { Search, ShoppingBag, Heart, User, Package, ArrowRight, LogOut, LayoutDashboard } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import useClickOutside from '../hooks/useClickOutside';
-import Logo from './Logo';
+import useAuthStore from '../store/useAuthStore';
+import useCartStore from '../store/useCartStore';
+import useWishlistStore from '../store/useWishlistStore';
+import api, { getImageUrl } from '../api/axios';
 
-const Navbar = () => {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [suggestions, setSuggestions] = useState([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [loadingSearch, setLoadingSearch] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [loggingOut, setLoggingOut] = useState(false);
-  
+export default function Navbar() {
+  const { user, logout } = useAuthStore();
+  const { items: cartItems } = useCartStore();
+  const { items: wishlistItems } = useWishlistStore();
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+  const [showDrop, setShowDrop] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
   const searchRef = useRef(null);
-  const profileRef = useRef(null);
+  const menuRef = useRef(null);
   const navigate = useNavigate();
-  const location = useLocation();
-
-  const cartItems = useCartStore((state) => state.items);
-  const wishlistItems = useWishlistStore((state) => state.items);
-  const { token, user, logout } = useAuthStore();
-  const isStaff = ['admin', 'moderator'].includes(user?.role?.toLowerCase());
-
-  useClickOutside(searchRef, () => setShowSuggestions(false));
-  useClickOutside(profileRef, () => setIsProfileOpen(false));
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    if (query.length < 2) { setResults([]); setShowDrop(false); return; }
+    const t = setTimeout(async () => {
+      try {
+        const r = await api.get(`/products?search=${query}&limit=6`);
+        setResults(r.data.data || []);
+        setShowDrop(true);
+      } catch { }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  useEffect(() => {
+    const h = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target)) setShowDrop(false);
+      if (menuRef.current && !menuRef.current.contains(e.target)) setShowMenu(false);
+    };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
   }, []);
 
-  // Close menu/suggestions on route change
-  useEffect(() => {
-    setIsMenuOpen(false);
-    setShowSuggestions(false);
-    setSearchQuery('');
-  }, [location]);
+  const isAdmin = ['admin', 'moderator'].includes(user?.role?.toLowerCase());
 
-
-  // Real-time Search Logic
-  useEffect(() => {
-    if (searchQuery.trim().length < 1) {
-      setSuggestions([]);
-      return;
-    }
-
-    const timer = setTimeout(async () => {
-      setLoadingSearch(true);
-      try {
-        const res = await api.get(`/products?search=${searchQuery}&limit=5`);
-        setSuggestions(res.data.data || []);
-        setShowSuggestions(true);
-      } catch (err) {
-        console.error('Search failed', err);
-      } finally {
-        setLoadingSearch(false);
-      }
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
-
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/products?search=${searchQuery}`);
-      setShowSuggestions(false);
-    }
+  const C = {
+    bg: '#ffffff',
+    bgPage: '#edf0f4',
+    bgInput: '#f5f6f9',
+    bgMuted: '#f3f5f8',
+    t900: '#0d1117',
+    t500: '#6b7280',
+    t300: '#adb5bd',
+    bSoft: 'rgba(0,0,0,0.07)',
+    bMed: 'rgba(0,0,0,0.10)',
   };
 
   return (
-    <header className={`fixed top-0 w-full z-[100] transition-all duration-500 ${
-      isScrolled
-        ? 'bg-[#0f172a]/95 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] py-2'
-        : 'bg-[#0f172a]/70 backdrop-blur-xl py-3'
-    } border-b border-white/[0.06]`}>
-      <div className="max-w-[1400px] mx-auto flex items-center justify-between px-6 md:px-10">
+    <nav style={{
+      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
+      background: 'rgba(255,255,255,0.88)',
+      backdropFilter: 'blur(24px) saturate(180%)',
+      WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+      borderBottom: `1px solid ${C.bSoft}`,
+    }}>
+      <div style={{
+        maxWidth: 1400, margin: '0 auto',
+        padding: '0 2rem',
+        height: '4.5rem',
+        display: 'flex', alignItems: 'center', gap: '1.5rem',
+      }}>
 
-        {/* Brand Logo */}
-        <Link
-          to="/"
-          onClick={(e) => {
-            if (location.pathname === '/') {
-              e.preventDefault();
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
-          }}
-          className="flex items-center gap-3 group shrink-0 transition-transform duration-300 hover:-translate-y-0.5"
-        >
-          <div className="text-2xl font-[1000] tracking-[0.3em] text-white group-hover:text-indigo-300 transition-colors">ERAYA</div>
+        {/* ── Logo ── */}
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', textDecoration: 'none', flexShrink: 0 }}>
+          <div style={{
+            width: 36, height: 36,
+            background: C.t900,
+            borderRadius: '0.75rem',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.18)',
+          }}>
+            <Package style={{ width: 17, height: 17, color: '#fff' }} />
+          </div>
+          <span style={{
+            fontFamily: "'Plus Jakarta Sans', sans-serif",
+            fontWeight: 900, fontSize: '1.25rem',
+            letterSpacing: '0.15em', color: C.t900,
+            lineHeight: 1, textTransform: 'none'
+          }}>Eraya</span>
         </Link>
-        
-        {/* Desktop Search Input with Suggestions */}
-        <div className="hidden md:block flex-grow max-w-2xl mx-12 relative" ref={searchRef}>
-          <form onSubmit={handleSearchSubmit} className="relative group">
-            <Search className={`absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${loadingSearch ? 'text-secondary animate-pulse' : 'text-slate-400'}`} />
+
+        {/* ── Search pill ── */}
+        <div style={{ flex: 1, maxWidth: 420, position: 'relative' }} ref={searchRef}>
+          <form 
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (query.trim()) {
+                navigate(`/products?search=${query.trim()}`);
+                setShowDrop(false);
+              }
+            }}
+            style={{ position: 'relative', display: 'flex', alignItems: 'center' }}
+          >
             <input
               type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => searchQuery && setShowSuggestions(true)}
-              placeholder="Search in Eraya"
-              className="w-full glass-card/[0.06] border border-white/[0.10] rounded-2xl py-3 pl-12 pr-4 text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/20 focus:glass-card/[0.10] focus:border-indigo-500/40 transition-all placeholder:text-slate-500 text-white"
+              placeholder="Search products..."
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              onFocus={e => {
+                if (query.length >= 2) setShowDrop(true);
+                e.target.style.background = '#fff';
+                e.target.style.borderColor = C.bMed;
+                e.target.style.boxShadow = '0 0 0 4px rgba(13,17,23,0.03)';
+              }}
+              onBlur={e => { 
+                e.target.style.background = C.bgInput; 
+                e.target.style.borderColor = 'transparent'; 
+                e.target.style.boxShadow = 'none';
+              }}
+              style={{
+                width: '100%',
+                background: C.bgInput,
+                border: `1px solid transparent`,
+                borderRadius: 9999,
+                padding: '0.65rem 3.5rem 0.65rem 1.25rem',
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                fontSize: '0.78rem', fontWeight: 600,
+                color: C.t900, outline: 'none',
+                transition: 'all .25s ease',
+              }}
             />
-            <button type="submit" className="hidden" />
+            <button
+              type="submit"
+              style={{
+                position: 'absolute', right: '0.35rem',
+                width: 32, height: 32,
+                background: C.t900,
+                border: 'none', borderRadius: '50%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', color: '#fff',
+                transition: 'all .2s ease',
+                flexShrink: 0,
+              }}
+              onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
+              onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+            >
+              <Search style={{ width: 13, height: 13 }} />
+            </button>
           </form>
 
-          {/* Suggestions Dropdown */}
+          {/* Search dropdown */}
           <AnimatePresence>
-            {showSuggestions && (suggestions.length > 0 || searchQuery.length > 0) && (
+            {showDrop && results.length > 0 && (
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                className="absolute top-full left-0 right-0 mt-4 glass-card border border-white/[0.12] overflow-hidden z-[110] shadow-[0_30px_100px_rgba(0,0,0,0.6)]"
+                initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                style={{
+                  position: 'absolute', top: 'calc(100% + 0.6rem)', left: 0, right: 0,
+                  background: 'rgba(255,255,255,0.98)',
+                  backdropFilter: 'blur(20px)',
+                  border: `1px solid ${C.bSoft}`,
+                  borderRadius: '1.5rem',
+                  boxShadow: '0 30px 70px -10px rgba(0,0,0,0.12)',
+                  overflow: 'hidden', zIndex: 200,
+                  padding: '0.4rem',
+                }}
               >
-                {loadingSearch ? (
-                   <div className="p-8 flex flex-col items-center gap-3">
-                      <div className="w-5 h-5 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
-                      <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Searching...</p>
-                   </div>
-                ) : suggestions.length > 0 ? (
-                  <div className="py-2">
-                    <p className="px-5 py-2 text-[8px] font-black text-indigo-400/60 uppercase tracking-[0.3em]">Quick Results</p>
-                    {suggestions.map((p) => (
+                <div style={{ padding: '0.6rem 1rem 0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '0.62rem', fontWeight: 800, color: C.t300, letterSpacing: '0.04em' }}>
+                    {results.length} item{results.length !== 1 ? 's' : ''} found
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                  {results.map((p) => {
+                    const img = p.images?.find(i => i.is_primary)?.image_url ?? p.images?.[0]?.image_url;
+                    return (
                       <Link
                         key={p.id}
                         to={`/products/${p.slug}`}
-                        className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.05] transition-all duration-300 group"
-                        onClick={() => { setShowSearch(false); setSearchQuery(''); }}
+                        onClick={() => { setShowDrop(false); setQuery(''); }}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '0.8rem',
+                          padding: '0.5rem 0.6rem', borderRadius: '1rem',
+                          textDecoration: 'none', transition: 'all .15s ease',
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = C.bgMuted}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                       >
-                        <div className="w-14 h-14 rounded-xl glass-card-light overflow-hidden shrink-0 border border-white/[0.08] shadow-inner group-hover:scale-105 transition-transform duration-500">
-                          <img 
-                            src={getImageUrl(p.images?.[0]?.image_url)} 
-                            className="w-full h-full object-cover" 
-                            alt={p.name} 
-                          />
+                        <div style={{ width: 44, height: 44, borderRadius: '0.75rem', overflow: 'hidden', background: C.bgMuted, flexShrink: 0, border: `1px solid ${C.bSoft}` }}>
+                          {img && <img src={getImageUrl(img)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />}
                         </div>
-                        <div className="min-w-0">
-                           <p className="font-bold text-white text-sm truncate group-hover:text-indigo-300 transition-colors">{p.name}</p>
-                           <p className="text-[10px] font-black text-slate-400 mt-0.5 tracking-wider">৳{p.base_price.toLocaleString()}</p>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ margin: 0, fontSize: '0.72rem', fontWeight: 700, color: C.t900, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</p>
+                          <span style={{ fontSize: '0.7rem', fontWeight: 800, color: C.t900 }}>৳{p.base_price?.toLocaleString()}</span>
                         </div>
-                        <div className="ml-auto p-2 rounded-xl bg-white/[0.03] group-hover:bg-indigo-600 transition-colors">
-                          <ArrowRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-white transition-all" />
-                        </div>
+                        <ArrowRight style={{ width: 10, height: 10, color: C.t500, transform: 'rotate(-45deg)' }} />
                       </Link>
-                    ))}
-                    <Link 
-                      to={`/products?search=${searchQuery}`} 
-                      className="block p-5 text-center text-[9px] font-black text-indigo-400 uppercase tracking-[0.3em] bg-white/[0.02] hover:bg-white/[0.04] transition-colors border-t border-white/[0.05]"
-                      onClick={() => setShowSearch(false)}
-                    >
-                      View all results
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="p-10 text-center">
-                    <div className="w-12 h-12 bg-white/[0.03] rounded-full flex items-center justify-center mx-auto mb-4 border border-white/[0.05]">
-                      <Package className="w-5 h-5 text-slate-600" />
-                    </div>
-                    <p className="text-sm font-bold text-white mb-1">No products found</p>
-                    <p className="text-[10px] font-medium text-slate-500 uppercase tracking-widest">Try a different search term</p>
-                  </div>
-                )}
+                    );
+                  })}
+                </div>
+
+                <div style={{ padding: '0.4rem' }}>
+                  <Link
+                    to={`/products?search=${query}`}
+                    onClick={() => { setShowDrop(false); setQuery(''); }}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
+                      padding: '0.65rem', background: C.t900, color: '#fff',
+                      borderRadius: '1rem', textDecoration: 'none',
+                      fontSize: '0.7rem', fontWeight: 800, transition: 'all .2s ease',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#000'}
+                    onMouseLeave={e => e.currentTarget.style.background = C.t900}
+                  >
+                    See all results for "{query}"
+                    <ArrowRight style={{ width: 10, height: 10 }} />
+                  </Link>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
-        {/* Desktop Navigation */}
-        <nav className="hidden lg:flex items-center gap-10 mx-8">
-          <Link to="/products" className="text-xs font-black text-slate-400 hover:text-white hover:-translate-y-0.5 tracking-widest transition-all duration-300 relative group shrink-0 uppercase">
-            Shop
-            <span className="absolute -bottom-1 left-0 w-0 h-[2px] bg-indigo-400 transition-all group-hover:w-full" />
-          </Link>
-          <Link to="/products?category=Deals" className="text-xs font-black text-slate-400 hover:text-white hover:-translate-y-0.5 tracking-widest transition-all duration-300 relative group shrink-0 uppercase">
-            Deals
-            <span className="absolute -bottom-1 left-0 w-0 h-[2px] bg-indigo-400 transition-all group-hover:w-full" />
-          </Link>
-        </nav>
+        <div style={{ flex: 1 }} />
 
-        {/* Action Icons */}
-        <div className="flex items-center gap-5 shrink-0 ml-8">
-          <div 
-            className="relative" 
-            ref={profileRef}
-            onMouseEnter={() => setIsProfileOpen(true)}
-            onMouseLeave={() => setIsProfileOpen(false)}
-          >
-            {token ? (
-              <button
-                className="flex items-center gap-2 p-1 glass-card/[0.06] hover:glass-card/[0.10] rounded-full text-slate-300 hover:text-white transition-all relative group border border-white/[0.10] hover:-translate-y-0.5 duration-300"
-              >
-                <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-white font-bold text-xs overflow-hidden border-2 border-white shadow-sm transition-transform group-hover:scale-105">
-                  {user?.avatar_url ? (
-                    <img 
-                      src={getImageUrl(user.avatar_url)} 
-                      className="w-full h-full object-cover" 
-                      alt={user.full_name} 
-                    />
-                  ) : (
-                    <span>{user?.full_name?.charAt(0).toUpperCase()}</span>
-                  )}
-                </div>
-                <span className="hidden sm:inline text-xs font-bold text-slate-200 group-hover:text-white transition-colors px-1">
-                  {user?.full_name?.split(' ')[0]}
-                </span>
-                <ChevronDown className={`w-4 h-4 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} />
-                <span className="absolute top-1 right-3.5 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full" />
-              </button>
-            ) : (
-              <Link
-                to="/login"
-                className="flex items-center gap-3 p-1 glass-card/[0.06] hover:glass-card/[0.10] rounded-full text-slate-400 hover:text-white transition-all border border-white/[0.10] hover:-translate-y-0.5 duration-300"
-              >
-                <div className="w-8 h-8 rounded-full glass-card/[0.10] flex items-center justify-center text-slate-300">
-                  <User className="w-4 h-4" />
-                </div>
-              </Link>
+        {/* ── Right actions ── */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          
+          <Link to="/cart" className="icon-btn" style={{ position: 'relative', width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', background: C.bgMuted, color: C.t900, textDecoration: 'none' }}>
+            <ShoppingBag style={{ width: 16, height: 16 }} />
+            {cartItems.length > 0 && (
+              <span style={{ position: 'absolute', top: -3, right: -3, width: 16, height: 16, background: C.t900, color: '#fff', fontSize: '0.55rem', fontWeight: 900, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `2px solid #fff` }}>
+                {cartItems.length}
+              </span>
             )}
+          </Link>
 
-            {/* Profile Dropdown */}
-            <AnimatePresence>
-              {token && isProfileOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  className="absolute top-full right-0 mt-2 w-64 glass-card p-2 border border-white/[0.08] overflow-hidden z-[120] py-3"
-                >
-                  <div className="px-6 py-4 border-b border-white/[0.06] mb-2">
-                    <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-1">Account</p>
-                    <p className="text-sm font-bold text-white truncate">{user?.full_name}</p>
-                    <p className="text-[10px] text-slate-400 truncate">{user?.email}</p>
-                  </div>
-                    <div className="px-2 space-y-1">
-                      {/* Staff Specific Links */}
-                      {isStaff && (
-                        <>
-                          <Link
-                            to="/admin"
-                            onClick={() => setIsProfileOpen(false)}
-                            className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-slate-300 hover:glass-card/[0.08] hover:text-white transition-all"
-                          >
-                            <LayoutDashboard className="w-5 h-5" />
-                            {user?.role?.toLowerCase() === 'admin' ? 'Admin Dashboard' : 'Moderator Dashboard'}
-                          </Link>
-                          <Link
-                            to="/admin/profile"
-                            onClick={() => setIsProfileOpen(false)}
-                            className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-slate-300 hover:glass-card/[0.08] hover:text-white transition-all"
-                          >
-                            <Settings className="w-5 h-5" />
-                            Account Settings
-                          </Link>
-                          <Link
-                            to="/admin/store-settings"
-                            onClick={() => setIsProfileOpen(false)}
-                            className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-slate-300 hover:glass-card/[0.08] hover:text-white transition-all"
-                          >
-                            <Truck className="w-5 h-5" />
-                            Store Settings
-                          </Link>
-                        </>
-                      )}
+          <Link to="/wishlist" className="icon-btn" style={{ position: 'relative', width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', background: C.bgMuted, color: C.t900, textDecoration: 'none' }}>
+            <Heart style={{ width: 16, height: 16, ...(wishlistItems.length > 0 ? { fill: '#f43f5e', color: '#f43f5e' } : {}) }} />
+            {wishlistItems.length > 0 && <span style={{ position: 'absolute', top: -3, right: -3, width: 16, height: 16, background: '#f43f5e', color: '#fff', fontSize: '0.55rem', fontWeight: 900, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `2px solid #fff` }}>{wishlistItems.length}</span>}
+          </Link>
 
-                      {/* Buyer Specific Links */}
-                      {!isStaff && (
-                        <>
-                          <Link
-                            to="/profile"
-                            onClick={() => setIsProfileOpen(false)}
-                            className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-slate-300 hover:glass-card/[0.08] hover:text-white transition-all"
-                          >
-                            <UserCircle className="w-5 h-5" />
-                            My Profile
-                          </Link>
-                          <Link
-                            to="/profile"
-                            onClick={() => setIsProfileOpen(false)}
-                            className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-slate-300 hover:glass-card/[0.08] hover:text-white transition-all"
-                          >
-                            <ShoppingBag className="w-5 h-5" />
-                            My Orders
-                          </Link>
-                          <Link
-                            to="/profile/edit"
-                            onClick={() => setIsProfileOpen(false)}
-                            className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-slate-300 hover:glass-card/[0.08] hover:text-white transition-all"
-                          >
-                            <Settings className="w-5 h-5" />
-                            Account Settings
-                          </Link>
-                        </>
-                      )}
-                    </div>
-                    <div className="h-px glass-card/[0.06] mx-4 my-2" />
-                    <div className="px-3 pb-1">
-                      <button
-                        onClick={async () => {
-                          setLoggingOut(true);
-                          await new Promise(resolve => setTimeout(resolve, 800));
-                          setIsProfileOpen(false);
-                          await logout();
-                          setLoggingOut(false);
-                          navigate('/');
-                        }}
-                        disabled={loggingOut}
-                        className="w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest text-red-500 bg-red-50/50 hover:bg-red-50 transition-all border border-red-100/50"
-                      >
-                        {loggingOut ? (
-                          <div className="w-3.5 h-3.5 border-2 border-red-500/20 border-t-red-500 rounded-full animate-spin" />
-                        ) : (
-                          <LogOut className="w-4 h-4" />
-                        )}
-                        {loggingOut ? 'Signing Out...' : 'Sign Out'}
-                      </button>
-                    </div>
-                  </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
- 
-          {!isStaff && (
-            <div className="flex items-center gap-4">
-              {token && (
-                <Link to="/wishlist" className="relative group transition-transform duration-300 hover:-translate-y-0.5">
-                  <div className="w-10 h-10 rounded-full bg-amber-500/15 flex items-center justify-center text-amber-400 border border-amber-500/20 transition-all group-hover:bg-amber-500 group-hover:text-white group-hover:border-amber-500 group-hover:shadow-[0_0_20px_rgba(245,158,11,0.4)]">
-                    <Star className={`w-4 h-4 transition-transform group-hover:scale-110 ${wishlistItems.length > 0 ? 'fill-current' : ''}`} />
-                  </div>
-                  <AnimatePresence>
-                    {wishlistItems.length > 0 && (
-                      <motion.span
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border border-[#0f172a] shadow-sm"
-                      >
-                        {wishlistItems.length}
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </Link>
-              )}
-              <Link to="/cart" className="relative group transition-transform duration-300 hover:-translate-y-0.5">
-                <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white shadow-[0_4px_20px_rgba(99,102,241,0.4)] transition-all group-hover:bg-indigo-500 group-hover:shadow-[0_4px_28px_rgba(99,102,241,0.6)]">
-                  <ShoppingBag className="w-4 h-4 transition-transform group-hover:scale-110" />
+          <div style={{ width: 1, height: 20, background: C.bSoft, margin: '0 0.1rem' }} />
+
+          {user ? (
+            <div style={{ position: 'relative' }} ref={menuRef}>
+              <button
+                onClick={() => setShowMenu(v => !v)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '0.55rem',
+                  padding: '0.3rem 0.3rem 0.3rem 1rem',
+                  background: '#fff', border: `1px solid ${C.bSoft}`,
+                  borderRadius: 9999, cursor: 'pointer',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                  transition: 'all .2s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = C.bMed; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = C.bSoft; e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)'; }}
+              >
+                <span style={{ fontSize: '0.78rem', fontWeight: 600, color: C.t900 }}>{user.full_name?.split(' ')[0]}</span>
+                <div style={{ width: 30, height: 30, borderRadius: '50%', overflow: 'hidden', border: `2px solid ${C.bSoft}`, background: C.bgMuted }}>
+                  {user.avatar_url ? <img src={getImageUrl(user.avatar_url)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : <div style={{ width: '100%', height: '100%', background: C.t900, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.7rem', fontWeight: 800 }}>{user.full_name?.charAt(0)?.toUpperCase()}</div>}
                 </div>
-                <AnimatePresence>
-                  {cartItems.length > 0 && (
-                    <motion.span
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="absolute -top-1 -right-1 w-4 h-4 bg-indigo-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border border-[#0f172a] shadow-sm"
-                    >
-                      {cartItems.length}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </Link>
+              </button>
+
+              <AnimatePresence>
+                {showMenu && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.96, y: 6 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.96, y: 6 }}
+                    style={{
+                      position: 'absolute', top: 'calc(100% + 0.6rem)', right: 0, width: 200,
+                      background: '#fff', border: `1px solid ${C.bSoft}`, borderRadius: '1.25rem',
+                      boxShadow: '0 20px 60px -12px rgba(0,0,0,0.14)', overflow: 'hidden', zIndex: 200, padding: '0.35rem'
+                    }}
+                  >
+                    <div style={{ padding: '0.75rem 0.85rem 0.6rem', borderBottom: `1px solid ${C.bSoft}`, marginBottom: '0.35rem' }}>
+                      <p style={{ margin: 0, fontSize: '0.82rem', fontWeight: 700, color: C.t900 }}>{user.full_name}</p>
+                      <p style={{ margin: '0.15rem 0 0', fontSize: '0.68rem', color: C.t500, fontWeight: 500 }}>{user.email}</p>
+                    </div>
+                    <Link to={isAdmin ? '/admin' : '/profile'} onClick={() => setShowMenu(false)} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.6rem 0.85rem', borderRadius: '0.875rem', textDecoration: 'none', color: C.t900, fontSize: '0.78rem', fontWeight: 600 }}>
+                      <LayoutDashboard style={{ width: 14, height: 14, color: C.t500 }} /> {isAdmin ? 'Admin Panel' : 'My Profile'}
+                    </Link>
+                    <button onClick={logout} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.6rem 0.85rem', borderRadius: '0.875rem', border: 'none', background: 'transparent', cursor: 'pointer', color: '#f43f5e', fontSize: '0.78rem', fontWeight: 600 }}>
+                      <LogOut style={{ width: 14, height: 14 }} /> Sign Out
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
+          ) : (
+            <Link to="/login" style={{ width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', background: C.bgMuted, color: C.t900, textDecoration: 'none' }}>
+              <User style={{ width: 16, height: 16 }} />
+            </Link>
           )}
- 
-          <button
-            className="lg:hidden p-2 text-slate-300 hover:text-white transition-colors"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-          >
-            <Menu className="w-6 h-6" />
-          </button>
         </div>
       </div>
-
-      {/* Mobile Search - Simplified to just an icon for now or kept as is if requested */}
-      
-      {/* Simplified Mobile Menu */}
-      <AnimatePresence>
-        {isMenuOpen && (
-          <motion.div
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            className="fixed inset-y-0 right-0 w-full max-w-xs bg-[#1e293b] border-l border-white/[0.08] shadow-2xl z-[120] p-6"
-          >
-            <div className="flex justify-between items-center mb-10">
-              <span className="text-xl font-bold text-white">Menu</span>
-              <button onClick={() => setIsMenuOpen(false)}>
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-            <nav className="space-y-6">
-              {['New Arrivals', 'Categories', 'Best Sellers', 'Deals'].map((label) => (
-                <Link
-                  key={label}
-                  to="/products"
-                  className="block text-lg font-semibold text-slate-300 hover:text-indigo-300"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {label}
-                </Link>
-              ))}
-              <div className="pt-6 border-t border-white/[0.08]">
-                <button 
-                  onClick={async () => {
-                    await logout();
-                    setIsMenuOpen(false);
-                    navigate('/');
-                  }}
-                  className="w-full py-3 text-red-500 font-bold border border-red-100 rounded-xl hover:bg-red-50"
-                >
-                  Sign Out
-                </button>
-              </div>
-            </nav>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </header>
+    </nav>
   );
-};
-
-export default Navbar;
+}

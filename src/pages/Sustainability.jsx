@@ -5,7 +5,7 @@ import { Leaf, Recycle, Globe, Shield } from 'lucide-react';
 const Sustainability = () => {
   return (
     <div className="pb-24">
-      <section className="relative h-[400px] overflow-hidden bg-slate-900 flex items-center justify-center text-center px-6">
+      <section className="relative h-[400px] overflow-hidden bg-[#0d1117] flex items-center justify-center text-center px-6">
         <img 
           src="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=1280&auto=format&fit=crop" 
           className="absolute inset-0 w-full h-full object-cover opacity-40"
@@ -15,11 +15,11 @@ const Sustainability = () => {
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-5xl font-bold text-white font-display mb-6"
+            className="text-5xl font-bold text-[#0d1117] font-display mb-6"
           >
             Conscious Excellence
           </motion.h1>
-          <p className="text-white/80 text-lg leading-relaxed">
+          <p className="text-[#0d1117]/80 text-lg leading-relaxed">
             Our commitment to the planet is as strong as our commitment to quality. Discover how Eraya is redefining luxury through responsibility.
           </p>
         </div>
@@ -34,7 +34,7 @@ const Sustainability = () => {
           >
             <span className="text-secondary font-bold uppercase tracking-widest text-xs mb-4 block">Our Philosophy</span>
             <h2 className="text-4xl font-bold text-primary-container mb-6 font-display">Minimalism with Meaning</h2>
-            <p className="text-slate-500 leading-loose mb-8">
+            <p className="text-[#94a3b8] leading-loose mb-8">
               At Eraya, we believe that true luxury shouldn't come at the cost of our environment. Every product in our collection is selected based on its lifecycle, material source, and the ethics of its production.
             </p>
             <div className="grid grid-cols-2 gap-8">
@@ -62,20 +62,20 @@ const Sustainability = () => {
           </motion.div>
         </div>
 
-        <section className="glass-card-light rounded-[40px] p-16 text-center">
+        <section className="bg-white rounded-[40px] p-16 text-center">
           <h2 className="text-3xl font-bold mb-16">Our Global Impact</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             <div>
               <div className="text-4xl font-bold text-primary mb-2">94%</div>
-              <p className="text-slate-400 text-sm font-bold uppercase tracking-widest">Recycled Packaging</p>
+              <p className="text-[#64748b] text-sm font-bold uppercase tracking-widest">Recycled Packaging</p>
             </div>
             <div>
               <div className="text-4xl font-bold text-primary mb-2">100%</div>
-              <p className="text-slate-400 text-sm font-bold uppercase tracking-widest">Carbon Neutral Shipping</p>
+              <p className="text-[#64748b] text-sm font-bold uppercase tracking-widest">Carbon Neutral Shipping</p>
             </div>
             <div>
               <div className="text-4xl font-bold text-primary mb-2">50k+</div>
-              <p className="text-slate-400 text-sm font-bold uppercase tracking-widest">Trees Planted Globally</p>
+              <p className="text-[#64748b] text-sm font-bold uppercase tracking-widest">Trees Planted Globally</p>
             </div>
           </div>
         </section>

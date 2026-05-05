@@ -55,10 +55,10 @@ const AdminSettings = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center glass-card-light">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-4">
            <div className="w-16 h-16 border-4 border-indigo-600/20 border-t-indigo-600 rounded-full animate-spin" />
-           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Loading Configuration</p>
+           <p className="text-[10px] font-black text-[#64748b] uppercase tracking-widest">Loading Configuration</p>
         </div>
       </div>
     );
@@ -74,17 +74,17 @@ const AdminSettings = () => {
               <div className="w-10 h-10 bg-indigo-600/10 rounded-2xl flex items-center justify-center">
                 <Settings className="w-5 h-5 text-indigo-600" />
               </div>
-              <h1 className="text-3xl font-[1000] text-white tracking-tight">Store Settings</h1>
+              <h1 className="text-3xl font-[1000] text-[#0d1117] tracking-tight">Store Settings</h1>
             </div>
-            <p className="text-sm font-bold text-slate-400">Manage delivery fees, tax rates, and official store contact information</p>
+            <p className="text-sm font-bold text-[#64748b]">Manage delivery fees, tax rates, and official store contact information</p>
           </div>
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="flex items-center gap-3 px-8 py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl hover:bg-indigo-600 transition-all active:scale-95 disabled:opacity-50"
+            className="flex items-center gap-3 px-8 py-4 bg-[#0d1117] text-[#0d1117] rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl hover:bg-indigo-600 transition-all active:scale-95 disabled:opacity-50"
           >
             {isSaving ? (
-              <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-[#eaeef2] border-t-white rounded-full animate-spin" />
             ) : (
               <Save className="w-4 h-4" />
             )}
@@ -97,19 +97,19 @@ const AdminSettings = () => {
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="glass-card-light p-8 rounded-[2.5rem] border border-white/[0.08] shadow-sm group hover:border-indigo-600/30 transition-all"
+            className="bg-white p-8 rounded-[2.5rem] border border-[#eaeef2] shadow-sm group hover:border-indigo-600/30 transition-all"
           >
             <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110">
               <Truck className="w-7 h-7 text-amber-500" />
             </div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 px-1">Free Shipping Threshold</label>
+            <label className="block text-[10px] font-black text-[#64748b] uppercase tracking-[0.2em] mb-3 px-1">Free Shipping Threshold</label>
             <div className="relative">
-               <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 font-black">৳</div>
+               <div className="absolute left-6 top-1/2 -translate-y-1/2 text-[#64748b] font-black">৳</div>
                <input
                  type="number"
                  value={form.free_shipping_threshold || ''}
                  onChange={(e) => setForm({ ...form, free_shipping_threshold: e.target.value === '' ? '' : parseFloat(e.target.value) })}
-                 className="w-full glass-card-light border border-white/[0.08] rounded-2xl py-4 pl-12 pr-6 text-sm font-black text-white outline-none focus:ring-4 focus:ring-indigo-600/5 focus:border-indigo-600 transition-all"
+                 className="w-full bg-white border border-[#eaeef2] rounded-2xl py-4 pl-12 pr-6 text-sm font-black text-[#0d1117] outline-none focus:ring-4 focus:ring-indigo-600/5 focus:border-indigo-600 transition-all"
                />
             </div>
           </motion.div>
@@ -119,19 +119,19 @@ const AdminSettings = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="glass-card-light p-8 rounded-[2.5rem] border border-white/[0.08] shadow-sm group hover:border-indigo-600/30 transition-all"
+            className="bg-white p-8 rounded-[2.5rem] border border-[#eaeef2] shadow-sm group hover:border-indigo-600/30 transition-all"
           >
             <div className="w-14 h-14 bg-indigo-600/10 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110">
               <DollarSign className="w-7 h-7 text-indigo-600" />
             </div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 px-1">Standard Delivery Fee</label>
+            <label className="block text-[10px] font-black text-[#64748b] uppercase tracking-[0.2em] mb-3 px-1">Standard Delivery Fee</label>
             <div className="relative">
-               <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 font-black">৳</div>
+               <div className="absolute left-6 top-1/2 -translate-y-1/2 text-[#64748b] font-black">৳</div>
                <input
                  type="number"
                  value={form.standard_delivery_fee || ''}
                  onChange={(e) => setForm({ ...form, standard_delivery_fee: e.target.value === '' ? '' : parseFloat(e.target.value) })}
-                 className="w-full glass-card-light border border-white/[0.08] rounded-2xl py-4 pl-12 pr-6 text-sm font-black text-white outline-none focus:ring-4 focus:ring-indigo-600/5 focus:border-indigo-600 transition-all"
+                 className="w-full bg-white border border-[#eaeef2] rounded-2xl py-4 pl-12 pr-6 text-sm font-black text-[#0d1117] outline-none focus:ring-4 focus:ring-indigo-600/5 focus:border-indigo-600 transition-all"
                />
             </div>
           </motion.div>
@@ -141,20 +141,20 @@ const AdminSettings = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="glass-card-light p-8 rounded-[2.5rem] border border-white/[0.08] shadow-sm group hover:border-indigo-600/30 transition-all"
+            className="bg-white p-8 rounded-[2.5rem] border border-[#eaeef2] shadow-sm group hover:border-indigo-600/30 transition-all"
           >
             <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110">
               <Percent className="w-7 h-7 text-emerald-500" />
             </div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 px-1">Estimated Tax (%)</label>
+            <label className="block text-[10px] font-black text-[#64748b] uppercase tracking-[0.2em] mb-3 px-1">Estimated Tax (%)</label>
             <div className="relative">
                <input
                  type="number"
                  value={form.tax_percentage || ''}
                  onChange={(e) => setForm({ ...form, tax_percentage: e.target.value === '' ? '' : parseFloat(e.target.value) })}
-                 className="w-full glass-card-light border border-white/[0.08] rounded-2xl py-4 px-6 text-sm font-black text-white outline-none focus:ring-4 focus:ring-indigo-600/5 focus:border-indigo-600 transition-all"
+                 className="w-full bg-white border border-[#eaeef2] rounded-2xl py-4 px-6 text-sm font-black text-[#0d1117] outline-none focus:ring-4 focus:ring-indigo-600/5 focus:border-indigo-600 transition-all"
                />
-               <div className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 font-black">%</div>
+               <div className="absolute right-6 top-1/2 -translate-y-1/2 text-[#64748b] font-black">%</div>
             </div>
           </motion.div>
 
@@ -163,17 +163,17 @@ const AdminSettings = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="glass-card-light p-8 rounded-[2.5rem] border border-white/[0.08] shadow-sm group hover:border-indigo-600/30 transition-all"
+            className="bg-white p-8 rounded-[2.5rem] border border-[#eaeef2] shadow-sm group hover:border-indigo-600/30 transition-all"
           >
             <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110">
               <Mail className="w-7 h-7 text-blue-500" />
             </div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 px-1">Store Official Email</label>
+            <label className="block text-[10px] font-black text-[#64748b] uppercase tracking-[0.2em] mb-3 px-1">Store Official Email</label>
             <input
               type="email"
               value={form.store_email}
               onChange={(e) => setForm({ ...form, store_email: e.target.value })}
-              className="w-full glass-card-light border border-white/[0.08] rounded-2xl py-4 px-6 text-sm font-black text-white outline-none focus:ring-4 focus:ring-indigo-600/5 focus:border-indigo-600 transition-all"
+              className="w-full bg-white border border-[#eaeef2] rounded-2xl py-4 px-6 text-sm font-black text-[#0d1117] outline-none focus:ring-4 focus:ring-indigo-600/5 focus:border-indigo-600 transition-all"
             />
           </motion.div>
 
@@ -182,17 +182,17 @@ const AdminSettings = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="glass-card-light p-8 rounded-[2.5rem] border border-white/[0.08] shadow-sm group hover:border-indigo-600/30 transition-all"
+            className="bg-white p-8 rounded-[2.5rem] border border-[#eaeef2] shadow-sm group hover:border-indigo-600/30 transition-all"
           >
             <div className="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110">
               <Phone className="w-7 h-7 text-rose-500" />
             </div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 px-1">Store Contact Phone</label>
+            <label className="block text-[10px] font-black text-[#64748b] uppercase tracking-[0.2em] mb-3 px-1">Store Contact Phone</label>
             <input
               type="text"
               value={form.store_phone}
               onChange={(e) => setForm({ ...form, store_phone: e.target.value })}
-              className="w-full glass-card-light border border-white/[0.08] rounded-2xl py-4 px-6 text-sm font-black text-white outline-none focus:ring-4 focus:ring-indigo-600/5 focus:border-indigo-600 transition-all"
+              className="w-full bg-white border border-[#eaeef2] rounded-2xl py-4 px-6 text-sm font-black text-[#0d1117] outline-none focus:ring-4 focus:ring-indigo-600/5 focus:border-indigo-600 transition-all"
             />
           </motion.div>
 
@@ -201,17 +201,17 @@ const AdminSettings = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="glass-card-light p-8 rounded-[2.5rem] border border-white/[0.08] shadow-sm group hover:border-indigo-600/30 transition-all"
+            className="bg-white p-8 rounded-[2.5rem] border border-[#eaeef2] shadow-sm group hover:border-indigo-600/30 transition-all"
           >
             <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110">
-              <MapPin className="w-7 h-7 text-slate-300" />
+              <MapPin className="w-7 h-7 text-[#64748b]" />
             </div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 px-1">Store Physical Address</label>
+            <label className="block text-[10px] font-black text-[#64748b] uppercase tracking-[0.2em] mb-3 px-1">Store Physical Address</label>
             <textarea
               rows={2}
               value={form.store_address}
               onChange={(e) => setForm({ ...form, store_address: e.target.value })}
-              className="w-full glass-card-light border border-white/[0.08] rounded-2xl py-4 px-6 text-sm font-black text-white outline-none focus:ring-4 focus:ring-indigo-600/5 focus:border-indigo-600 transition-all resize-none"
+              className="w-full bg-white border border-[#eaeef2] rounded-2xl py-4 px-6 text-sm font-black text-[#0d1117] outline-none focus:ring-4 focus:ring-indigo-600/5 focus:border-indigo-600 transition-all resize-none"
             />
           </motion.div>
         </div>

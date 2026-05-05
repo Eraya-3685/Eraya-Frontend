@@ -1,400 +1,385 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, ArrowRight, Star, Truck, ShieldCheck, Globe, Tag, RefreshCcw, Zap, Sparkles } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { ArrowRight, Heart, Star, ShoppingBag, Share2, Globe, Link2, ChevronRight, Zap, Truck, Shield, RotateCcw } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import api, { getImageUrl } from '../api/axios';
 import toast from 'react-hot-toast';
 import useCartStore from '../store/useCartStore';
+import useWishlistStore from '../store/useWishlistStore';
 import useAuthStore from '../store/useAuthStore';
 import useDocumentTitle from '../hooks/useDocumentTitle';
-import useSettingsStore from '../store/useSettingsStore';
+import ProductCard from '../components/ProductCard';
 
-const Home = () => {
-  useDocumentTitle('Premium Lifestyle & Aesthetics | Eraya');
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingItemId, setLoadingItemId] = useState(null);
-  const addToCart = useCartStore((state) => state.addItem);
-  const navigate = useNavigate();
-  const { user } = useAuthStore();
-  const { settings, fetchSettings } = useSettingsStore();
+/* ── design tokens ── */
+const C = {
+  t900: '#0d1117', t700: '#1f2937', t500: '#6b7280', t300: '#adb5bd',
+  bSoft: 'rgba(0,0,0,0.07)', bgCard: '#fff', bgHero: '#f5f6f9', bgMuted: '#f3f5f8',
+  lime: '#cbff00', blue: '#3b82f6', rose: '#f43f5e',
+};
 
-  const getPrimaryImage = (images) => {
-    if (!images || images.length === 0) return null;
-    const primary = images.find((img) => img.is_primary) || images[0];
-    return primary.image_url;
-  };
+const primaryImg = (images) =>
+  images?.find(i => i.is_primary)?.image_url ?? images?.[0]?.image_url ?? null;
 
-  useEffect(() => {
-    fetchSettings();
-    const fetchData = async () => {
-      try {
-        const [productsRes, categoriesRes] = await Promise.all([
-          api.get('/products?page=1&limit=8'),
-          api.get('/categories'),
-        ]);
-        setProducts(productsRes.data.data || []);
-        setCategories(categoriesRes.data || []);
-      } catch (error) {
-        console.error('Failed to fetch data', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [fetchSettings]);
+const fadeUp = (delay = 0) => ({
+  initial: { opacity: 0, y: 18 },
+  animate: { opacity: 1, y: 0 },
+  transition: { delay, duration: 0.48, ease: [0.22, 1, 0.36, 1] },
+});
 
-  const [currentSlide, setCurrentSlide] = useState(0);
+export default function Home() {
+  useDocumentTitle('Eraya — Curated Collection');
+  const [products, setProducts]       = useState([]);
+  const [allProducts, setAllProducts] = useState([]);
+  const [categories, setCategories]   = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const { user }                      = useAuthStore();
+  const addToCart                     = useCartStore(s => s.addItem);
+  const { toggleWishlist, isInWishlist } = useWishlistStore();
+  const [heroIndex, setHeroIndex] = useState(0);
+  const [totalProducts, setTotalProducts] = useState(0);
+
   useEffect(() => {
     if (products.length > 0) {
       const timer = setInterval(() => {
-        setCurrentSlide((prev) => (prev + 1) % Math.min(products.length, 5));
+        setHeroIndex(prev => (prev + 1) % Math.min(products.length, 5));
       }, 4000);
       return () => clearInterval(timer);
     }
   }, [products]);
 
-  const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
   useEffect(() => {
-    if (categories.length > 0) {
-      const timer = setInterval(() => {
-        setCurrentCategoryIndex((prev) => (prev + 1) % Math.min(categories.length, 6));
-      }, 3000);
-      return () => clearInterval(timer);
-    }
-  }, [categories]);
+    Promise.all([
+      api.get('/products?page=1&limit=8'),
+      api.get('/products?page=1&limit=24'),
+      api.get('/categories'),
+    ]).then(([heroRes, allRes, catRes]) => {
+      setProducts(heroRes.data.data || []);
+      setAllProducts(allRes.data.data || []);
+      setTotalProducts(allRes.data.pagination?.total_items || heroRes.data.pagination?.total_items || 0);
+      setCategories(catRes.data || []);
+    }).finally(() => setLoading(false));
+  }, []);
 
-  const handleAddToCart = async (e, product) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleCart = (e, p) => {
+    e.preventDefault(); e.stopPropagation();
     const role = user?.role?.toLowerCase();
-    if (role === 'admin' || role === 'moderator') {
-      toast.error('Management accounts cannot add items to cart');
-      return;
-    }
-    setLoadingItemId(product.id);
-    await new Promise(resolve => setTimeout(resolve, 600));
-    const cartProduct = { ...product, image_url: getPrimaryImage(product.images) };
-    addToCart(cartProduct);
-    setLoadingItemId(null);
-    toast.success(`${product.name} added to cart`);
+    if (role === 'admin' || role === 'moderator') { toast.error('Admin accounts cannot add to cart.'); return; }
+    addToCart({ ...p, image_url: getImageUrl(primaryImg(p.images)) });
+    toast.success(`${p.name} added to cart`);
   };
 
-  const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: (i = 0) => ({ opacity: 1, y: 0, transition: { delay: i * 0.1, duration: 0.6, ease: 'easeOut' } }) };
+  const handleWishlist = (e, p) => {
+    e.preventDefault(); e.stopPropagation();
+    if (!user) { toast.error('Please login first'); return; }
+    toggleWishlist(p);
+    toast.success(isInWishlist(p.id) ? 'Removed from wishlist' : 'Saved to wishlist');
+  };
 
-  return (
-    <div className="relative z-10">
-
-      {/* ── Hero Section ──────────────────────────────── */}
-      <section className="relative min-h-[92vh] flex items-center overflow-hidden pt-20">
-
-        
-        
-        
-
-        <div className="max-w-7xl mx-auto px-4 md:px-6 relative z-10 w-full py-16">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-
-            {/* Left: Content */}
-            <div className="lg:col-span-5 space-y-8">
-              <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}
-                className="inline-flex items-center gap-3 px-4 py-2 bg-indigo-500/10 rounded-full border border-indigo-500/20">
-                <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-300">New Arrivals 2026</span>
-              </motion.div>
-
-              <motion.h1 variants={fadeUp} initial="hidden" animate="visible" custom={1}
-                className="text-5xl md:text-7xl font-black text-white drop-shadow-sm leading-[1.05] tracking-tight">
-                Eraya<br />
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-violet-400 to-purple-400 animate-gradient">
-                  Aesthetics.
-                </span>
-              </motion.h1>
-
-              <motion.p variants={fadeUp} initial="hidden" animate="visible" custom={2}
-                className="text-lg text-slate-400 leading-relaxed max-w-md font-medium">
-                Experience a new standard of premium lifestyle. Discover curated products that sparkle with confidence.
-              </motion.p>
-
-              <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={3}
-                className="flex flex-wrap items-center gap-4">
-                <button onClick={() => navigate('/products')}
-                  className="btn-primary flex items-center gap-3 group">
-                  Shop Collection
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </button>
-                <button onClick={() => navigate('/products')}
-                  className="btn-ghost flex items-center gap-3">
-                  Explore Categories
-                </button>
-              </motion.div>
-
-              {/* Stats */}
-              <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={4}
-                className="flex items-center gap-8 pt-8 border-t border-white/[0.06]">
-                {[{ n: '12k+', l: 'Active Buyers' }, { n: '4.9/5', l: 'User Rating' }, { n: '500+', l: 'Products' }].map((stat, i) => (
-                  <React.Fragment key={i}>
-                    {i > 0 && <div className="w-px h-10 glass-card-light/10" />}
-                    <div>
-                      <p className="text-2xl font-black text-white drop-shadow-sm">{stat.n}</p>
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{stat.l}</p>
-                    </div>
-                  </React.Fragment>
-                ))}
-              </motion.div>
-            </div>
-
-            {/* Right: Slider */}
-            <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2}
-              className="lg:col-span-7 flex justify-center lg:justify-end">
-              <div className="relative w-full max-w-[520px] aspect-[4/5]">
-                {/* Decorative rings */}
-                <div className="absolute inset-2 border border-indigo-500/15 rounded-[3.5rem] rotate-2 z-0 animate-float" />
-                <div className="absolute inset-2 border border-violet-500/10 rounded-[3.5rem] -rotate-2 z-0" style={{ animationDelay: '1s' }} />
-
-                <div className="relative w-full h-full glass-card p-1 overflow-hidden z-10 group shadow-2xl shadow-indigo-500/10">
-                  <AnimatePresence mode="wait">
-                    {loading ? (
-                      <motion.div key="loading-hero"
-                        className="w-full h-full flex flex-col items-center justify-center gap-4">
-                        <div className="relative">
-                          <div className="w-12 h-12 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
-                        </div>
-                        <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest animate-pulse">Setting the stage...</p>
-                      </motion.div>
-                    ) : products.length > 0 ? (
-                      <motion.div key={products[currentSlide]?.id}
-                        initial={{ opacity: 0, scale: 1.05 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.97 }}
-                        transition={{ duration: 0.7, ease: 'easeInOut' }}
-                        className="relative w-full h-full">
-                        <img
-                          src={getImageUrl(getPrimaryImage(products[currentSlide]?.images))}
-                          className="w-full h-full object-cover transition-transform duration-[4000ms] group-hover:scale-105"
-                          alt={products[currentSlide]?.name}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-transparent to-transparent opacity-70" />
-                        {products[currentSlide]?.stock_count <= 0 && (
-                          <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px] flex items-center justify-center z-10">
-                            <div className="badge-rose text-sm px-6 py-3 -rotate-12 font-black">Stock Out</div>
-                          </div>
-                        )}
-                        {/* Overlay info */}
-                        <div className="absolute bottom-8 left-8 right-8 glass-card p-5">
-                          <p className="section-label mb-1">Featured Item</p>
-                          <h3 className="text-lg font-black text-white drop-shadow-sm truncate">{products[currentSlide]?.name}</h3>
-                          <p className="text-sm font-bold text-slate-400 mt-1">Starting from ৳{products[currentSlide]?.base_price}</p>
-                        </div>
-                      </motion.div>
-                    ) : null}
-                  </AnimatePresence>
-
-                  {/* Slide dots */}
-                  <div className="absolute top-1/2 -right-5 -translate-y-1/2 flex flex-col gap-2.5 z-20">
-                    {[0, 1, 2, 3, 4].map((i) => (
-                      <button key={i} onClick={() => setCurrentSlide(i)}
-                        className={`rounded-full transition-all duration-500 ${currentSlide === i ? 'w-1.5 h-10 bg-indigo-400' : 'w-1.5 h-4 glass-card-light/20 hover:glass-card-light/40'}`} />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* ── Feature Strip ──────────────────────────────── */}
-      <section className="py-10 border-y border-white/[0.05]">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 grid grid-cols-1 md:grid-cols-3 gap-8">
-          {[
-            { icon: Truck, title: 'Fast Shipping', desc: `Free on orders over ৳${settings.free_shipping_threshold}`, color: 'text-indigo-400' },
-            { icon: ShieldCheck, title: 'Secure Payment', desc: '100% secure checkout', color: 'text-violet-400' },
-            { icon: Globe, title: 'Global Delivery', desc: 'We ship worldwide', color: 'text-purple-400' },
-          ].map((feat, i) => (
-            <motion.div key={i} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} custom={i}
-              className="flex items-center gap-5 glass-card-light p-6">
-              <div className={`w-12 h-12 rounded-2xl glass-card-light flex items-center justify-center ${feat.color}`}>
-                <feat.icon className="w-6 h-6" />
-              </div>
-              <div>
-                <h4 className="font-black text-white drop-shadow-sm text-sm">{feat.title}</h4>
-                <p className="text-slate-400 text-xs font-medium">{feat.desc}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── Categories ──────────────────────────────────── */}
-      <section className="py-20">
-        <div className="max-w-7xl mx-auto px-4 md:px-6">
-          <div className="flex items-end justify-between mb-12">
-            <div>
-              <p className="section-label mb-3">Collections</p>
-              <h2 className="text-4xl font-black text-white drop-shadow-sm tracking-tight">Shop by Category</h2>
-            </div>
-            <Link to="/products" className="text-indigo-400 font-black text-[11px] uppercase tracking-widest flex items-center gap-2 hover:text-indigo-300 transition-colors">
-              View All <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {/* All Products */}
-            <motion.div whileHover={{ y: -6, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }}
-              className="relative group aspect-[4/5] overflow-hidden rounded-[28px] glass-card-light shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
-              <Link to="/products" className="block w-full h-full relative">
-                <div className="absolute inset-0">
-                  <AnimatePresence mode="wait">
-                    {categories.length > 0 && categories[currentCategoryIndex]?.image_url ? (
-                      <motion.img key={categories[currentCategoryIndex].id}
-                        src={getImageUrl(categories[currentCategoryIndex].image_url)}
-                        initial={{ opacity: 0 }} animate={{ opacity: 0.3 }} exit={{ opacity: 0 }}
-                        transition={{ duration: 1 }}
-                        className="w-full h-full object-cover" alt="All Products" />
-                    ) : null}
-                  </AnimatePresence>
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-t from-indigo-950 via-indigo-900/40 to-transparent" />
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 z-10">
-                  <div className="w-12 h-12 bg-indigo-500/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-indigo-500/30">
-                    <Tag className="w-6 h-6 text-indigo-300" />
-                  </div>
-                  <p className="font-black text-[10px] tracking-[0.2em] text-indigo-200 uppercase">All Products</p>
-                </div>
-              </Link>
-            </motion.div>
-
-            {loading
-              ? [...Array(7)].map((_, i) => <div key={i} className="aspect-[4/5] skeleton rounded-[28px]" />)
-              : categories.slice(0, 11).map((cat, i) => (
-                <motion.div key={cat.id}
-                  initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-                  transition={{ delay: i * 0.05 }} whileHover={{ y: -6 }}
-                  className="relative group aspect-[4/5] overflow-hidden rounded-[28px] shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
-                  <Link to={`/products?category=${cat.id}`} className="block w-full h-full relative">
-                    <div className="absolute inset-0 bg-slate-800 transition-transform duration-700 group-hover:scale-110">
-                      {cat.image_url
-                        ? <img src={getImageUrl(cat.image_url)} className="w-full h-full object-cover" alt={cat.name} />
-                        : <div className="w-full h-full flex items-center justify-center"><Tag className="w-10 h-10 text-slate-400" /></div>}
-                    </div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-[#0f172a]/30 to-transparent opacity-90 group-hover:opacity-80 transition-opacity duration-500" />
-                    <div className="absolute inset-x-0 bottom-0 p-5 space-y-1">
-                      <p className="text-[9px] font-black text-indigo-400 uppercase tracking-[0.2em]">Collection</p>
-                      <h3 className="text-white drop-shadow-sm font-black text-base leading-tight">{cat.name}</h3>
-                      <p className="text-white drop-shadow-sm/40 text-[9px] font-bold uppercase tracking-widest">{cat.product_count} Pieces</p>
-                    </div>
-                    <div className="absolute top-4 right-4 w-9 h-9 glass-card-light/10 backdrop-blur-md rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 -translate-y-2 group-hover:translate-y-0 border border-white/20">
-                      <ArrowRight className="w-4 h-4 text-white drop-shadow-sm" />
-                    </div>
-                  </Link>
-                </motion.div>
-              ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Featured Products ────────────────────────────── */}
-      <section className="py-20">
-        <div className="max-w-7xl mx-auto px-4 md:px-6">
-          <div className="flex items-end justify-between mb-12">
-            <div>
-              <p className="section-label mb-3">Handpicked</p>
-              <h2 className="text-4xl font-black text-white drop-shadow-sm tracking-tight">Featured Products</h2>
-            </div>
-            <Link to="/products" className="text-indigo-400 font-black text-[11px] uppercase tracking-widest flex items-center gap-2 hover:text-indigo-300 transition-colors">
-              View All <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-            {loading
-              ? [...Array(4)].map((_, i) => (
-                <div key={i} className="space-y-4">
-                  <div className="aspect-square skeleton rounded-[28px]" />
-                  <div className="h-5 w-2/3 skeleton rounded-xl" />
-                  <div className="h-5 w-1/3 skeleton rounded-xl" />
-                </div>
-              ))
-              : products.map((product, i) => (
-                <motion.div key={product.id}
-                  initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-                  transition={{ delay: i * 0.05 }}>
-                  <Link to={`/products/${product.slug}`} className="product-card block p-4">
-                    <div className="aspect-square glass-card-light p-2 overflow-hidden mb-5 relative">
-                      <img
-                        src={getImageUrl(getPrimaryImage(product.images))}
-                        className="w-full h-full object-contain group-hover:scale-110 transition-all duration-500"
-                        alt={product.name}
-                      />
-                      {product.stock_count <= 0 && (
-                        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-10">
-                          <span className="badge-rose -rotate-12 text-xs px-4 py-2">Stock Out</span>
-                        </div>
-                      )}
-                      {!['admin', 'moderator'].includes(user?.role?.toLowerCase()) && (
-                        <button
-                          onClick={(e) => handleAddToCart(e, product)}
-                          disabled={loadingItemId === product.id || product.stock_count <= 0}
-                          className="absolute bottom-3 right-3 w-10 h-10 bg-indigo-600 rounded-xl shadow-lg flex items-center justify-center text-white drop-shadow-sm hover:bg-indigo-500 transition-all transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 disabled:opacity-50 shadow-[0_4px_20px_rgba(99,102,241,0.4)]">
-                          {loadingItemId === product.id
-                            ? <RefreshCcw className="w-4 h-4 animate-spin" />
-                            : <ShoppingBag className="w-4 h-4" />}
-                        </button>
-                      )}
-                    </div>
-                    <div className="px-1">
-                      <h3 className="font-black text-white drop-shadow-sm text-sm mb-2 line-clamp-1 group-hover:text-indigo-300 transition-colors">{product.name}</h3>
-                      <div className="flex items-center gap-1.5 mb-3">
-                        {[...Array(5)].map((_, i) => <Star key={i} className="w-3 h-3 text-amber-400 fill-current" />)}
-                        <span className="text-[9px] text-slate-400 font-bold">4.8</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-lg font-black text-white drop-shadow-sm">৳{product.base_price}</span>
-                        <span className={`badge ${product.stock_count > 0 ? 'badge-emerald' : 'badge-rose'}`}>
-                          {product.stock_count > 0 ? 'In Stock' : 'Out'}
-                        </span>
-                      </div>
-                    </div>
-                  </Link>
-                </motion.div>
-              ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Newsletter ──────────────────────────────────── */}
-      <section className="py-24 mx-4 md:mx-6 mb-12">
-        <div className="relative rounded-[3rem] overflow-hidden glass-card border border-indigo-500/20 shadow-[0_40px_80px_-20px_rgba(99,102,241,0.2)]">
-          {/* Background glow */}
-          <div className="absolute inset-0">
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/40 via-violet-900/20 to-purple-900/40" />
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-indigo-500/15 rounded-full blur-[100px]" />
-          </div>
-          <div className="relative z-10 max-w-2xl mx-auto px-6 py-20 text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-500/10 rounded-full border border-indigo-500/20 mb-6">
-              <Zap className="w-3.5 h-3.5 text-indigo-400" />
-              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-300">Exclusive Access</span>
-            </div>
-            <h2 className="text-4xl font-black text-white drop-shadow-sm mb-4 tracking-tight">Stay in the Loop</h2>
-            <p className="text-slate-400 mb-10 font-medium max-w-md mx-auto">
-              Subscribe to receive updates, access to exclusive deals, and early access to new collections.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-              <input
-                type="email"
-                placeholder="your@email.com"
-                className="glass-input flex-grow text-sm"
-              />
-              <button className="btn-primary whitespace-nowrap">Subscribe</button>
-            </div>
-          </div>
-        </div>
-      </section>
+  if (loading) return (
+    <div style={{ height: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: 36, height: 36, border: `4px solid #e5e7eb`, borderTopColor: C.t900, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
-};
 
-export default Home;
+  const heroProducts = products.slice(0, 5);
+  const activeProduct = heroProducts[heroIndex];
+  const [p0, p1, p2, p3, p4, p5, p6, p7] = products;
+
+  /* Arrow circle helpers */
+  const ArrowCircleLight = ({ to, slug }) => (
+    <Link to={to || `/products/${slug}`} style={{ width: 34, height: 34, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', flexShrink: 0, textDecoration: 'none' }}>
+      <ArrowRight style={{ width: 14, height: 14, color: C.t900, transform: 'rotate(-45deg)' }} />
+    </Link>
+  );
+
+  const ArrowCircleDark = () => (
+    <div style={{ width: 34, height: 34, borderRadius: '50%', background: C.t900, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      <ArrowRight style={{ width: 14, height: 14, color: '#fff', transform: 'rotate(-45deg)' }} />
+    </div>
+  );
+
+  const imgOverlay = { position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(13,17,23,0.58) 0%, rgba(13,17,23,0.02) 55%)' };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+
+      {/* ═══ ROW 1 — Hero + Sidebar ═══ */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 18rem', gap: '1rem', alignItems: 'stretch' }}>
+
+        {/* HERO CARD (Dynamic Carousel) */}
+        <motion.div {...fadeUp(0)} className="hero-card" style={{
+          minHeight: '18rem', padding: '2rem 2.5rem',
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+          position: 'relative', overflow: 'hidden',
+        }}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={heroIndex}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.5, ease: "easeInOut" }}
+              style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
+            >
+              {/* Floating product */}
+              {activeProduct && (
+                <div style={{ position: 'absolute', right: '-5%', top: '50%', transform: 'translateY(-50%)', width: '55%', height: '100%', pointerEvents: 'none', zIndex: 1 }}>
+                  <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at 50% 50%, ${C.lime}15 0%, transparent 70%)`, filter: 'blur(40px)' }} />
+                  <img 
+                    src={getImageUrl(primaryImg(activeProduct.images))} 
+                    alt="" 
+                    style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0 35px 70px rgba(0,0,0,0.12))' }} 
+                  />
+                </div>
+              )}
+
+              {/* Content */}
+              <div style={{ maxWidth: '55%', position: 'relative', zIndex: 2 }}>
+                {/* Badge */}
+                <div className="badge" style={{ marginBottom: '1.5rem', padding: '0.45rem 0.9rem', fontSize: '0.65rem' }}>
+                  <span style={{ width: 6, height: 6, background: C.lime, borderRadius: 2, transform: 'rotate(45deg)', display: 'inline-block', flexShrink: 0 }} />
+                  Curated Collection
+                </div>
+
+                {/* Heading */}
+                <h1 style={{
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  fontSize: 'clamp(2.5rem, 5vw, 4.2rem)',
+                  fontWeight: 900, lineHeight: 0.95,
+                  letterSpacing: '-0.05em', color: C.t900,
+                  margin: '0 0 1.75rem',
+                  width: '100%'
+                }}>
+                  {activeProduct?.name ?? 'Premium Aesthetics'}
+                </h1>
+
+                {/* description */}
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1.5rem', marginBottom: '2.5rem', width: '100%' }}>
+                  <div style={{ width: 2, height: 60, background: C.lime, flexShrink: 0, borderRadius: 4 }} />
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: '1rem', fontWeight: 600, color: C.t500, lineHeight: 1.5, margin: 0 }}>
+                      {activeProduct?.description?.slice(0, 140) ?? 'Elevating your everyday with curated products and precision engineering for the modern lifestyle.'}
+                    </p>
+                  </div>
+                </div>
+
+                <Link to={`/products/${activeProduct?.slug}`} className="btn-lime" style={{ height: 52, padding: '0 2rem', fontSize: '0.95rem', borderRadius: '1.25rem' }}>
+                  Explore Collection
+                  <div className="icon-circle" style={{ width: '2rem', height: '2rem' }}>
+                    <ArrowRight style={{ width: 16, height: 16, transform: 'rotate(-45deg)' }} />
+                  </div>
+                </Link>
+              </div>
+
+              {/* Slider Controls / Indicators */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', position: 'relative', zIndex: 2 }}>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  {heroProducts.map((_, i) => (
+                    <div 
+                      key={i}
+                      onClick={() => setHeroIndex(i)}
+                      style={{ 
+                        width: i === heroIndex ? 24 : 8, 
+                        height: 4, 
+                        background: i === heroIndex ? C.t900 : '#d1d5db', 
+                        borderRadius: 2, 
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease'
+                      }}
+                    />
+                  ))}
+                </div>
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                  {[Share2, Globe, Link2].map((Icon, i) => (
+                    <a key={i} href="#" style={{ color: '#d1d5db', transition: 'color .18s' }}
+                       onMouseEnter={e => e.currentTarget.style.color = C.t900}
+                       onMouseLeave={e => e.currentTarget.style.color = '#d1d5db'}>
+                      <Icon style={{ width: 12, height: 12 }} />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        </motion.div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div style={{ background: '#fff', borderRadius: '1.5rem', padding: '1.25rem', border: `1px solid ${C.bSoft}`, flex: 1 }}>
+            <p style={{ fontSize: '0.75rem', fontWeight: 800, color: C.t900, margin: '0 0 0.75rem' }}>Featured Picks</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              {[p3, p4, p5].map((p, i) => p && (
+                <ProductCard key={p.id} product={p} variant="horizontal" />
+              ))}
+            </div>
+          </div>
+          {p1 && <ProductCard product={p1} variant="overlay" />}
+        </div>
+      </div>
+
+      {/* ═══ ROW 2 — Bottom 3 cards ═══ */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', alignItems: 'stretch' }}>
+
+        {/* More Products */}
+        <motion.div {...fadeUp(0.08)} className="card" style={{ 
+          padding: '1.5rem', height: '100%', display: 'flex', flexDirection: 'column',
+          background: '#f8fafc', border: `1px solid ${C.bSoft}`
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
+            <div>
+              <h4 style={{ fontSize: '0.85rem', fontWeight: 800, color: C.t900, margin: 0, letterSpacing: '-0.02em' }}>More Products</h4>
+              <p style={{ fontSize: '0.65rem', fontWeight: 700, color: C.t300, margin: '0.2rem 0 0' }}>{totalProducts}+ items available</p>
+            </div>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+              <Heart style={{ width: 14, height: 14, color: C.rose, fill: C.rose }} />
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1, justifyContent: 'center' }}>
+            {[p2, p3, p4].filter(Boolean).map(p => (
+              <ProductCard key={p.id} product={p} variant="horizontal" />
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Stats — Blue */}
+        <motion.div {...fadeUp(0.12)} className="card" style={{
+          padding: '1.25rem', background: C.blue, height: '100%',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          textAlign: 'center', gap: '0.6rem', position: 'relative', overflow: 'hidden',
+        }}>
+          <div style={{ position: 'absolute', top: '-30%', right: '-20%', width: '80%', height: '80%', background: 'rgba(255,255,255,0.07)', borderRadius: '50%', pointerEvents: 'none' }} />
+          <div style={{ display: 'flex', position: 'relative', zIndex: 1 }}>
+            {[11,22,33].map(u => (
+              <div key={u} style={{ width: 32, height: 32, borderRadius: '50%', border: `2px solid ${C.blue}`, overflow: 'hidden', marginLeft: u===11?0:-8, background: '#dbeafe', boxShadow: '0 0 0 1.5px rgba(255,255,255,0.2)' }}>
+                <img src={`https://i.pravatar.cc/80?u=${u}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+            ))}
+          </div>
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <p style={{ fontSize: '2rem', fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-0.06em', lineHeight: 1 }}>5m+</p>
+            <p style={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,.45)', margin: '0.3rem 0 0' }}>Active Users</p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: 'rgba(255,255,255,0.14)', padding: '0.3rem 0.75rem', borderRadius: 9999, backdropFilter: 'blur(8px)', position: 'relative', zIndex: 1 }}>
+            <Star style={{ width: 10, height: 10, fill: '#fbbf24', color: '#fbbf24' }} />
+            <span style={{ fontSize: '0.6rem', fontWeight: 800, color: '#fff', letterSpacing: '0.04em' }}>4.6 reviews</span>
+          </div>
+        </motion.div>
+
+        {/* Featured — Overlay variant */}
+        <div style={{ height: '100%' }}>
+          {p6 && (
+            <ProductCard product={p6} variant="overlay" />
+          )}
+        </div>
+      </div>
+
+      {/* ═══ PERKS STRIP ═══ */}
+      <motion.div {...fadeUp(0.1)} style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginTop: '0.25rem' }}>
+        {[
+          { icon: Truck,    label: 'Free Delivery',   sub: 'On orders over ৳999' },
+          { icon: Shield,   label: 'Secure Payment',  sub: 'SSL encrypted checkout' },
+          { icon: Zap,      label: 'Fast Dispatch',   sub: 'Ships within 24 hours' },
+          { icon: RotateCcw,label: 'Easy Returns',    sub: '7-day hassle-free policy' },
+        ].map(({ icon: Icon, label, sub }) => (
+          <div key={label} className="card" style={{ padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+            <div style={{ width: 36, height: 36, background: C.bgMuted, borderRadius: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Icon style={{ width: 16, height: 16, color: C.t900 }} />
+            </div>
+            <div>
+              <p style={{ fontSize: '0.72rem', fontWeight: 800, color: C.t900, margin: 0, letterSpacing: '-0.01em' }}>{label}</p>
+              <p style={{ fontSize: '0.6rem', color: C.t500, margin: '0.1rem 0 0', fontWeight: 500 }}>{sub}</p>
+            </div>
+          </div>
+        ))}
+      </motion.div>
+
+      {/* ═══ CATEGORIES ═══ */}
+      {categories.length > 0 && (
+        <div style={{ marginTop: '0.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+            <div>
+              <p style={{ fontSize: '0.7rem', fontWeight: 800, color: C.t300, margin: '0 0 0.3rem' }}>Browse by</p>
+              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: C.t900, margin: 0, letterSpacing: '-0.03em' }}>Categories</h2>
+            </div>
+            <Link to="/products" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.72rem', fontWeight: 700, color: C.t500, textDecoration: 'none', transition: 'color .2s' }}
+              onMouseEnter={e => e.currentTarget.style.color = C.t900}
+              onMouseLeave={e => e.currentTarget.style.color = C.t500}>
+              View all <ChevronRight style={{ width: 14, height: 14 }} />
+            </Link>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '0.85rem' }}>
+            {categories.slice(0, 8).map((cat, i) => (
+              <Link key={cat.id} to={`/products?category=${cat.id}`} style={{ textDecoration: 'none' }}>
+                <motion.div {...fadeUp(i * 0.04)} className="card"
+                  style={{ padding: '1rem 0.75rem', textAlign: 'center', cursor: 'pointer' }}
+                  whileHover={{ y: -3 }}
+                >
+                  <div style={{ 
+                    width: 52, height: 52, background: C.bgMuted, borderRadius: '50%', 
+                    margin: '0 auto 0.65rem', overflow: 'hidden', border: `1px solid ${C.bSoft}`
+                  }}>
+                    {cat.image_url ? (
+                      <img src={getImageUrl(cat.image_url)} alt={cat.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem' }}>📦</div>
+                    )}
+                  </div>
+                  <p style={{ fontSize: '0.68rem', fontWeight: 800, color: C.t900, margin: 0, letterSpacing: '-0.01em' }}>{cat.name}</p>
+                </motion.div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ═══ ALL PRODUCTS GRID ═══ */}
+      <div style={{ marginTop: '0.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <div>
+            <p style={{ fontSize: '0.7rem', fontWeight: 800, color: C.t300, margin: '0 0 0.3rem' }}>Handpicked for you</p>
+            <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: C.t900, margin: 0, letterSpacing: '-0.03em' }}>All Products</h2>
+          </div>
+          <Link to="/products" className="btn-lime" style={{ fontSize: '0.62rem' }}>
+            See All
+            <div className="icon-circle" style={{ width: '1.75rem', height: '1.75rem' }}>
+              <ArrowRight style={{ width: 12, height: 12, transform: 'rotate(-45deg)' }} />
+            </div>
+          </Link>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '2rem' }}>
+          {allProducts.map((p, i) => (
+            <ProductCard 
+              key={p.id} 
+              product={p} 
+              onCart={(p) => handleCart({ preventDefault: () => {}, stopPropagation: () => {} }, p)}
+              onWishlist={(p) => handleWishlist({ preventDefault: () => {}, stopPropagation: () => {} }, p)}
+              inWishlist={isInWishlist(p.id)}
+            />
+          ))}
+        </div>
+        
+        {/* CSS for hover reveal */}
+        <style>{`
+          div:hover .hover-reveal-btn {
+            transform: translateY(0) !important;
+            opacity: 1 !important;
+          }
+        `}</style>
+      </div>
+
+      {/* ═══ CTA STRIP ═══ */}
+      <motion.div {...fadeUp(0.1)} style={{ background: C.t900, borderRadius: '2rem', padding: '3rem 3.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '2rem', marginTop: '0.5rem' }}>
+        <div>
+          <p style={{ fontSize: '0.7rem', fontWeight: 800, color: 'rgba(255,255,255,0.35)', margin: '0 0 0.6rem' }}>Stay in the loop</p>
+          <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-0.04em', lineHeight: 1.1 }}>Get exclusive drops &<br />early access.</h2>
+        </div>
+        <div style={{ display: 'flex', gap: '0.6rem', flexShrink: 0 }}>
+          <input type="email" placeholder="your@email.com" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 9999, padding: '0.75rem 1.5rem', fontSize: '0.8rem', fontWeight: 500, color: '#fff', outline: 'none', width: 260, fontFamily: 'inherit' }} />
+          <button className="btn-lime">Subscribe <div className="icon-circle"><ArrowRight style={{ width: 14, height: 14, transform: 'rotate(-45deg)' }} /></div></button>
+        </div>
+      </motion.div>
+
+    </div>
+  );
+}

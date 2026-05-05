@@ -9,8 +9,15 @@ import { format, isToday, isYesterday } from 'date-fns';
 import ChatMessage, { DateSeparator } from './Chat/ChatMessage';
 import ChatReplyPreview from './Chat/ChatReplyPreview';
 
+const C = {
+  t900: '#0d1117', t700: '#1f2937', t500: '#6b7280', t300: '#adb5bd',
+  bSoft: 'rgba(0,0,0,0.07)', bMed: 'rgba(0,0,0,0.12)',
+  bgCard: '#ffffff', bgPage: '#edf0f4', bgMuted: '#f3f5f8',
+  lime: '#cbff00', blue: '#3b82f6', rose: '#f43f5e', amber: '#f59e0b',
+  rSm: '0.85rem', rMd: '1.25rem', rLg: '1.5rem', r2xl: '2.5rem'
+};
+
 const ChatWidget = () => {
-  // Load initial state from localStorage
   const [isOpen, setIsOpen] = useState(() => localStorage.getItem('chat_open') === 'true');
   const [input, setInput] = useState(() => localStorage.getItem('chat_input') || '');
   const [isAdminView, setIsAdminView] = useState(() => localStorage.getItem('chat_admin_view') !== 'false');
@@ -27,31 +34,15 @@ const ChatWidget = () => {
   const [confirmModal, setConfirmModal] = useState({ show: false, title: '', message: '', onConfirm: () => { } });
 
   const {
-    messages,
-    connect,
-    disconnect,
-    sendMessage,
-    setMessages,
-    isConnected,
-    currentWithID,
-    socket,
-    conversations,
-    setConversations,
-    deleteMessage,
-    isTyping,
-    sendTyping,
-    editingMessage,
-    setEditingMessage,
-    editMessage,
-    markAsRead,
-    totalUnreadCount,
-    fetchTotalUnread,
-    setIsOpen: setIsOpenStore
+    messages, connect, disconnect, sendMessage, setMessages, isConnected,
+    currentWithID, socket, conversations, setConversations, deleteMessage,
+    isTyping, sendTyping, editingMessage, setEditingMessage, editMessage,
+    markAsRead, totalUnreadCount, fetchTotalUnread, setIsOpen: setIsOpenStore
   } = useChatStore();
+  
   const { user } = useAuthStore();
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
-  const menuRef = useRef(null);
 
   const handleScroll = (e) => {
     const { scrollTop, scrollHeight, clientHeight } = e.target;
@@ -60,77 +51,46 @@ const ChatWidget = () => {
 
   const scrollToBottom = () => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTo({
-        top: scrollRef.current.scrollHeight,
-        behavior: 'smooth'
-      });
+      scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
     }
   };
 
   useEffect(() => {
-    if (replyingTo && inputRef.current) {
-      inputRef.current.focus();
-    }
+    if (replyingTo && inputRef.current) { inputRef.current.focus(); }
   }, [replyingTo]);
 
-  // Persistence Effects
   useEffect(() => {
     localStorage.setItem('chat_open', isOpen);
-    setIsOpenStore(isOpen); // Sync with store for real-time message filtering
+    setIsOpenStore(isOpen);
   }, [isOpen]);
 
+  useEffect(() => { localStorage.setItem('chat_input', input); }, [input]);
+  useEffect(() => { localStorage.setItem('chat_admin_view', isAdminView); }, [isAdminView]);
   useEffect(() => {
-    localStorage.setItem('chat_input', input);
-  }, [input]);
-
-  useEffect(() => {
-    localStorage.setItem('chat_admin_view', isAdminView);
-  }, [isAdminView]);
-
-  useEffect(() => {
-    if (selectedBuyer) {
-      localStorage.setItem('chat_selected_buyer', JSON.stringify(selectedBuyer));
-    } else {
-      localStorage.removeItem('chat_selected_buyer');
-    }
+    if (selectedBuyer) { localStorage.setItem('chat_selected_buyer', JSON.stringify(selectedBuyer)); }
+    else { localStorage.removeItem('chat_selected_buyer'); }
   }, [selectedBuyer]);
 
-  // Default Admin ID for buyer support (0 means unassigned/general support)
   const DEFAULT_ADMIN_ID = 0;
-
   const isStaff = user?.role === 'admin' || user?.role === 'moderator';
 
-  // [NEW] Keep connected even when closed for real-time notifications
   useEffect(() => {
     if (user) {
       if (isStaff) {
-        // Staff only connects when a buyer is selected
-        if (isOpen && selectedBuyer) {
-          connect(selectedBuyer.buyer_id);
-        }
+        if (isOpen && selectedBuyer) { connect(selectedBuyer.buyer_id); }
       } else {
-        // Buyer always stays connected in background
-        if (!isConnected || currentWithID !== DEFAULT_ADMIN_ID) {
-          connect(DEFAULT_ADMIN_ID);
-        }
+        if (!isConnected || currentWithID !== DEFAULT_ADMIN_ID) { connect(DEFAULT_ADMIN_ID); }
       }
-    } else {
-      disconnect();
-    }
+    } else { disconnect(); }
   }, [user, isStaff, isConnected, isOpen, !!selectedBuyer, currentWithID]);
 
-  // Fetch data when isOpen changes
   useEffect(() => {
     if (isOpen && user) {
       if (isStaff) {
-        if (selectedBuyer) {
-          fetchMessages(selectedBuyer.buyer_id);
-        } else {
-          fetchConversations();
-        }
+        if (selectedBuyer) { fetchMessages(selectedBuyer.buyer_id); }
+        else { fetchConversations(); }
       } else {
         fetchMessages(DEFAULT_ADMIN_ID);
-        // Mark as read when opening
         api.get('/chat/conversations').then(res => {
           const buyerConv = (res.data || []).find(c => c.buyer_id === user.id);
           if (buyerConv) markAsRead(buyerConv.id);
@@ -139,480 +99,235 @@ const ChatWidget = () => {
     }
   }, [isOpen, user, isStaff, selectedBuyer?.buyer_id]);
 
-  // [NEW] Fetch initial count on mount and sync with isOpen
   useEffect(() => {
-    if (user && !isStaff) {
-      fetchTotalUnread();
-    }
+    if (user && !isStaff) { fetchTotalUnread(); }
   }, [user, isStaff]);
 
-  // We can remove the periodic fetch as we are now using real-time WebSocket
-  /*
+  const fetchConversations = async () => {
+    try {
+      const res = await api.get('/chat/conversations');
+      setConversations(res.data || []);
+    } catch (err) { console.error('Failed to fetch conversations', err); }
+  };
+
+  const fetchMessages = async (withID) => {
+    try {
+      const res = await api.get(`/chat/conversation/${withID}`);
+      const msgs = res.data || [];
+      setMessages(msgs);
+      const firstUnread = msgs.find(m => !m.is_read && m.sender_id !== user?.id);
+      setFirstUnreadMsgId(firstUnread ? firstUnread.id : null);
+    } catch (err) { console.error('Failed to fetch messages', err); }
+  };
+
+  const handleSelectConversation = (conv) => {
+    setSelectedBuyer(conv);
+    fetchMessages(conv.buyer_id);
+    connect(conv.buyer_id);
+    markAsRead(conv.id);
+    setIsAdminView(false);
+  };
+
   useEffect(() => {
-    if (!isOpen && user) {
-      fetchTotalUnread();
-      const interval = setInterval(fetchTotalUnread, 30000);
-      return () => clearInterval(interval);
-    }
-  }, [isOpen, user]);
-  */
+    const sb = () => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; };
+    sb();
+    const timer = setTimeout(sb, 100);
+    return () => clearTimeout(timer);
+  }, [messages, isOpen, isAdminView]);
 
-const fetchConversations = async () => {
-  try {
-    const res = await api.get('/chat/conversations');
-    setConversations(res.data || []);
-  } catch (err) {
-    console.error('Failed to fetch conversations', err);
-  }
-};
+  useEffect(() => {
+    if (editingMessage) {
+      setInput(editingMessage.message_text || '');
+      inputRef.current?.focus();
+    } else { setInput(''); }
+  }, [editingMessage]);
 
-const fetchMessages = async (withID) => {
-  try {
-    const res = await api.get(`/chat/conversation/${withID}`);
-    const msgs = res.data || [];
-    setMessages(msgs);
-    
-    // Find the first unread message from the OTHER person
-    const firstUnread = msgs.find(m => !m.is_read && m.sender_id !== user?.id);
-    if (firstUnread) {
-      setFirstUnreadMsgId(firstUnread.id);
-    } else {
-      setFirstUnreadMsgId(null);
-    }
-  } catch (err) {
-    console.error('Failed to fetch messages', err);
-  }
-};
-
-const handleSelectConversation = (conv) => {
-  setSelectedBuyer(conv);
-  fetchMessages(conv.buyer_id);
-  connect(conv.buyer_id);
-  markAsRead(conv.id);
-  setIsAdminView(false);
-};
-
-useEffect(() => {
-  const scrollToBottom = () => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  const handleSend = (e) => {
+    e.preventDefault();
+    if (input.trim()) {
+      if (editingMessage) {
+        editMessage(editingMessage.id, input);
+        setEditingMessage(null);
+        setInput('');
+        setReplyingTo(null);
+      } else {
+        const success = sendMessage(input, replyingTo);
+        if (success) { setInput(''); setReplyingTo(null); }
+        else { alert('Connecting to chat server...'); }
+      }
     }
   };
 
-  // Initial scroll
-  scrollToBottom();
-  // Delayed scroll for dynamic content/rendering
-  const timer = setTimeout(scrollToBottom, 100);
-  return () => clearTimeout(timer);
-}, [messages, isOpen, isAdminView]);
+  if (!user || user.role === 'admin' || user.role === 'moderator') return null;
 
-// Update input when editingMessage changes
-useEffect(() => {
-  if (editingMessage) {
-    setInput(editingMessage.message_text || '');
-    inputRef.current?.focus();
-  } else {
-    setInput('');
-  }
-}, [editingMessage]);
-
-const handleSend = (e) => {
-  e.preventDefault();
-  if (input.trim()) {
-    if (editingMessage) {
-      editMessage(editingMessage.id, input);
-      setEditingMessage(null);
-      setInput('');
-      setReplyingTo(null);
-      inputRef.current?.focus();
-    } else {
-      const success = sendMessage(input, replyingTo);
-      if (success) {
-        setInput('');
-        setReplyingTo(null);
-        inputRef.current?.focus();
-      } else {
-        // If WS is not connected, alert the user and don't clear the input
-        alert('Connecting to chat server, please wait a second and try again.');
-      }
-    }
-  }
-};
-
-if (!user || user.role === 'admin' || user.role === 'moderator') return null;
-
-const filteredConvs = conversations.filter(c =>
-  c.buyer_id.toString().includes(search)
-);
-
-return (
-  <div className="fixed bottom-6 right-6 z-[9999] flex items-end">
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0, y: 20, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 20, scale: 0.95 }}
-          className="glass-card-light w-[380px] h-[550px] rounded-[2.5rem] shadow-[0_25px_60px_rgba(0,0,0,0.2)] flex flex-col overflow-x-hidden overflow-y-hidden border border-white/[0.08] mb-4 mr-2"
-        >
-          {/* Header */}
-          <div className="bg-slate-900 p-6 text-white shrink-0">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                {!isStaff || isAdminView ? (
-                  <div className="w-10 h-10 rounded-2xl bg-secondary flex items-center justify-center font-bold text-sm">E</div>
-                ) : (
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => { setIsAdminView(true); setSelectedBuyer(null); }}
-                      className="w-8 h-8 rounded-xl glass-card-light/10 flex items-center justify-center hover:glass-card-light/20 transition-all"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-sm shadow-sm overflow-hidden"
-                      style={{
-                        backgroundColor: `hsl(${((selectedBuyer?.buyer_id || 0) * 137.5) % 360}, 70%, 45%)`,
-                        color: '#ffffff'
-                      }}>
-                      {selectedBuyer?.buyer_avatar ? (
-                        <img
-                          src={selectedBuyer.buyer_avatar.startsWith('http') ? selectedBuyer.buyer_avatar : `${import.meta.env.VITE_ASSETS_URL}/${selectedBuyer.buyer_avatar}`}
-                          alt=""
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        (selectedBuyer?.buyer_name || selectedBuyer?.buyer_id?.toString() || 'U').substring(0, 1).toUpperCase()
-                      )}
+  return (
+    <div style={{ position: 'fixed', bottom: '1.5rem', right: '1.5rem', zIndex: 9999, display: 'flex', alignItems: 'flex-end' }}>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            style={{
+              background: '#fff', width: 380, height: 580, borderRadius: C.r2xl,
+              boxShadow: '0 25px 60px -12px rgba(0,0,0,0.25)', display: 'flex', flexDirection: 'column',
+              overflow: 'hidden', border: `1px solid ${C.bSoft}`, marginBottom: '1rem', marginRight: '0.5rem'
+            }}
+          >
+            {/* Header */}
+            <div style={{ background: '#6366f1', padding: '1.5rem', color: '#fff', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: '-50%', right: '-20%', width: '100%', height: '200%', background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 100%)', transform: 'rotate(15deg)' }} />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div style={{ 
+                    width: 40, height: 40, background: 'rgba(255,255,255,0.1)', borderRadius: '1rem', 
+                    display: 'flex', alignItems: 'center', justifyContent: 'center' 
+                  }}>
+                    <MessageCircle size={20} color="#fff" />
+                  </div>
+                  <div>
+                    <h4 style={{ fontSize: '0.9rem', fontWeight: 800, margin: 0 }}>Eraya support</h4>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginTop: '0.1rem' }}>
+                      <div style={{ width: 6, height: 6, background: '#10b981', borderRadius: '50%' }} />
+                      <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'rgba(255,255,255,0.5)' }}>Online now</span>
                     </div>
                   </div>
-                )}
-                <div>
-                  <h4 className="font-bold text-sm tracking-tight">
-                    {isStaff ? (isAdminView ? 'Admin messages' : (selectedBuyer?.buyer_name || `Customer #${selectedBuyer?.buyer_id}`)) : 'Eraya support'}
-                  </h4>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                    <span className="text-[9px] text-slate-400 font-bold">
-                      Live now
-                    </span>
-                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {isStaff && !isAdminView && (
-                  <>
-                    <AnimatePresence>
-                      {showMsgSearch && (
-                        <motion.div
-                          initial={{ width: 0, opacity: 0 }}
-                          animate={{ width: 120, opacity: 1 }}
-                          exit={{ width: 0, opacity: 0 }}
-                          className="relative overflow-hidden"
-                        >
-                          <input
-                            type="text"
-                            placeholder="Search..."
-                            value={msgSearch}
-                            onChange={(e) => setMsgSearch(e.target.value)}
-                            className="w-full glass-card-light/10 border border-white/10 rounded-lg py-1.5 px-3 text-[9px] font-bold focus:outline-none focus:glass-card-light/20 transition-all text-white placeholder:text-slate-500"
-                            autoFocus
-                          />
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                    <button
-                      onClick={() => { setShowMsgSearch(!showMsgSearch); if (showMsgSearch) setMsgSearch(''); }}
-                      className={`p-2 rounded-xl transition-all ${showMsgSearch ? 'bg-indigo-500 text-white' : 'text-slate-400 hover:text-white hover:glass-card-light/10'}`}
-                    >
-                      <Search className="w-4 h-4" />
-                    </button>
-                  </>
-                )}
-                <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-white transition-colors p-2">
-                  <Minus className="w-5 h-5" />
+                <button onClick={() => setIsOpen(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer' }}>
+                  <Minus size={20} />
                 </button>
               </div>
             </div>
 
-            {isStaff && isAdminView && (
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
-                <input
-                  type="text"
-                  placeholder="Search buyer ID..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full glass-card-light/5 border border-white/10 rounded-xl py-2.5 pl-9 pr-4 text-[10px] font-bold focus:outline-none focus:glass-card-light/10 transition-all"
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Content Area */}
-          <div className="flex-grow flex flex-col glass-card-light overflow-hidden relative">
-            {isStaff && isAdminView ? (
-              /* Admin Conversation List */
-              <div className="flex-grow overflow-y-auto p-4 space-y-2 custom-scrollbar">
-                {filteredConvs.map((conv) => (
-                  <button
-                    key={conv.id}
-                    onClick={() => handleSelectConversation(conv)}
-                    className="w-full p-4 glass-card-light hover:glass-card-light rounded-2xl flex items-center gap-4 transition-all shadow-sm border border-white/[0.08] group/conv text-left relative"
-                  >
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-xs shadow-sm transition-all overflow-hidden shrink-0"
-                      style={{
-                        backgroundColor: `hsl(${(conv.buyer_id * 137.5) % 360}, 70%, 45%)`,
-                        color: '#ffffff'
-                      }}>
-                      {conv.buyer_avatar ? (
-                        <img
-                          src={conv.buyer_avatar.startsWith('http') ? conv.buyer_avatar : `${import.meta.env.VITE_ASSETS_URL}/${conv.buyer_avatar}`}
-                          alt=""
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        (conv.buyer_name || conv.buyer_id.toString()).substring(0, 1).toUpperCase()
-                      )}
-                    </div>
-                    <div className="flex-grow min-w-0 pr-6">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="font-bold text-[11px] text-white truncate pr-2">
-                          {conv.buyer_name || `Customer #${conv.buyer_id}`}
-                        </p>
-                        <span className="text-[8px] font-bold text-slate-400 shrink-0">
-                          {format(new Date(conv.updated_at), 'HH:mm')}
-                        </span>
-                      </div>
-                      <p className={`text-[10px] line-clamp-1 ${conv.unread_count > 0 ? 'font-bold text-indigo-600' : 'font-bold text-slate-500'}`}>
-                        {conv.last_message || 'Start chatting...'}
-                      </p>
-                    </div>
-
-                    {conv.unread_count > 0 && (
-                      <div className="absolute right-12 top-1/2 -translate-y-1/2 flex items-center justify-center min-w-[18px] h-[18px] bg-indigo-500 text-white text-[8px] font-bold rounded-full shadow-sm animate-pulse">
-                        {conv.unread_count}
-                      </div>
-                    )}
-
-                    {/* Quick Delete */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setConfirmModal({
-                          show: true,
-                          title: 'Delete Chat?',
-                          message: 'This will permanently remove this conversation.',
-                          onConfirm: () => {
-                            api.delete(`/chat/conversation/${conv.id}`).then(() => {
-                              fetchConversations();
-                            });
-                          }
-                        });
-                      }}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-xl bg-rose-50 text-rose-500 opacity-0 group-hover/conv:opacity-100 transition-all hover:bg-rose-100 shadow-sm"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                  </button>
-                ))}
-                {filteredConvs.length === 0 && (
-                  <div className="h-full flex flex-col items-center justify-center opacity-30 p-10">
-                    <MessageCircle className="w-10 h-10 mb-4" />
-                    <p className="text-[10px] font-bold">No active chats</p>
+            {/* Messages */}
+            <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+              <div 
+                ref={scrollRef} onScroll={handleScroll}
+                style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}
+              >
+                {messages.length === 0 ? (
+                  <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity: 0.3 }}>
+                    <MessageCircle size={40} style={{ marginBottom: '1rem' }} />
+                    <p style={{ fontSize: '0.75rem', fontWeight: 600 }}>Start a conversation</p>
                   </div>
+                ) : (
+                  messages.map((msg, i) => {
+                    const isMe = msg.sender_id === user?.id;
+                    const prevMsgDate = i > 0 ? new Date(messages[i - 1].created_at) : null;
+                    const showDateSeparator = !prevMsgDate || new Date(msg.created_at).toDateString() !== prevMsgDate.toDateString();
+                    return (
+                      <React.Fragment key={msg.id || i}>
+                        {showDateSeparator && <DateSeparator date={msg.created_at} />}
+                        <ChatMessage 
+                          msg={msg} isMe={isMe} onReply={setReplyingTo} 
+                          isAdminView={isStaff} setConfirmModal={setConfirmModal} 
+                        />
+                      </React.Fragment>
+                    );
+                  })
                 )}
               </div>
-            ) : (
-              /* Chat Messages */
-              <>
-                <div
-                  ref={scrollRef}
-                  onScroll={handleScroll}
-                  className="flex-grow overflow-y-auto overflow-x-hidden p-6 custom-scrollbar relative"
+
+              {/* Typing Indicator */}
+              <AnimatePresence>
+                {isTyping && (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    style={{ position: 'absolute', bottom: '5.5rem', left: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', gap: '2px' }}>
+                      <span style={{ width: 4, height: 4, background: C.blue, borderRadius: '50%' }} />
+                      <span style={{ width: 4, height: 4, background: C.blue, borderRadius: '50%' }} />
+                    </div>
+                    <span style={{ fontSize: '0.65rem', fontWeight: 700, color: C.t500 }}>Typing...</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Scroll Bottom Button */}
+              <AnimatePresence>
+                {showScrollBottom && (
+                  <motion.button
+                    initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                    onClick={scrollToBottom}
+                    style={{
+                      position: 'absolute', bottom: '6rem', right: '1.5rem', width: 36, height: 36,
+                      background: '#fff', border: `1px solid ${C.bSoft}`, borderRadius: '50%',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 20px rgba(0,0,0,0.1)', cursor: 'pointer'
+                    }}
+                  >
+                    <ArrowDown size={16} />
+                  </motion.button>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Input */}
+            <div style={{ padding: '1.25rem', borderTop: `1px solid ${C.bSoft}`, background: '#fff' }}>
+              <ChatReplyPreview replyingTo={replyingTo} onClear={() => setReplyingTo(null)} isAdminView={false} />
+              <form onSubmit={handleSend} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <input
+                  ref={inputRef} type="text" value={input}
+                  onChange={(e) => { setInput(e.target.value); sendTyping(e.target.value.length > 0); }}
+                  onBlur={() => sendTyping(false)}
+                  placeholder="Type a message..."
+                  style={{
+                    width: '100%', padding: '0.85rem 3rem 0.85rem 1.25rem', background: C.bgMuted,
+                    border: 'none', borderRadius: '1.25rem', fontSize: '0.8rem', fontWeight: 600, outline: 'none'
+                  }}
+                />
+                <button 
+                  type="submit" disabled={!input.trim()}
+                  style={{ 
+                    position: 'absolute', right: '0.5rem', width: 32, height: 32, background: '#6366f1', 
+                    borderRadius: '0.85rem', border: 'none', color: '#fff', display: 'flex', 
+                    alignItems: 'center', justifyContent: 'center', cursor: 'pointer', opacity: !input.trim() ? 0.3 : 1,
+                    boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)'
+                  }}
                 >
-                  <div className="min-h-full flex flex-col justify-end space-y-4">
-                    {messages.length === 0 && (
-                      <div className="h-full flex flex-col items-center justify-center text-center p-6 opacity-30">
-                        <MessageCircle className="w-12 h-12 mb-4" />
-                        <p className="text-[10px] ">Start a conversation</p>
-                      </div>
-                    )}
-                    {messages
-                      .filter(m => (m.message_text || '').toLowerCase().includes(msgSearch.toLowerCase()))
-                      .map((msg, i, filtered) => {
-                        const isMe = msg.sender_id === user?.id;
-                        const prevMsgDate = i > 0 ? new Date(filtered[i - 1].created_at || new Date()) : null;
-                        const showDateSeparator = !prevMsgDate || new Date(msg.created_at).toDateString() !== prevMsgDate.toDateString();
+                  <Send size={14} />
+                </button>
+              </form>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-                          return (
-                            <React.Fragment key={msg.id || i}>
-                              {showDateSeparator && <DateSeparator date={msg.created_at} />}
-                              {firstUnreadMsgId === msg.id && (
-                                <div className="flex items-center gap-4 py-4">
-                                  <div className="h-px flex-grow bg-indigo-100"></div>
-                                  <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400 bg-indigo-50 px-3 py-1 rounded-full shadow-sm">
-                                    Unread Messages
-                                  </span>
-                                  <div className="h-px flex-grow bg-indigo-100"></div>
-                                </div>
-                              )}
-                              <ChatMessage
-                                msg={msg}
-                                isMe={isMe}
-                                onReply={setReplyingTo}
-                                isAdminView={isStaff}
-                                setConfirmModal={setConfirmModal}
-                              />
-                            </React.Fragment>
-                          );
-                      })}
-                    {msgSearch && messages.filter(m => (m.message_text || '').toLowerCase().includes(msgSearch.toLowerCase())).length === 0 && (
-                      <div className="py-20 text-center">
-                        <p className="text-[9px] font-bold text-slate-300 ">No results</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Scroll to Bottom Button */}
-                <AnimatePresence>
-                  {showScrollBottom && (
-                    <motion.button
-                      initial={{ opacity: 0, scale: 0.5, y: 10 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.5, y: 10 }}
-                      onClick={scrollToBottom}
-                      className="absolute bottom-24 right-6 w-11 h-11 glass-card-light text-white rounded-full shadow-2xl border border-white/[0.08] flex items-center justify-center hover:glass-card-light transition-all z-[100] group"
-                    >
-                      <div className="absolute inset-0 bg-indigo-500/5 rounded-full animate-ping" />
-                      <ArrowDown className="w-5 h-5 group-hover:translate-y-0.5 transition-transform relative z-10" />
-                    </motion.button>
-                  )}
-                </AnimatePresence>
-
-                {/* Typing & Editing Indicator */}
-                <div className="px-6 flex flex-col gap-1">
-                  <AnimatePresence>
-                    {editingMessage && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 5 }}
-                        className="py-1 px-3 bg-indigo-50 border border-indigo-100 rounded-lg flex items-center justify-between"
-                      >
-                        <div className="flex items-center gap-1.5 overflow-hidden">
-                          <span className="text-[7px] font-bold text-indigo-600  shrink-0">Editing:</span>
-                          <span className="text-[7px] font-bold text-slate-300 truncate italic">"{editingMessage.message_text}"</span>
-                        </div>
-                        <button
-                          onClick={() => {
-                            setEditingMessage(null);
-                            setInput('');
-                          }}
-                          className="p-1 hover:bg-indigo-100 rounded-lg transition-all text-indigo-400 shrink-0"
-                        >
-                          <X className="w-2.5 h-2.5" />
-                        </button>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  <AnimatePresence>
-                    {isTyping && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 5 }}
-                        className="py-1 flex items-center gap-2"
-                      >
-                        <div className="flex gap-1">
-                          <span className="w-1 h-1 bg-indigo-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                          <span className="w-1 h-1 bg-indigo-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                          <span className="w-1 h-1 bg-indigo-500 rounded-full animate-bounce" />
-                        </div>
-                        <span className="text-[8px] font-bold text-slate-400 ">Typing...</span>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-
-                {/* Input Area */}
-                <div className="p-6 glass-card-light border-t border-white/[0.08]">
-                  <ChatReplyPreview
-                    replyingTo={replyingTo}
-                    onClear={() => setReplyingTo(null)}
-                    isAdminView={false}
-                  />
-                  <form onSubmit={handleSend} className="relative flex items-center">
-                    <input
-                      ref={inputRef}
-                      type="text"
-                      value={input}
-                      onChange={(e) => {
-                        setInput(e.target.value);
-                        sendTyping(e.target.value.length > 0);
-                      }}
-                      onBlur={() => sendTyping(false)}
-                      placeholder="Type a reply..."
-                      className="w-full glass-card-light border border-white/[0.08] rounded-[1.25rem] py-4 pl-6 pr-14 text-xs font-bold focus:outline-none focus:ring-4 focus:ring-slate-900/5 transition-all"
-                    />
-                    <button
-                      type="submit"
-                      disabled={!input.trim()}
-                      className="absolute right-2 w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center hover:bg-secondary transition-all disabled:opacity-20"
-                    >
-                      <Send className="w-4 h-4" />
-                    </button>
-                  </form>
-                </div>
-              </>
-            )}
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-
-    <motion.button
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      onClick={() => setIsOpen(!isOpen)}
-      className="w-16 h-16 bg-slate-900 text-white rounded-[1.8rem] shadow-2xl shadow-slate-900/40 flex items-center justify-center hover:bg-secondary transition-all relative overflow-hidden group ml-auto"
-    >
-      <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/5 to-white/10 group-hover:scale-150 transition-transform duration-700" />
-      <div className="relative">
-        <MessageCircle className="w-7 h-7" />
-
-        {/* Unread Count Badge */}
+      <motion.button
+        whileHover={{ scale: 1.05, translateY: -5 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          width: 64, height: 64, background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', borderRadius: '1.5rem',
+          boxShadow: '0 20px 40px rgba(79, 70, 229, 0.3)', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', cursor: 'pointer', border: 'none', position: 'relative'
+        }}
+      >
+        <MessageCircle size={28} color="#fff" />
         <AnimatePresence>
           {!isOpen && totalUnreadCount > 0 && (
             <motion.div
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0, opacity: 0 }}
-              className="absolute -top-2 -right-2 min-w-[22px] h-[22px] bg-rose-500 text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-lg shadow-rose-500/40"
+              initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+              style={{
+                position: 'absolute', top: -5, right: -5, minWidth: 22, height: 22,
+                background: C.rose, color: '#fff', fontSize: '0.7rem', fontWeight: 900,
+                borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                border: '3px solid #fff', boxShadow: '0 5px 10px rgba(244,63,94,0.3)'
+              }}
             >
               {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
             </motion.div>
           )}
         </AnimatePresence>
+      </motion.button>
 
-        {isStaff && (
-          <div className="absolute -top-1 -right-1 w-3 h-3 bg-indigo-500 rounded-full border-2 border-slate-900" />
-        )}
-      </div>
-    </motion.button>
-    <ConfirmModal
-      isOpen={confirmModal.show}
-      onClose={() => setConfirmModal({ ...confirmModal, show: false })}
-      onConfirm={() => {
-        confirmModal.onConfirm();
-        setConfirmModal({ ...confirmModal, show: false });
-      }}
-      title={confirmModal.title}
-      message={confirmModal.message}
-    />
-  </div>
-);
+      <ConfirmModal
+        isOpen={confirmModal.show}
+        onClose={() => setConfirmModal({ ...confirmModal, show: false })}
+        onConfirm={() => { confirmModal.onConfirm(); setConfirmModal({ ...confirmModal, show: false }); }}
+        title={confirmModal.title}
+        message={confirmModal.message}
+      />
+    </div>
+  );
 };
 
 export default ChatWidget;

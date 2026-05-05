@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingCart, Star, Check, ChevronDown, Filter, X, ArrowRight, Heart, RefreshCcw } from 'lucide-react';
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { Search, ShoppingBag, Heart, Star, Check, ChevronDown, ArrowRight, X, SlidersHorizontal, RefreshCcw } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import api, { getImageUrl } from '../api/axios';
 import useCartStore from '../store/useCartStore';
 import useAuthStore from '../store/useAuthStore';
@@ -9,63 +9,49 @@ import useWishlistStore from '../store/useWishlistStore';
 import toast from 'react-hot-toast';
 import { useDebounce } from '../hooks/useDebounce';
 import useDocumentTitle from '../hooks/useDocumentTitle';
+import ProductCard from '../components/ProductCard';
 
+const C = {
+  t900:'#0d1117', t700:'#1f2937', t500:'#6b7280', t300:'#adb5bd',
+  bSoft:'rgba(0,0,0,0.07)', bgCard:'#fff', bgMuted:'#f3f5f8', bgInput:'#f5f6f9',
+  lime:'#cbff00', blue:'#3b82f6', rose:'#f43f5e',
+};
+
+/* ── Sort Dropdown ── */
 const SortDropdown = ({ value, onChange }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef(null);
-
-  const options = [
-    { value: 'newest', label: 'Newest Arrivals' },
-    { value: 'price_low', label: 'Price: Low to High' },
-    { value: 'price_high', label: 'Price: High to Low' },
-    { value: 'popular', label: 'Most Popular' },
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const opts = [
+    { value:'newest',    label:'Newest' },
+    { value:'price_low', label:'Price: Low → High' },
+    { value:'price_high',label:'Price: High → Low' },
+    { value:'popular',   label:'Most Popular' },
   ];
-
-  const activeLabel = options.find(opt => opt.value === value)?.label;
-
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    const h = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
   }, []);
 
   return (
-    <div className="relative" ref={dropdownRef}>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-3 px-5 py-2.5 glass-card-light rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-300 hover:text-white hover:border-white/20 transition-all min-w-[180px] justify-between"
-      >
-        <span>{activeLabel}</span>
-        <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180 text-primary' : ''}`} />
+    <div style={{ position:'relative' }} ref={ref}>
+      <button onClick={() => setOpen(v=>!v)} style={{ display:'flex', alignItems:'center', gap:'0.5rem', padding:'0.6rem 1rem', background:'#fff', border:`1px solid ${C.bSoft}`, borderRadius:9999, fontSize:'0.72rem', fontWeight:700, color:C.t500, cursor:'pointer', whiteSpace:'nowrap', fontFamily:'inherit' }}>
+        <SlidersHorizontal style={{ width:13, height:13 }} />
+        Sort by: <strong style={{ color:C.t900 }}>{opts.find(o=>o.value===value)?.label}</strong>
+        <ChevronDown style={{ width:13, height:13, transform: open?'rotate(180deg)':'none', transition:'transform .2s' }} />
       </button>
-
       <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 8, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 8, scale: 0.98 }}
-            className="absolute right-0 mt-2 w-56 bg-[#1e293b] border border-white/[0.10] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.5)] z-50 overflow-hidden p-1.5"
-          >
-            {options.map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => {
-                  onChange(opt.value);
-                  setIsOpen(false);
-                }}
-                className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-[11px] font-bold transition-all ${
-                  value === opt.value 
-                    ? 'bg-indigo-500/20 text-indigo-300' 
-                    : 'text-slate-400 hover:glass-card-light/[0.08] hover:text-white'
-                }`}
+        {open && (
+          <motion.div initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:6 }} transition={{ duration:0.15 }}
+            style={{ position:'absolute', right:0, top:'calc(100% + 0.5rem)', width:200, background:'#fff', border:`1px solid ${C.bSoft}`, borderRadius:'1.25rem', boxShadow:'0 20px 50px -10px rgba(0,0,0,0.12)', overflow:'hidden', zIndex:50, padding:'0.35rem' }}>
+            {opts.map(o => (
+              <button key={o.value} onClick={() => { onChange(o.value); setOpen(false); }}
+                style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0.65rem 0.85rem', background: value===o.value ? C.bgMuted : 'transparent', borderRadius:'0.875rem', border:'none', fontSize:'0.75rem', fontWeight:value===o.value?700:500, color:value===o.value?C.t900:C.t500, cursor:'pointer', fontFamily:'inherit', transition:'background .12s' }}
+                onMouseEnter={e=>e.currentTarget.style.background=C.bgMuted}
+                onMouseLeave={e=>e.currentTarget.style.background=value===o.value?C.bgMuted:'transparent'}
               >
-                {opt.label}
-                {value === opt.value && <Check className="w-3.5 h-3.5" />}
+                {o.label}
+                {value===o.value && <Check style={{ width:12, height:12 }} />}
               </button>
             ))}
           </motion.div>
@@ -75,346 +61,348 @@ const SortDropdown = ({ value, onChange }) => {
   );
 };
 
-const Products = () => {
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [sortBy, setSortBy] = useState('newest');
-  const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(false);
-  const [loadingItemId, setLoadingItemId] = useState(null); // stores productId for Cart/Wishlist async actions
-  
-  const [minPrice, setMinPrice] = useState('');
-  const [maxPrice, setMaxPrice] = useState('');
-  const debouncedMinPrice = useDebounce(minPrice, 500);
-  const debouncedMaxPrice = useDebounce(maxPrice, 500);
 
-  const limit = 12;
-  const addItem = useCartStore((state) => state.addItem);
-  const { toggleWishlist, isInWishlist } = useWishlistStore();
-  const { user } = useAuthStore();
-  const navigate = useNavigate();
-  const { search } = useLocation();
-  const searchParams = new URLSearchParams(search);
+
+export default function Products() {
+  useDocumentTitle('Collection | Eraya');
+  const [products, setProducts]     = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [page, setPage]             = useState(1);
+  const [total, setTotal]           = useState(0);
+  const [sortBy, setSortBy]         = useState('relevance');
+  const [minPrice, setMinPrice]     = useState(0);
+  const [maxPrice, setMaxPrice]     = useState(2500);
+  const [loadingItemId, setLoadingItemId] = useState(null);
   
-  const query = searchParams.get('search') || '';
-  const activeCategoryIDs = useMemo(() => searchParams.getAll('category'), [search]);
+  const limit = 12;
+  const { search } = useLocation();
+  const navigate   = useNavigate();
+  const addItem    = useCartStore(s => s.addItem);
+  const { toggleWishlist, isInWishlist } = useWishlistStore();
+  const { user }   = useAuthStore();
+
+  const searchParams = new URLSearchParams(search);
+  const query        = searchParams.get('search') || '';
+  const activeCatIDs = useMemo(() => searchParams.getAll('category'), [search]);
 
   useEffect(() => {
-    fetchCategories();
+    api.get('/categories').then(r => setCategories(r.data || [])).catch(()=>{});
   }, []);
 
   useEffect(() => {
-    fetchProducts();
-  }, [page, query, search, sortBy, debouncedMinPrice, debouncedMaxPrice]);
-
-  const fetchCategories = async () => {
-    try {
-      const res = await api.get('/categories');
-      setCategories(res.data || []);
-    } catch (err) {
-      console.error('Failed to fetch categories');
-    }
-  };
-
-  const fetchProducts = async () => {
     setLoading(true);
-    try {
-      let url = `/products?page=${page}&limit=${limit}&search=${query}&sort=${sortBy}`;
-      activeCategoryIDs.forEach(id => { url += `&category_id=${id}`; });
-      if (debouncedMinPrice) url += `&min_price=${debouncedMinPrice}`;
-      if (debouncedMaxPrice) url += `&max_price=${debouncedMaxPrice}`;
-      
-      const response = await api.get(url);
-      setProducts(response.data.data || []);
-      setTotal(response.data.total || 0);
-    } catch (error) {
-      console.error('Failed to fetch products', error);
-      toast.error('Could not load products');
-    } finally {
-      setLoading(false);
-    }
+    let url = `/products?page=${page}&limit=${limit}&search=${query}&sort=${sortBy}`;
+    activeCatIDs.forEach(id => { url += `&category_id=${id}`; });
+    if (minPrice > 0) url += `&min_price=${minPrice}`;
+    if (maxPrice < 2500) url += `&max_price=${maxPrice}`;
+    
+    api.get(url)
+      .then(r => { setProducts(r.data.data || []); setTotal(r.data.total || 0); })
+      .catch(() => toast.error('Could not load products'))
+      .finally(() => setLoading(false));
+  }, [page, query, search, sortBy, minPrice, maxPrice]);
+
+  const toggleCategory = id => {
+    const p = new URLSearchParams(search);
+    const cur = p.getAll('category');
+    p.delete('category');
+    if (cur.includes(String(id))) cur.filter(c=>c!==String(id)).forEach(c=>p.append('category',c));
+    else { cur.forEach(c=>p.append('category',c)); p.append('category',id); }
+    p.set('page','1'); navigate(`/products?${p.toString()}`); setPage(1);
   };
 
-  const toggleCategory = (id) => {
-    const newParams = new URLSearchParams(search);
-    const currentIDs = newParams.getAll('category');
-    if (currentIDs.includes(String(id))) {
-      const filtered = currentIDs.filter(cid => cid !== String(id));
-      newParams.delete('category');
-      filtered.forEach(cid => newParams.append('category', cid));
-    } else {
-      newParams.append('category', id);
-    }
-    newParams.set('page', '1');
-    navigate(`/products?${newParams.toString()}`);
-    setPage(1);
-  };
-
-  const clearAllFilters = () => {
-    setMinPrice('');
-    setMaxPrice('');
-    navigate('/products');
-    setPage(1);
-  };
-
-  const handleAddToCart = async (product) => {
+  const handleCart = async p => {
     const role = user?.role?.toLowerCase();
-    if (role === 'admin' || role === 'moderator') {
-      toast.error('Management accounts cannot add items to cart');
-      return;
-    }
-    setLoadingItemId(product.id);
-    await new Promise(resolve => setTimeout(resolve, 500));
-    addItem(product);
-    setLoadingItemId(null);
-    toast.success(`${product.name} added to cart`);
+    if (role==='admin'||role==='moderator') { toast.error('Admin cannot add to cart'); return; }
+    setLoadingItemId(p.id);
+    await new Promise(r=>setTimeout(r,400));
+    addItem(p); setLoadingItemId(null);
+    toast.success(`${p.name} added to cart`);
   };
 
-  const getPrimaryImage = (images) => {
-    if (!images || images.length === 0) return null;
-    const primary = images.find((img) => img.is_primary) || images[0];
-    return primary.image_url;
+  const handleWishlist = p => {
+    if (!user) { toast.error('Please login first'); navigate('/login'); return; }
+    toggleWishlist(p);
   };
+
+  const resetPrice = () => { setMinPrice(0); setMaxPrice(2500); };
+  const resetCategories = () => { navigate('/products'); setPage(1); };
+  const clearAll = () => { resetPrice(); navigate('/products'); setPage(1); };
+
+  const [isSortOpen, setIsSortOpen] = useState(false);
+  const [isPriceOpen, setIsPriceOpen] = useState(false);
+  const sortRef = useRef(null);
+  const priceRef = useRef(null);
+
+  const sortOptions = [
+    { label: 'Relevance', value: 'relevance' },
+    { label: 'Newest', value: 'newest' },
+    { label: 'Price: Low to High', value: 'price_low' },
+    { label: 'Price: High to Low', value: 'price_high' },
+  ];
+
+  const currentSortLabel = sortOptions.find(o => o.value === sortBy)?.label || 'Relevance';
+
+  useEffect(() => {
+    const handleClickOutside = (e) => { 
+      if (sortRef.current && !sortRef.current.contains(e.target)) setIsSortOpen(false); 
+      if (priceRef.current && !priceRef.current.contains(e.target)) setIsPriceOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const totalPages = Math.ceil(total / limit);
+  const hasFilters = activeCatIDs.length > 0 || minPrice > 0 || maxPrice < 2500 || query;
 
   return (
-    <div className="min-h-screen">
-      {/* Header */}
-      <div className="border-b border-white/[0.06] py-5 pt-28">
-        <div className="max-w-screen-2xl mx-auto px-4 md:px-8">
-          <div className="flex justify-between items-end">
-            <div>
-              <p className="section-label mb-1">Browse</p>
-              <h1 className="text-2xl font-black text-white tracking-tight">Eraya Collection</h1>
-              <p className="text-slate-500 text-[9px] font-black mt-1 uppercase tracking-widest">{total} pieces available</p>
+    <div style={{ minHeight: '100vh', paddingBottom: '5rem' }}>
+      
+      {/* ── EXPANSIVE TOP BAR ── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3.5rem' }}>
+        <div>
+           <div style={{ display: 'flex', gap: '0.6rem', fontSize: '0.8rem', color: C.t300, marginBottom: '0.75rem', fontWeight: 600 }}>
+             <Link to="/" style={{ color: 'inherit', textDecoration: 'none' }}>Home</Link>
+             <span style={{ opacity: 0.5 }}>/</span>
+             <span style={{ color: C.t900 }}>Collection</span>
+           </div>
+           <h1 style={{ fontSize: '3rem', fontWeight: 900, color: C.t900, margin: 0, letterSpacing: '-0.04em', lineHeight: 1 }}>Our Collection</h1>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          <p style={{ fontSize: '0.9rem', color: C.t500, fontWeight: 700, margin: '0 1.5rem 0 0' }}>
+             Showing <span style={{ color: C.t900 }}>{products.length}</span> of <span style={{ color: C.t900 }}>{total}</span> Results
+          </p>
+
+          {/* Price Range Dropdown (Moved to top) */}
+          <div ref={priceRef} style={{ position: 'relative' }}>
+            <div 
+              onClick={() => setIsPriceOpen(!isPriceOpen)}
+              style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: '#fff', border: `1px solid ${C.bSoft}`, padding: '0.5rem 1.25rem', borderRadius: '9999px', boxShadow: '0 2px 10px rgba(0,0,0,0.02)', cursor: 'pointer', minWidth: 180, justifyContent: 'space-between' }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <span style={{ fontSize: '0.8rem', fontWeight: 800, color: C.t500 }}>Price:</span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 800, color: C.t900 }}>৳{minPrice} - ৳{maxPrice}</span>
+              </div>
+              <ChevronDown style={{ width: 16, color: C.t300, transform: isPriceOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }} />
             </div>
-            <div className="hidden md:flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
-              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Vault Live</span>
+
+            <AnimatePresence>
+              {isPriceOpen && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  style={{ position: 'absolute', top: '115%', right: 0, zIndex: 100, background: '#fff', border: `1px solid ${C.bSoft}`, borderRadius: '1.5rem', padding: '1.75rem', boxShadow: '0 15px 40px rgba(0,0,0,0.08)', minWidth: 280 }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+                     <h4 style={{ fontSize: '0.9rem', fontWeight: 900, margin: 0 }}>Price Range</h4>
+                     <button onClick={resetPrice} style={{ border: 'none', background: 'none', color: C.blue, fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer' }}>Reset</button>
+                  </div>
+                  <input 
+                    type="range" min="0" max="5000" value={maxPrice} 
+                    onChange={e => setMaxPrice(parseInt(e.target.value))}
+                    style={{ width: '100%', accentColor: C.t900, marginBottom: '1.5rem', cursor: 'pointer' }} 
+                  />
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                     <div style={{ flex: 1, padding: '0.75rem', background: C.bgMuted, borderRadius: '0.85rem', fontSize: '0.85rem', fontWeight: 800, textAlign: 'center', border: `1px solid ${C.bSoft}` }}>৳{minPrice}</div>
+                     <div style={{ flex: 1, padding: '0.75rem', background: C.bgMuted, borderRadius: '0.85rem', fontSize: '0.85rem', fontWeight: 800, textAlign: 'center', border: `1px solid ${C.bSoft}` }}>৳{maxPrice}</div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+          
+          {/* Custom Sort Dropdown */}
+          <div ref={sortRef} style={{ position: 'relative' }}>
+            <div 
+              onClick={() => setIsSortOpen(!isSortOpen)}
+              style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: '#fff', border: `1px solid ${C.bSoft}`, padding: '0.5rem 1.25rem', borderRadius: '9999px', boxShadow: '0 2px 10px rgba(0,0,0,0.02)', cursor: 'pointer', minWidth: 200, justifyContent: 'space-between' }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <span style={{ fontSize: '0.8rem', fontWeight: 800, color: C.t500 }}>Sort By:</span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 800, color: C.t900 }}>{currentSortLabel}</span>
+              </div>
+              <ChevronDown style={{ width: 16, color: C.t300, transform: isSortOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }} />
             </div>
+
+            <AnimatePresence>
+              {isSortOpen && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                  style={{ position: 'absolute', top: '115%', right: 0, zIndex: 100, background: '#fff', border: `1px solid ${C.bSoft}`, borderRadius: '1.25rem', padding: '0.5rem', boxShadow: '0 15px 40px rgba(0,0,0,0.08)', minWidth: '100%' }}
+                >
+                  {sortOptions.map(opt => (
+                    <div 
+                      key={opt.value}
+                      onClick={() => { setSortBy(opt.value); setPage(1); setIsSortOpen(false); }}
+                      style={{ padding: '0.75rem 1rem', borderRadius: '0.85rem', fontSize: '0.85rem', fontWeight: 700, color: sortBy === opt.value ? C.t900 : C.t700, cursor: 'pointer', background: sortBy === opt.value ? C.bgMuted : 'transparent', transition: 'all 0.2s' }}
+                      onMouseEnter={e => { if(sortBy !== opt.value) e.currentTarget.style.background = C.bgMuted; }}
+                      onMouseLeave={e => { if(sortBy !== opt.value) e.currentTarget.style.background = 'transparent'; }}
+                    >
+                      {opt.label}
+                    </div>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </div>
 
-      <div className="max-w-screen-2xl mx-auto px-4 md:px-8 py-8 flex flex-col lg:flex-row gap-8">
+      {/* ── MAIN WIDE LAYOUT ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '4rem', alignItems: 'start' }}>
         
-        {/* Sidebar */}
-        <aside className="hidden lg:block w-60 shrink-0 space-y-10 sticky top-24 h-fit">
-          <div className="space-y-4">
-            <h4 className="section-label">Browse By</h4>
-            <div className="max-h-[400px] overflow-y-auto pr-2 custom-scrollbar space-y-1">
+        {/* ── SIDEBAR (STICKY CARD) ── */}
+        <div style={{ 
+          display: 'flex', flexDirection: 'column', gap: '2.5rem', 
+          position: 'sticky', top: '7rem', 
+          background: '#fff', border: `1px solid ${C.bSoft}`, 
+          borderRadius: '2rem', padding: '2.5rem',
+          boxShadow: '0 10px 40px rgba(0,0,0,0.02)'
+        }}>
+          
+          {/* Availability */}
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+               <h4 style={{ fontSize: '0.95rem', fontWeight: 900, margin: 0, letterSpacing: '-0.02em' }}>Availability</h4>
+               <button style={{ border: 'none', background: 'none', color: C.blue, fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer' }}>Reset</button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer' }}>
+                <input type="checkbox" defaultChecked style={{ width: 18, height: 18, accentColor: C.t900, borderRadius: '0.25rem' }} /> 
+                In Stock
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.9rem', fontWeight: 700, color: C.t300, cursor: 'pointer' }}>
+                <input type="checkbox" style={{ width: 18, height: 18, accentColor: C.t900, borderRadius: '0.25rem' }} /> 
+                Out Of Stock
+              </label>
+            </div>
+          </div>
+
+          <div style={{ height: 1, background: C.bSoft }} />
+
+          {/* Product type */}
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+               <h4 style={{ fontSize: '0.95rem', fontWeight: 900, margin: 0, letterSpacing: '-0.02em' }}>Product type</h4>
+               <button onClick={resetCategories} style={{ border: 'none', background: 'none', color: C.blue, fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer' }}>Reset</button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {categories.map(cat => (
-                <button
-                  key={cat.id}
-                  onClick={() => toggleCategory(cat.id)}
-                  className={`group w-full flex items-center justify-between p-2.5 rounded-xl transition-all duration-300 ${
-                    activeCategoryIDs.includes(String(cat.id))
-                      ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
-                      : 'hover:glass-input text-slate-400 hover:text-white'
-                  }`}
-                >
-                  <span className="text-xs font-bold tracking-tight">{cat.name}</span>
-                  {!activeCategoryIDs.includes(String(cat.id)) && (
-                    <span className="text-[9px] font-black opacity-40">{cat.product_count}</span>
-                  )}
-                </button>
+                <label key={cat.id} style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={activeCatIDs.includes(String(cat.id))}
+                    onChange={() => toggleCategory(cat.id)}
+                    style={{ width: 18, height: 18, accentColor: C.t900 }} 
+                  /> 
+                  {cat.name}
+                </label>
               ))}
             </div>
           </div>
+        </div>
 
-          <div className="space-y-4 pt-6 border-t border-white/[0.06]">
-            <h4 className="section-label">Price Range</h4>
-            <div className="grid grid-cols-2 gap-3">
-              <input type="number" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} placeholder="MIN"
-                className="glass-input text-xs py-2.5 px-3" />
-              <input type="number" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} placeholder="MAX"
-                className="glass-input text-xs py-2.5 px-3" />
-            </div>
+        {/* ── EXPANSIVE GRID CONTENT ── */}
+        <div style={{ background: '#fff', borderRadius: '2.5rem', padding: '3.5rem', border: `1px solid ${C.bSoft}`, boxShadow: '0 10px 40px rgba(0,0,0,0.02)' }}>
+          {/* Active Filter Tags Row */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '3rem', minHeight: 40 }}>
+            {activeCatIDs.map(id => {
+              const cat = categories.find(c => String(c.id) === id);
+              return cat && (
+                <div key={id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 1.5rem', background: C.bgMuted, border: `1px solid ${C.bSoft}`, borderRadius: '9999px', fontSize: '0.85rem', fontWeight: 800 }}>
+                  {cat.name} <X style={{ width: 16, cursor: 'pointer', color: C.t300 }} onClick={() => toggleCategory(id)} />
+                </div>
+              );
+            })}
+            {(minPrice > 0 || maxPrice < 2500) && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 1.5rem', background: C.bgMuted, border: `1px solid ${C.bSoft}`, borderRadius: '9999px', fontSize: '0.85rem', fontWeight: 800 }}>
+                ৳{minPrice} - ৳{maxPrice} <X style={{ width: 16, cursor: 'pointer', color: C.t300 }} onClick={resetPrice} />
+              </div>
+            )}
+            {query && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 1.5rem', background: C.bgMuted, border: `1px solid ${C.bSoft}`, borderRadius: '9999px', fontSize: '0.85rem', fontWeight: 800 }}>
+                "{query}" <X style={{ width: 16, cursor: 'pointer', color: C.t300 }} onClick={() => navigate('/products')} />
+              </div>
+            )}
+            {hasFilters && (
+              <button onClick={clearAll} style={{ border: 'none', background: 'none', color: C.t900, textDecoration: 'underline', fontSize: '0.9rem', fontWeight: 900, cursor: 'pointer', marginLeft: '0.5rem' }}>
+                Clear all
+              </button>
+            )}
           </div>
 
-          <button onClick={clearAllFilters}
-            className="w-full py-3 text-[9px] font-black uppercase tracking-widest text-slate-500 border border-white/[0.08] rounded-xl hover:bg-rose-500/10 hover:text-rose-400 hover:border-rose-500/20 transition-all">
-            Clear Filters
-          </button>
-        </aside>
-
-        {/* Product Grid */}
-        <div className="flex-grow">
-          <div className="flex justify-end mb-6">
-            <SortDropdown value={sortBy} onChange={setSortBy} />
-          </div>
-
+          {/* Grid */}
           {loading ? (
-            <div className="py-32 flex flex-col items-center justify-center glass-card-light rounded-[48px] gap-6">
-              <div className="w-12 h-12 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
-              <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.3em] animate-pulse">Curating your collection...</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '2.5rem' }}>
+              {Array.from({ length: 8 }).map((_, i) => <div key={i} style={{ aspectRatio: '1/1.2', background: C.bgMuted, borderRadius: '2rem', animation: 'pulse 1.5s infinite' }} />)}
             </div>
           ) : products.length === 0 ? (
-            <div className="text-center py-32 glass-card-light rounded-[48px]">
-              <h3 className="text-xl font-black text-white mb-2">No results found</h3>
-              <p className="text-slate-400 text-xs font-bold mb-8">Try adjusting your filters.</p>
-              <button onClick={clearAllFilters} className="btn-primary">Reset All</button>
+            <div style={{ padding: '8rem 0', textAlign: 'center', background: C.bgMuted, borderRadius: '2rem' }}>
+               <Search style={{ width: 64, height: 64, color: C.t300, marginBottom: '2rem' }} />
+               <h3 style={{ fontSize: '1.5rem', fontWeight: 900, margin: 0 }}>No products match your criteria</h3>
+               <p style={{ fontSize: '1rem', color: C.t500, marginTop: '0.75rem' }}>Try clearing some filters to see more results.</p>
+               <button onClick={clearAll} style={{ marginTop: '2rem', background: C.t900, color: '#fff', border: 'none', padding: '1rem 2.5rem', borderRadius: '9999px', fontWeight: 800, cursor: 'pointer' }}>Clear all filters</button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-x-5 gap-y-10">
-              <AnimatePresence mode="popLayout">
-                {products.map((product, i) => (
-                  <motion.div
-                    layout
-                    key={product.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.5, delay: i * 0.03 }}
-                    className="group flex flex-col relative"
-                  >
-                    {/* Image Container - The Centerpiece */}
-                    <div className="relative aspect-[4/5] rounded-2xl overflow-hidden glass-card-light border border-white/[0.06] mb-4 transition-all duration-500 group-hover:shadow-[0_20px_40px_-10px_rgba(99,102,241,0.2)] group-hover:-translate-y-2 group-hover:border-indigo-500/20">
-                      <Link to={`/products/${product.slug}`}>
-                        <img
-                          src={getImageUrl(getPrimaryImage(product.images))}
-                          className="w-full h-full object-contain p-5 group-hover:scale-110 transition-transform duration-1000 ease-out"
-                          alt={product.name}
-                        />
-                        {/* Overlay Gradient */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                        
-                        {/* Stock Out Overlay */}
-                        {product.stock_count <= 0 && (
-                          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-10 pointer-events-none">
-                            <div className="badge-rose px-5 py-2 -rotate-12 text-xs font-black">Stock Out</div>
-                          </div>
-                        )}
-                      </Link>
-
-                      {/* Top Badges */}
-                      <div className="absolute top-4 left-4 right-4 flex justify-between items-start">
-                        {product.discount_price && product.base_price > product.discount_price ? (
-                          <div className="bg-red-500 text-white px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest shadow-lg shadow-red-500/20">
-                            -{Math.round(((product.base_price - product.discount_price) / product.base_price) * 100)}%
-                          </div>
-                        ) : <div />}
-                        
-                        {!['admin', 'moderator'].includes(user?.role?.toLowerCase()) && (
-                          <button 
-                            onClick={async (e) => {
-                              e.preventDefault();
-                              if (!user) {
-                                toast.error('Please login to add items to wishlist');
-                                navigate('/login');
-                                return;
-                              }
-                              setLoadingItemId(`wishlist-${product.id}`);
-                              const added = await toggleWishlist(product, !!user);
-                              setLoadingItemId(null);
-                              if (added) toast.success('Added to Wishlist');
-                              else toast.success('Removed from Wishlist');
-                            }}
-                            disabled={loadingItemId === `wishlist-${product.id}`}
-                            className={`glass-card-light/80 backdrop-blur-md p-1.5 rounded-lg transition-all shadow-sm flex items-center justify-center min-w-[28px] min-h-[28px] ${
-                              isInWishlist(product.id) ? 'text-amber-500 scale-110' : 'text-slate-400 hover:text-amber-500'
-                            }`}
-                          >
-                             {loadingItemId === `wishlist-${product.id}` ? (
-                               <RefreshCcw className="w-2.5 h-2.5 animate-spin" />
-                             ) : (
-                               <Star className={`w-3 h-3 ${isInWishlist(product.id) ? 'fill-amber-500 text-amber-500' : ''}`} />
-                             )}
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Interaction Actions */}
-                      <div className="absolute bottom-5 left-5 right-5 flex gap-2 translate-y-10 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-700">
-                        {!['admin', 'moderator'].includes(user?.role?.toLowerCase()) && (
-                          <button
-                            onClick={() => handleAddToCart(product)}
-                            disabled={loadingItemId === product.id}
-                            className="flex-grow bg-indigo-600 text-white h-10 rounded-xl flex items-center justify-center gap-2 font-black text-[8px] uppercase tracking-widest hover:bg-indigo-500 transition-all shadow-[0_4px_20px_rgba(99,102,241,0.4)] active:scale-95 disabled:opacity-50"
-                          >
-                            {loadingItemId === product.id ? (
-                              <RefreshCcw className="w-3 h-3 animate-spin" />
-                            ) : (
-                              <ShoppingCart className="w-3.5 h-3.5" />
-                            )}
-                            {loadingItemId === product.id ? 'Adding...' : 'Add To Bag'}
-                          </button>
-                        )}
-                        <Link
-                          to={`/products/${product.slug}`}
-                          className="w-10 h-10 glass-card-light/10 backdrop-blur-md text-white rounded-xl flex items-center justify-center border border-white/20 hover:bg-indigo-500 hover:border-indigo-400 transition-all"
-                        >
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </Link>
-                      </div>
-                    </div>
-
-                      <div className="px-1 space-y-1.5">
-                        <div className="flex justify-between items-start gap-3">
-                          <Link to={`/products/${product.slug}`} className="flex-grow">
-                            <h3 className="font-bold text-white group-hover:text-indigo-300 transition-colors text-sm leading-snug tracking-tight line-clamp-2">
-                              {product.name}
-                            </h3>
-                          </Link>
-                          <div className="flex items-center gap-1 shrink-0 pt-0.5">
-                            <Star className="w-2.5 h-2.5 fill-yellow-400 text-yellow-400" />
-                            <span className="text-[9px] font-black text-slate-300">
-                               {product.average_rating > 0 ? product.average_rating.toFixed(1) : '4.5'}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-baseline gap-1.5">
-                             <span className="text-base font-black text-white tracking-tighter">৳{product.base_price}</span>
-                             {product.discount_price && (
-                               <span className="text-slate-500 line-through text-[10px] font-bold">৳{product.discount_price}</span>
-                             )}
-                          </div>
-                          <div className="w-0.5 h-0.5 rounded-full glass-card-light/20" />
-                          <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">
-                             {product.categories?.[0]?.name || 'Essential'}
-                          </span>
-                        </div>
-                      </div>
-
-                  </motion.div>
-                ))}
-              </AnimatePresence>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '2.5rem' }}>
+              {products.map(p => (
+                <ProductCard 
+                  key={p.id} 
+                  product={p} 
+                  onCart={handleCart} 
+                  onWishlist={handleWishlist} 
+                  inWishlist={isInWishlist(p.id)} 
+                  loading={loadingItemId === p.id} 
+                />
+              ))}
             </div>
           )}
 
-          {total > limit && (
-            <div className="flex justify-center gap-3 mt-20">
-              <button
-                onClick={() => { setPage((p) => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '3rem', marginTop: '10rem' }}>
+              <button 
+                onClick={() => { setPage(p => Math.max(1, p-1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                 disabled={page === 1}
-                className="btn-ghost text-[9px] py-3 px-6 disabled:opacity-20">
-                Prev
+                style={{ width: 64, height: 64, borderRadius: '50%', border: `1px solid ${C.bSoft}`, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: page === 1 ? 'not-allowed' : 'pointer', opacity: page === 1 ? 0.3 : 1, transition: 'all 0.3s', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}
+                onMouseEnter={e => { if(page!==1) e.currentTarget.style.background = C.bgMuted; }}
+                onMouseLeave={e => e.currentTarget.style.background = '#fff'}
+              >
+                <ArrowRight style={{ width: 24, transform: 'rotate(180deg)' }} />
               </button>
-              <div className="flex items-center gap-2">
-                {[...Array(Math.ceil(total / limit))].map((_, i) => (
-                  <button key={i + 1}
-                    onClick={() => { setPage(i + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                    className={`w-10 h-10 rounded-xl font-black text-[10px] transition-all ${
-                      page === i + 1 ? 'bg-indigo-600 text-white shadow-[0_4px_20px_rgba(99,102,241,0.4)]' : 'glass-card-light text-slate-400 hover:text-white'
-                    }`}>
-                    {i + 1}
-                  </button>
+              
+              <div style={{ display: 'flex', gap: '3.5rem', fontSize: '1.25rem', fontWeight: 900 }}>
+                {Array.from({ length: totalPages }).map((_, i) => (
+                  <span 
+                    key={i} 
+                    onClick={() => { setPage(i+1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                    style={{ cursor: 'pointer', color: page === i+1 ? C.t900 : C.t300, transition: 'color 0.3s', padding: '0.5rem' }}
+                  >
+                    {i+1}
+                  </span>
                 ))}
               </div>
-              <button
-                onClick={() => { setPage((p) => p + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                disabled={page * limit >= total}
-                className="btn-ghost text-[9px] py-3 px-6 disabled:opacity-20">
-                Next
+
+              <button 
+                onClick={() => { setPage(p => Math.min(totalPages, p+1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                disabled={page === totalPages}
+                style={{ width: 64, height: 64, borderRadius: '50%', border: `1px solid ${C.bSoft}`, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: page === totalPages ? 'not-allowed' : 'pointer', opacity: page === totalPages ? 0.3 : 1, transition: 'all 0.3s', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}
+                onMouseEnter={e => { if(page!==totalPages) e.currentTarget.style.background = C.bgMuted; }}
+                onMouseLeave={e => e.currentTarget.style.background = '#fff'}
+              >
+                <ArrowRight style={{ width: 24 }} />
               </button>
             </div>
           )}
         </div>
       </div>
+      <style>{`@keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }`}</style>
     </div>
   );
-};
-
-export default Products;
+}

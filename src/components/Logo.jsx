@@ -49,7 +49,7 @@ const Logo = ({
   return (
     <div className={`flex ${flexRow ? 'flex-row' : 'flex-col'} items-center gap-4`}>
       {showImage && (
-        <div className={`${className} ${variant === "black" ? 'glass-card-light' : ''} overflow-hidden shrink-0`}>
+        <div className={`${className} ${variant === "black" ? 'bg-white' : ''} overflow-hidden shrink-0`}>
           <img src={logoSrc} className="w-full h-full object-contain p-1" alt="Eraya Logo" />
         </div>
       )}
@@ -65,7 +65,7 @@ const Logo = ({
               <LeafIcon />
             </motion.div>
           )}
-          <h1 className={`${textClassName} font-bold tracking-[0.25em] text-white drop-shadow-sm`}>ERAYA</h1>
+          <h1 className={`${textClassName} font-bold tracking-[0.25em] text-[#0d1117]`}>ERAYA</h1>
           {showAccents && (
             <motion.div
               initial={{ opacity: 0, scale: 0.5, rotate: 20 }}

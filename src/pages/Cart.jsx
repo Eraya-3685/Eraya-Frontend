@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, ShieldCheck, Truck, X } from 'lucide-react';
+import { Plus, Minus, ArrowRight, ShieldCheck, Truck, Flame, Phone, RefreshCcw, X, Bookmark } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import useCartStore from '../store/useCartStore';
 import useAuthStore from '../store/useAuthStore';
@@ -8,238 +8,321 @@ import api, { getImageUrl } from '../api/axios';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 import useSettingsStore from '../store/useSettingsStore';
 import ConfirmModal from '../components/ConfirmModal';
-import { RefreshCcw } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+const C = {
+  t900:'#0d1117', t700:'#1f2937', t500:'#6b7280', t300:'#c4c9d4',
+  bSoft:'rgba(0,0,0,0.07)', bLine:'#edf0f4',
+  bgPage:'#f7f8fa', bgCard:'#fff', bgMuted:'#f3f5f8',
+  lime:'#cbff00', blue:'#3b82f6', rose:'#f43f5e', green:'#22c55e', orange:'#f97316',
+};
+
 const Cart = () => {
-  useDocumentTitle('Your Shopping Cart');
+  useDocumentTitle('Shopping Cart | Eraya');
   const { items, removeItem, updateQuantity, clearCart, syncItems } = useCartStore();
-  const { user } = useAuthStore();
+  const { user }                    = useAuthStore();
   const { settings, fetchSettings } = useSettingsStore();
-  const navigate = useNavigate();
-  const [itemToRemove, setItemToRemove] = useState(null);
-  const [isRemoving, setIsRemoving] = useState(false);
+  const navigate                    = useNavigate();
+  const [itemToRemove, setItemToRemove]     = useState(null);
+  const [isRemoving, setIsRemoving]         = useState(false);
   const [showClearModal, setShowClearModal] = useState(false);
-  const [isClearing, setIsClearing] = useState(false);
-  const [isNavigating, setIsNavigating] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isClearing, setIsClearing]         = useState(false);
+  const [isNavigating, setIsNavigating]     = useState(false);
+  const [isRefreshing, setIsRefreshing]     = useState(false);
 
   useEffect(() => {
     fetchSettings();
     if (user?.role === 'admin') navigate('/');
-    refreshCartStock();
-  }, [user, navigate, fetchSettings]);
+    refreshStock();
+  }, [user]);
 
-  const refreshCartStock = async () => {
-    if (items.length === 0) return;
+  const refreshStock = async () => {
+    if (!items.length) return;
     setIsRefreshing(true);
     try {
-      const updatedItems = await Promise.all(
-        items.map(async (item) => {
-          try {
-            const res = await api.get(`/products/${item.slug}`);
-            return { ...item, stock_count: res.data.stock_count };
-          } catch { return item; }
-        })
-      );
-      syncItems(updatedItems);
+      const updated = await Promise.all(items.map(async item => {
+        try { const r = await api.get(`/products/${item.slug}`); return { ...item, stock_count: r.data.stock_count }; }
+        catch { return item; }
+      }));
+      syncItems(updated);
     } finally { setIsRefreshing(false); }
   };
 
-  const subtotal = items.reduce((sum, item) => sum + item.base_price * item.quantity, 0);
-  const shipping = subtotal >= settings.free_shipping_threshold ? 0 : settings.standard_delivery_fee;
-  const total = subtotal + shipping;
+  const subtotal   = items.reduce((s, i) => s + i.base_price * i.quantity, 0);
+  const threshold  = settings.free_shipping_threshold || 1000;
+  const shipping   = subtotal >= threshold ? 0 : settings.standard_delivery_fee || 60;
+  const total      = subtotal + shipping;
+  const progress   = Math.min((subtotal / threshold) * 100, 100);
+  const freeLeft   = threshold - subtotal;
+  const cashbackAt = threshold * 1.5; // fictional cashback milestone at 150% of free shipping
+  const cashbackPct = Math.min((subtotal / cashbackAt) * 100, 100);
 
   const confirmRemove = async () => {
-    if (itemToRemove) {
-      setIsRemoving(true);
-      await new Promise(r => setTimeout(r, 800));
-      removeItem(itemToRemove.id);
-      setIsRemoving(false);
-      setItemToRemove(null);
-    }
+    if (!itemToRemove) return;
+    setIsRemoving(true);
+    await new Promise(r => setTimeout(r, 500));
+    removeItem(itemToRemove.id);
+    setIsRemoving(false);
+    setItemToRemove(null);
   };
 
-  const handleUpdateQuantity = (item, newQty) => {
-    if (newQty > item.stock_count) { toast.error(`Only ${item.stock_count} units available`); return; }
+  const handleQty = (item, newQty) => {
+    if (newQty > (item.stock_count ?? 99)) { toast.error(`Only ${item.stock_count} in stock`); return; }
     if (newQty <= 0) { setItemToRemove(item); return; }
     updateQuantity(item.id, newQty);
   };
 
-  if (items.length === 0) {
-    return (
-      <div className="min-h-screen pt-40 pb-20 px-6 flex items-center justify-center">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          className="glass-card p-16 text-center max-w-md w-full">
-          <div className="w-20 h-20 bg-indigo-500/10 rounded-full flex items-center justify-center mx-auto mb-8 border border-indigo-500/20">
-            <ShoppingBag className="w-10 h-10 text-indigo-400" />
-          </div>
-          <h1 className="text-3xl font-black text-white mb-3">Cart is Empty</h1>
-          <p className="text-slate-400 mb-10 font-medium">You haven't added anything yet.</p>
-          <Link to="/products" className="btn-primary inline-flex items-center gap-2">
-            Start Shopping <ArrowRight className="w-4 h-4" />
-          </Link>
-        </motion.div>
+  /* Delivery day estimate */
+  const deliveryDay = () => {
+    const d = new Date(); d.setDate(d.getDate() + 3);
+    return d.toLocaleDateString('en-US', { weekday: 'long' });
+  };
+
+  /* ── Empty State ── */
+  if (items.length === 0) return (
+    <div style={{ minHeight:'65vh', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:'1.5rem' }}>
+      <div style={{ width:80, height:80, background:C.bgMuted, borderRadius:'1.75rem', display:'flex', alignItems:'center', justifyContent:'center' }}>
+        <Bookmark style={{ width:36, height:36, color:C.t300 }} />
       </div>
-    );
-  }
+      <div style={{ textAlign:'center' }}>
+        <h1 style={{ fontSize:'1.75rem', fontWeight:800, color:C.t900, margin:'0 0 0.5rem', letterSpacing:'-0.04em' }}>Your cart is empty</h1>
+        <p style={{ fontSize:'0.85rem', color:C.t500, margin:0 }}>Browse our collection and add items you love.</p>
+      </div>
+      <Link to="/products" className="btn-lime">
+        Start Shopping
+        <div className="icon-circle"><ArrowRight style={{ width:14, height:14, transform:'rotate(-45deg)' }} /></div>
+      </Link>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen pt-28 pb-16 px-4 md:px-6">
-      {/* Ambient */}
-      <div className="fixed top-0 left-1/4 w-96 h-96 bg-indigo-500/5 rounded-full blur-[120px] pointer-events-none" />
+    <div style={{ paddingBottom:'3rem' }}>
 
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-10">
-          <p className="section-label mb-2">Review</p>
-          <h1 className="text-4xl font-black text-white tracking-tight">Shopping Cart
-            <span className="ml-3 text-lg font-bold text-slate-500">({items.length} items)</span>
-          </h1>
+      {/* ── Top info bar ── */}
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'1.75rem', flexWrap:'wrap', gap:'0.75rem' }}>
+        {/* Breadcrumb */}
+        <div style={{ display:'flex', alignItems:'center', gap:'0.35rem', fontSize:'0.72rem', fontWeight:600, color:C.t300 }}>
+          <Link to="/" style={{ color:C.t500, textDecoration:'none', transition:'color .15s' }} onMouseEnter={e=>e.currentTarget.style.color=C.t900} onMouseLeave={e=>e.currentTarget.style.color=C.t500}>Home</Link>
+          <span>/</span>
+          <Link to="/products" style={{ color:C.t500, textDecoration:'none', transition:'color .15s' }} onMouseEnter={e=>e.currentTarget.style.color=C.t900} onMouseLeave={e=>e.currentTarget.style.color=C.t500}>Products</Link>
+          <span>/</span>
+          <span style={{ color:C.t900, fontWeight:700 }}>Cart</span>
         </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Items */}
-          <div className="lg:col-span-8 glass-card p-8">
-            <div className="flex justify-between items-center mb-8 pb-5 border-b border-white/[0.06]">
-              <h2 className="font-black text-white text-sm uppercase tracking-widest">Items</h2>
-              <button onClick={() => setShowClearModal(true)}
-                className="text-xs font-black text-rose-400 hover:text-rose-300 uppercase tracking-widest flex items-center gap-1.5 transition-colors">
-                <X className="w-3.5 h-3.5" /> Clear All
-              </button>
-            </div>
-
-            <div className="space-y-6">
-              <AnimatePresence>
-                {items.map((item) => {
-                  const img = item.image_url || item.images?.[0]?.image_url;
-                  return (
-                    <motion.div key={item.id}
-                      initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}
-                      className="flex items-center gap-5 pb-6 border-b border-white/[0.04] last:border-0 last:pb-0 group">
-                      <div className="w-18 h-18 shrink-0 w-[72px] h-[72px] glass-card-light rounded-2xl overflow-hidden border border-white/[0.08] group-hover:border-indigo-500/30 transition-colors relative">
-                        <img src={getImageUrl(img)} className="w-full h-full object-contain p-2" alt={item.name} />
-                        {item.stock_count <= 0 && (
-                          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                            <span className="text-[8px] font-black text-rose-300 uppercase -rotate-12">Out</span>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex-grow flex items-center justify-between gap-4 min-w-0">
-                        <div className="min-w-0">
-                          <Link to={`/products/${item.slug}`}
-                            className="text-sm font-black text-white hover:text-indigo-300 transition-colors line-clamp-1 mb-1 block">
-                            {item.name}
-                          </Link>
-                          <div className="flex items-center gap-3">
-                            <span className="text-xs font-black text-indigo-300">৳{item.base_price.toLocaleString()}</span>
-                            {item.stock_count <= 0
-                              ? <span className="text-[10px] font-black text-rose-400 uppercase">Stock Out</span>
-                              : <button onClick={() => setItemToRemove(item)}
-                                  className="text-[10px] font-black text-slate-500 hover:text-rose-400 transition-colors uppercase tracking-widest">
-                                  Remove
-                                </button>}
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-5 shrink-0">
-                          <div className="flex items-center glass-input border border-white/[0.10] rounded-xl overflow-hidden">
-                            <button onClick={() => handleUpdateQuantity(item, item.quantity - 1)}
-                              disabled={item.stock_count <= 0}
-                              className="px-3 py-2.5 hover:glass-card-light/[0.08] transition-colors disabled:opacity-30 text-slate-400 hover:text-white">
-                              <Minus className="w-3 h-3" />
-                            </button>
-                            <span className="w-8 text-center font-black text-xs text-white">{item.quantity}</span>
-                            <button onClick={() => handleUpdateQuantity(item, item.quantity + 1)}
-                              disabled={item.stock_count <= 0}
-                              className="px-3 py-2.5 hover:glass-card-light/[0.08] transition-colors disabled:opacity-30 text-slate-400 hover:text-white">
-                              <Plus className="w-3 h-3" />
-                            </button>
-                          </div>
-                          <p className="text-sm font-black text-white min-w-[70px] text-right">
-                            ৳{(item.base_price * item.quantity).toLocaleString()}
-                          </p>
-                        </div>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
-            </div>
-          </div>
-
-          {/* Summary */}
-          <div className="lg:col-span-4 space-y-5">
-            <div className="glass-card p-7">
-              <h3 className="font-black text-white text-sm uppercase tracking-widest mb-7 pb-5 border-b border-white/[0.06]">
-                Order Summary
-              </h3>
-              <div className="space-y-4 mb-8">
-                <div className="flex justify-between">
-                  <span className="text-slate-400 font-medium text-sm">Subtotal</span>
-                  <span className="font-black text-white text-sm">৳{subtotal.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400 font-medium text-sm">Shipping</span>
-                  <span className={`font-black text-sm ${shipping === 0 ? 'text-emerald-400' : 'text-white'}`}>
-                    {shipping === 0 ? 'FREE' : `৳${shipping}`}
-                  </span>
-                </div>
-                {shipping > 0 && (
-                  <p className="text-[10px] text-indigo-400 font-bold">
-                    Add ৳{(settings.free_shipping_threshold - subtotal).toLocaleString()} more for free shipping
-                  </p>
-                )}
-                <div className="glow-divider" />
-                <div className="flex justify-between">
-                  <span className="font-black text-white">Total</span>
-                  <span className="text-2xl font-black text-white">৳{total.toLocaleString()}</span>
-                </div>
-              </div>
-
-              <button
-                onClick={async () => {
-                  if (items.some(i => i.stock_count <= 0)) { toast.error('Remove out of stock items first'); return; }
-                  if (!user?.id) { toast.error('Please login first'); navigate('/login', { state: { from: '/checkout' } }); return; }
-                  setIsNavigating(true);
-                  await new Promise(r => setTimeout(r, 500));
-                  navigate('/checkout');
-                }}
-                disabled={isNavigating || items.some(i => i.stock_count <= 0)}
-                className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none">
-                {isNavigating ? <RefreshCcw className="w-4 h-4 animate-spin" /> : <>Checkout Now <ArrowRight className="w-4 h-4" /></>}
-              </button>
-            </div>
-
-            <div className="glass-card-light p-6 border border-indigo-500/20">
-              <div className="flex items-center gap-3 mb-3">
-                <Truck className="w-5 h-5 text-indigo-400" />
-                <span className="font-black text-white text-sm">Fast Delivery</span>
-              </div>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Free express delivery on all orders above ৳{settings.free_shipping_threshold}. Securely packed and tracked.
-              </p>
-            </div>
-
-            <div className="glass-card-light p-6 border border-emerald-500/20">
-              <div className="flex items-center gap-3">
-                <ShieldCheck className="w-5 h-5 text-emerald-400" />
-                <div>
-                  <p className="font-black text-white text-sm">Secure Checkout</p>
-                  <p className="text-xs text-slate-400">256-bit SSL encrypted</p>
-                </div>
-              </div>
-            </div>
-          </div>
+        {/* Urgency */}
+        <div style={{ display:'flex', alignItems:'center', gap:'0.5rem', fontSize:'0.75rem', fontWeight:700, color:C.orange }}>
+          <Flame style={{ width:14, height:14 }} />
+          Hurry up! Your items are reserved for 10 minutes
+        </div>
+        {/* Help */}
+        <div style={{ display:'flex', alignItems:'center', gap:'0.5rem', fontSize:'0.72rem', fontWeight:600, color:C.t500 }}>
+          <Phone style={{ width:13, height:13 }} />
+          Help line: 09678-ERAYA
         </div>
       </div>
+
+      {/* ── Page title ── */}
+      <h1 style={{ fontSize:'2rem', fontWeight:800, color:C.t900, margin:'0 0 1.75rem', letterSpacing:'-0.04em' }}>Shopping Cart</h1>
+
+      {/* ── Progress bar ── */}
+      <div style={{ background:C.bgCard, border:`1px solid ${C.bLine}`, borderRadius:'1.5rem', padding:'1.25rem 2rem', marginBottom:'1.5rem' }}>
+        {subtotal < threshold ? (
+          <p style={{ textAlign:'center', fontSize:'0.78rem', fontWeight:600, color:C.t500, margin:'0 0 1rem' }}>
+            Great! You have been{' '}
+            <strong style={{ color:C.green }}>FREE SHIPPING</strong>,{' '}
+            Only <strong style={{ color:C.t900 }}>৳{freeLeft.toLocaleString()}</strong> away from getting{' '}
+            <strong style={{ color:C.orange }}>3% EXTRA CASHBACK</strong>
+          </p>
+        ) : (
+          <p style={{ textAlign:'center', fontSize:'0.78rem', fontWeight:700, color:C.green, margin:'0 0 1rem' }}>
+            🎉 You've unlocked FREE SHIPPING!
+          </p>
+        )}
+        {/* Bar */}
+        <div style={{ position:'relative', height:8, background:C.bgMuted, borderRadius:999, overflow:'hidden' }}>
+          <div style={{ position:'absolute', left:0, top:0, height:'100%', width:`${progress}%`, background:'linear-gradient(to right, #3b82f6, #6366f1)', borderRadius:999, transition:'width .6s ease' }} />
+          {/* Thumb */}
+          <div style={{ position:'absolute', left:`${progress}%`, top:'50%', transform:'translate(-50%,-50%)', width:16, height:16, background:C.blue, borderRadius:'50%', border:'3px solid #fff', boxShadow:'0 2px 6px rgba(59,130,246,0.4)', transition:'left .6s ease' }} />
+        </div>
+        {/* Labels */}
+        <div style={{ display:'flex', justifyContent:'space-between', marginTop:'0.5rem' }}>
+          <span style={{ fontSize:'0.65rem', fontWeight:700, color:C.t300 }}>৳0</span>
+          <span style={{ fontSize:'0.65rem', fontWeight:800, color:C.blue, letterSpacing:'0.02em' }}>Free Shipping ৳{threshold.toLocaleString()}</span>
+          <span style={{ fontSize:'0.65rem', fontWeight:800, color:C.orange, letterSpacing:'0.02em' }}>3% Cashback ৳{cashbackAt.toLocaleString()}</span>
+        </div>
+      </div>
+
+      {/* ── Product count + delivery ── */}
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'1rem', flexWrap:'wrap', gap:'0.5rem' }}>
+        <p style={{ fontSize:'0.78rem', fontWeight:600, color:C.t500, margin:0 }}>
+          You have <strong style={{ color:C.t900 }}>{items.length} product{items.length!==1?'s':''}</strong> in your cart
+        </p>
+        <div style={{ display:'flex', alignItems:'center', gap:'1.5rem' }}>
+          <button onClick={refreshStock} disabled={isRefreshing} style={{ display:'flex', alignItems:'center', gap:'0.35rem', fontSize:'0.65rem', fontWeight:700, color:C.t300, background:'none', border:'none', cursor:'pointer', fontFamily:'inherit', opacity:isRefreshing?0.5:1 }}>
+            <RefreshCcw style={{ width:11, height:11, animation:isRefreshing?'spin 1s linear infinite':'none' }} /> Refresh
+          </button>
+          <p style={{ fontSize:'0.78rem', fontWeight:600, color:C.t500, margin:0 }}>
+            Expected Delivery: <strong style={{ color:C.t900 }}>{deliveryDay()}</strong>
+          </p>
+        </div>
+      </div>
+
+      {/* ── Table ── */}
+      <div style={{ background:C.bgCard, border:`1px solid ${C.bLine}`, borderRadius:'1.5rem', overflow:'hidden', marginBottom:'1.5rem' }}>
+        {/* Table head */}
+        <div style={{ display:'grid', gridTemplateColumns:'3fr 0.85fr 1fr 1.1fr 0.9fr', gap:0, padding:'0.85rem 1.75rem', borderBottom:`1.5px solid ${C.bLine}`, background:C.bgMuted }}>
+          {[
+            { label:'Product',  align:'left'   },
+            { label:'Status',   align:'left'   },
+            { label:'Price',    align:'center' },
+            { label:'Quantity', align:'center' },
+            { label:'Total',    align:'right'  },
+          ].map(({ label, align }) => (
+            <span key={label} style={{ fontSize:'0.75rem', fontWeight:800, color:C.t700, textAlign:align, display:'block' }}>
+              {label}
+            </span>
+          ))}
+        </div>
+
+        {/* Rows */}
+        <AnimatePresence>
+          {items.map((item, idx) => {
+            const img = item.image_url || item.images?.[0]?.image_url;
+            const outOfStock = item.stock_count <= 0;
+            return (
+              <motion.div key={item.id}
+                initial={{ opacity:0, y:-8 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, height:0 }}
+                transition={{ duration:0.25, delay: idx*0.04 }}
+                style={{ display:'grid', gridTemplateColumns:'3fr 0.85fr 1fr 1.1fr 0.9fr', gap:0, padding:'1.25rem 1.75rem', borderBottom: idx < items.length-1 ? `1px solid ${C.bLine}` : 'none', alignItems:'center' }}
+              >
+                {/* Product cell */}
+                <div style={{ display:'flex', alignItems:'center', gap:'1rem', minWidth:0 }}>
+                  {/* Bookmark / remove */}
+                  <button onClick={() => setItemToRemove(item)} style={{ flexShrink:0, background:'none', border:'none', cursor:'pointer', padding:'0.25rem', color:C.t300, transition:'color .15s', display:'flex' }}
+                    onMouseEnter={e=>e.currentTarget.style.color=C.rose}
+                    onMouseLeave={e=>e.currentTarget.style.color=C.t300}>
+                    <X style={{ width:14, height:14 }} />
+                  </button>
+                  {/* Image */}
+                  <div style={{ width:72, height:72, borderRadius:'1rem', overflow:'hidden', background:C.bgMuted, border:`1px solid ${C.bLine}`, flexShrink:0, position:'relative' }}>
+                    {img && <img src={getImageUrl(img)} alt={item.name} style={{ width:'100%', height:'100%', objectFit:'cover' }} />}
+                    {outOfStock && <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.5)', display:'flex', alignItems:'center', justifyContent:'center' }}><span style={{ fontSize:'0.5rem', fontWeight:900, color:'#fff', textTransform:'uppercase' }}>Out</span></div>}
+                  </div>
+                  {/* Name + meta */}
+                  <div style={{ minWidth:0 }}>
+                    <Link to={`/products/${item.slug}`} style={{ textDecoration:'none' }}>
+                      <p style={{ fontSize:'0.85rem', fontWeight:800, color:C.t900, margin:'0 0 0.25rem', letterSpacing:'-0.01em', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.name}</p>
+                    </Link>
+                    {item.color && <p style={{ fontSize:'0.62rem', fontWeight:600, color:C.t500, margin:'0 0 0.1rem' }}>Color: <strong>{item.color}</strong></p>}
+                    {item.size  && <p style={{ fontSize:'0.62rem', fontWeight:600, color:C.t500, margin:0 }}>Size: <strong>{item.size}</strong></p>}
+                  </div>
+                </div>
+
+                {/* Stock status */}
+                <div>
+                  {outOfStock
+                    ? <span style={{ display:'inline-flex', alignItems:'center', gap:'0.3rem', fontSize:'0.62rem', fontWeight:700, color:C.rose }}><span style={{ width:6, height:6, borderRadius:'50%', background:C.rose, display:'inline-block' }} />Out of Stock</span>
+                    : <span style={{ display:'inline-flex', alignItems:'center', gap:'0.3rem', fontSize:'0.62rem', fontWeight:700, color:C.green }}><span style={{ width:6, height:6, borderRadius:'50%', background:C.green, display:'inline-block' }} />In Stock {item.stock_count ? `(${item.stock_count})` : ''}</span>
+                  }
+                </div>
+
+                {/* Price */}
+                <div style={{ textAlign:'center', paddingLeft:'0.5rem' }}>
+                  <span style={{ fontSize:'0.88rem', fontWeight:700, color:C.t900, letterSpacing:'-0.02em' }}>৳{item.base_price?.toLocaleString()}</span>
+                </div>
+
+                {/* Qty stepper */}
+                <div style={{ display:'flex', justifyContent:'center' }}>
+                  <div style={{ display:'inline-flex', alignItems:'center', border:`1.5px solid ${C.bLine}`, borderRadius:9999, overflow:'hidden', background:'#fff', boxShadow:'0 1px 4px rgba(0,0,0,0.05)' }}>
+                    <button onClick={() => handleQty(item, item.quantity-1)} disabled={outOfStock}
+                      style={{ width:30, height:30, display:'flex', alignItems:'center', justifyContent:'center', background:'none', border:'none', cursor:outOfStock?'not-allowed':'pointer', color:C.t500, transition:'background .12s' }}
+                      onMouseEnter={e=>{ if(!outOfStock) e.currentTarget.style.background=C.bgMuted; }}
+                      onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+                      <Minus style={{ width:11, height:11 }} />
+                    </button>
+                    <span style={{ minWidth:24, textAlign:'center', fontSize:'0.82rem', fontWeight:800, color:C.t900, padding:'0 0.25rem' }}>{item.quantity}</span>
+                    <button onClick={() => handleQty(item, item.quantity+1)} disabled={outOfStock}
+                      style={{ width:30, height:30, display:'flex', alignItems:'center', justifyContent:'center', background:'none', border:'none', cursor:outOfStock?'not-allowed':'pointer', color:C.t500, transition:'background .12s' }}
+                      onMouseEnter={e=>{ if(!outOfStock) e.currentTarget.style.background=C.bgMuted; }}
+                      onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+                      <Plus style={{ width:11, height:11 }} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Line total */}
+                <div style={{ textAlign:'right', paddingRight:'0.25rem' }}>
+                  <span style={{ fontSize:'0.88rem', fontWeight:800, color:C.t900, letterSpacing:'-0.02em' }}>৳{(item.base_price * item.quantity).toLocaleString()}</span>
+                </div>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
+      </div>
+
+      {/* ── Bottom actions ── */}
+      {/* Use same grid as table so Sub Total lines up with Total column */}
+      <div style={{ background:C.bgCard, border:`1px solid ${C.bLine}`, borderRadius:'1.5rem', padding:'1.25rem 1.75rem', display:'grid', gridTemplateColumns:'3fr 0.85fr 1fr 1.1fr 0.9fr', gap:0, alignItems:'center' }}>
+
+        {/* Left — info badges */}
+        <div style={{ display:'flex', alignItems:'center', gap:'0.75rem', gridColumn:'1 / 4' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:'0.4rem', padding:'0.45rem 0.85rem', background:C.bgMuted, border:`1px solid ${C.bLine}`, borderRadius:9999 }}>
+            <Truck style={{ width:13, height:13, color:C.blue }} />
+            <span style={{ fontSize:'0.68rem', fontWeight:600, color:C.t500 }}>
+              {shipping===0 ? <strong style={{ color:C.green }}>Free Shipping!</strong> : `৳${shipping} delivery`}
+            </span>
+          </div>
+          <div style={{ display:'flex', alignItems:'center', gap:'0.4rem', padding:'0.45rem 0.85rem', background:C.bgMuted, border:`1px solid ${C.bLine}`, borderRadius:9999 }}>
+            <ShieldCheck style={{ width:13, height:13, color:C.green }} />
+            <span style={{ fontSize:'0.68rem', fontWeight:600, color:C.t500 }}>SSL Secured</span>
+          </div>
+        </div>
+
+        {/* Quantity column — blank spacer */}
+        <div />
+
+        {/* Sub Total — aligned under Total column */}
+        <div style={{ textAlign:'right', paddingRight:'0.25rem' }}>
+          <p style={{ fontSize:'0.75rem', fontWeight:800, color:C.t500, margin:'0 0 0.2rem' }}>Sub Total</p>
+          <p style={{ fontSize:'1.1rem', fontWeight:800, color:C.t900, margin:'0 0 0.1rem', letterSpacing:'-0.03em', whiteSpace:'nowrap' }}>
+            ৳{subtotal.toLocaleString()}
+          </p>
+          <p style={{ fontSize:'0.58rem', color:C.t300, fontWeight:500, margin:0, whiteSpace:'nowrap' }}>Excl. Tax &amp; Delivery</p>
+        </div>
+      </div>
+
+      {/* Buttons row */}
+      <div style={{ display:'flex', justifyContent:'flex-end', gap:'0.75rem', marginTop:'1rem' }}>
+        <Link to="/products"
+          style={{ padding:'0.75rem 1.75rem', background:'transparent', border:`1.5px solid ${C.bLine}`, borderRadius:'0.875rem', fontSize:'0.8rem', fontWeight:800, color:C.t700, textDecoration:'none', transition:'border-color .2s, color .2s', display:'flex', alignItems:'center' }}
+          onMouseEnter={e=>{ e.currentTarget.style.borderColor=C.t900; e.currentTarget.style.color=C.t900; }}
+          onMouseLeave={e=>{ e.currentTarget.style.borderColor=C.bLine; e.currentTarget.style.color=C.t700; }}>
+          Continue Shopping
+        </Link>
+        <button
+          onClick={async () => {
+            if (items.some(i => i.stock_count <= 0)) { toast.error('Remove out-of-stock items first'); return; }
+            if (!user?.id) { toast.error('Please login first'); navigate('/login', { state:{ from:'/checkout' } }); return; }
+            setIsNavigating(true);
+            await new Promise(r => setTimeout(r, 400));
+            navigate('/checkout');
+          }}
+          disabled={isNavigating || items.some(i => i.stock_count <= 0)}
+          style={{ padding:'0.75rem 1.75rem', background:C.t900, color:'#fff', border:'none', borderRadius:'0.875rem', fontSize:'0.8rem', fontWeight:800, cursor:'pointer', fontFamily:'inherit', transition:'background .2s, opacity .2s', opacity: isNavigating || items.some(i=>i.stock_count<=0)?0.55:1, display:'flex', alignItems:'center', gap:'0.5rem' }}
+          onMouseEnter={e=>{ if(!isNavigating) e.currentTarget.style.background='#1e293b'; }}
+          onMouseLeave={e=>e.currentTarget.style.background=C.t900}>
+          {isNavigating ? <><RefreshCcw style={{ width:14, height:14, animation:'spin 0.8s linear infinite' }} />Processing…</> : <>Go to Checkout <ArrowRight style={{ width:14, height:14 }} /></>}
+        </button>
+      </div>
+
 
       <ConfirmModal isOpen={!!itemToRemove} onClose={() => setItemToRemove(null)}
         onConfirm={confirmRemove} loading={isRemoving}
         title="Remove Item?" message={`Remove "${itemToRemove?.name}" from cart?`} />
       <ConfirmModal isOpen={showClearModal} onClose={() => setShowClearModal(false)}
-        onConfirm={async () => { setIsClearing(true); await new Promise(r => setTimeout(r, 800)); clearCart(); setIsClearing(false); setShowClearModal(false); }}
+        onConfirm={async () => { setIsClearing(true); await new Promise(r=>setTimeout(r,500)); clearCart(); setIsClearing(false); setShowClearModal(false); }}
         loading={isClearing} title="Clear Cart?" message="Remove all items from your cart?" />
+
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 };

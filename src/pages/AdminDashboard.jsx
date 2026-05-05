@@ -70,7 +70,7 @@ const AdminDashboard = () => {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-8 h-8 glass-card flex items-center justify-center rounded-xl">
+            <div className="w-8 h-8 bg-white flex items-center justify-center rounded-xl">
               <Activity className="w-4 h-4 text-indigo-400" />
             </div>
             <h1 className="text-2xl font-black text-white tracking-tight">Analytics Engine</h1>
@@ -103,12 +103,12 @@ const AdminDashboard = () => {
               show: { opacity: 1, y: 0, scale: 1 }
             }}
             whileHover={{ y: -10, transition: { duration: 0.4, ease: "easeOut" } }}
-            className="glass-card p-8 group hover:border-indigo-500/40 transition-all duration-500 relative overflow-hidden"
+            className="bg-white p-8 group hover:border-indigo-500/40 transition-all duration-500 relative overflow-hidden"
           >
             <div className={`w-14 h-14 rounded-2xl ${stat.bg} ${stat.color} flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500`}>
               <stat.icon className="w-6 h-6" />
             </div>
-            <p className="section-label mb-1 opacity-60">{stat.name}</p>
+            <p className="text-[#64748b] mb-1 opacity-60">{stat.name}</p>
             <h3 className="text-3xl font-black text-white tracking-tighter">{stat.value}</h3>
           </motion.div>
         ))}
@@ -117,7 +117,7 @@ const AdminDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
         {/* Recent Transactions */}
         {isStaff && (
-          <div className="lg:col-span-8 glass-card overflow-hidden">
+          <div className="lg:col-span-8 bg-white overflow-hidden">
             <div className="p-8 border-b border-white/[0.05] flex justify-between items-center">
               <div>
                 <h2 className="text-lg font-black text-white tracking-tight">Recent Transactions</h2>
@@ -152,7 +152,7 @@ const AdminDashboard = () => {
                         </span>
                       </td>
                       <td className="px-8 py-6 text-right">
-                        <Link to="/admin/orders" className="w-10 h-10 glass-card-light inline-flex items-center justify-center hover:bg-indigo-600 hover:text-white transition-all">
+                        <Link to="/admin/orders" className="w-10 h-10 bg-white inline-flex items-center justify-center hover:bg-indigo-600 hover:text-white transition-all">
                           <ArrowRight className="w-4 h-4" />
                         </Link>
                       </td>
@@ -172,8 +172,8 @@ const AdminDashboard = () => {
 
         {/* Growth Analytics Sidebar */}
         <div className="lg:col-span-4 space-y-8">
-          <div className="glass-card p-8 bg-gradient-to-br from-indigo-600/10 to-purple-600/10 border-indigo-500/20">
-            <div className="w-12 h-12 glass-card flex items-center justify-center mb-6">
+          <div className="bg-white p-8 bg-gradient-to-br from-indigo-600/10 to-purple-600/10 border-indigo-500/20">
+            <div className="w-12 h-12 bg-white flex items-center justify-center mb-6">
               <TrendingUp className="w-6 h-6 text-indigo-400" />
             </div>
             <h3 className="text-xl font-black text-white mb-2 tracking-tight">Growth Insights</h3>
@@ -193,8 +193,8 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          <div className="glass-card p-8 space-y-6">
-            <h4 className="section-label">System Nodes</h4>
+          <div className="bg-white p-8 space-y-6">
+            <h4 className="text-[#64748b]">System Nodes</h4>
             <div className="space-y-5">
               {[
                 { label: 'Cloud Gateway', status: 'Optimal', color: 'bg-emerald-500' },

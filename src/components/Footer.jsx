@@ -1,86 +1,77 @@
-import React, { useEffect } from 'react';
-import { Globe, Share2, Mail, ArrowUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import useSettingsStore from '../store/useSettingsStore';
+import { Package, Globe, Share2, Link2 } from 'lucide-react';
 
-const Footer = () => {
-  const { settings, fetchSettings } = useSettingsStore();
-
-  useEffect(() => {
-    fetchSettings();
-  }, [fetchSettings]);
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
+export default function Footer() {
   return (
-    <footer className="relative mt-20 z-10">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="glass-card rounded-t-[3rem] rounded-b-none p-12 md:p-16 border-b-0">
-          <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-12 mb-16">
-            <div className="md:col-span-2 space-y-6">
-              <h3 className="text-2xl font-black text-white uppercase tracking-tighter font-display">ERAYA</h3>
-              <p className="text-slate-400 text-sm leading-relaxed max-w-sm font-medium">
-                Redefining the digital shopping experience through precision, clarity, and curated excellence for the modern minimalist.
-              </p>
-              <div className="flex gap-4">
-                {[Globe, Share2, Mail].map((Icon, i) => (
-                  <a key={i} href="#" className="w-11 h-11 glass-card-light flex items-center justify-center hover:bg-indigo-600 transition-all duration-500 hover:-translate-y-1">
-                    <Icon className="w-5 h-5 text-slate-300" />
-                  </a>
-                ))}
+    <footer style={{ background: '#fff', borderTop: '1px solid #eaeef2', marginTop: '3rem' }}>
+      <div style={{ maxWidth: 1400, margin: '0 auto', padding: '3rem 2rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 2fr', gap: '3rem' }}>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', textDecoration: 'none' }}>
+              <div style={{ width: 36, height: 36, background: '#0d1117', borderRadius: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Package style={{ width: 16, height: 16, color: '#fff' }} />
               </div>
+              <span style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 800, fontSize: '1rem', letterSpacing: '-0.04em', color: '#0d1117' }}>eraya.</span>
+            </Link>
+            <p style={{ fontSize: '0.75rem', color: '#94a3b8', lineHeight: 1.75, maxWidth: 280, margin: 0 }}>
+              Curated excellence for the modern minimalist. Redefining the digital shopping experience through aesthetics and precision.
+            </p>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              {[Globe, Share2, Link2].map((Icon, i) => (
+                <a key={i} href="#" style={{ width: 36, height: 36, background: '#f8fafc', border: '1px solid #eaeef2', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', transition: 'all .2s', textDecoration: 'none' }}
+                   onMouseEnter={e => { e.currentTarget.style.background = '#0d1117'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = '#0d1117'; }}
+                   onMouseLeave={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#64748b'; e.currentTarget.style.borderColor = '#eaeef2'; }}>
+                  <Icon style={{ width: 14, height: 14 }} />
+                </a>
+              ))}
             </div>
-            
-            <div>
-              <h4 className="section-label">Collections</h4>
-              <ul className="space-y-4 text-slate-400 text-xs font-bold">
-                <li><Link to="/products" className="hover:text-white transition-colors">New Arrivals</Link></li>
-                <li><Link to="/products" className="hover:text-white transition-colors">Best Sellers</Link></li>
-                <li><Link to="/products" className="hover:text-white transition-colors">Exclusive Deals</Link></li>
-              </ul>
-            </div>
+          </div>
 
-            <div>
-              <h4 className="section-label">Company</h4>
-              <ul className="space-y-4 text-slate-400 text-xs font-bold">
-                <li><Link to="/about" className="hover:text-white transition-colors">Our Story</Link></li>
-                <li><Link to="/sustainability" className="hover:text-white transition-colors">Sustainability</Link></li>
-                <li><Link to="/careers" className="hover:text-white transition-colors">Careers</Link></li>
-              </ul>
+          <div>
+            <p style={{ fontSize: '0.58rem', fontWeight: 800, letterSpacing: '0.28em', color: '#94a3b8', marginBottom: '1.25rem' }}>Collections</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+              {['New Arrivals','Best Sellers','Deals'].map(t => (
+                <Link key={t} to="/products" style={{ fontSize: '0.8rem', fontWeight: 600, color: '#374151', textDecoration: 'none', transition: 'color .2s' }}
+                  onMouseEnter={e => e.currentTarget.style.color = '#3b82f6'}
+                  onMouseLeave={e => e.currentTarget.style.color = '#374151'}>{t}</Link>
+              ))}
             </div>
+          </div>
 
-            <div>
-              <h4 className="section-label">Support</h4>
-              <ul className="space-y-4 text-slate-400 text-xs font-bold">
-                <li><Link to="/faq" className="hover:text-white transition-colors">Shipping Info</Link></li>
-                <li><Link to="/faq" className="hover:text-white transition-colors">Returns</Link></li>
-                <li><Link to="/faq" className="hover:text-white transition-colors">Help Center</Link></li>
-              </ul>
+          <div>
+            <p style={{ fontSize: '0.58rem', fontWeight: 800, letterSpacing: '0.28em', color: '#94a3b8', marginBottom: '1.25rem' }}>Company</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+              {[['About','/about'],['Support','/faq'],['Contact','/contact']].map(([t,href]) => (
+                <Link key={t} to={href} style={{ fontSize: '0.8rem', fontWeight: 600, color: '#374151', textDecoration: 'none', transition: 'color .2s' }}
+                  onMouseEnter={e => e.currentTarget.style.color = '#3b82f6'}
+                  onMouseLeave={e => e.currentTarget.style.color = '#374151'}>{t}</Link>
+              ))}
             </div>
+          </div>
 
-            <div className="flex flex-col items-start md:items-end">
-              <button 
-                onClick={scrollToTop}
-                className="w-14 h-14 glass-card-light flex items-center justify-center text-indigo-400 hover:bg-indigo-600 hover:text-white transition-all duration-500 shadow-xl"
-              >
-                <ArrowUp className="w-6 h-6" />
+          <div>
+            <p style={{ fontSize: '0.58rem', fontWeight: 800, letterSpacing: '0.28em', color: '#94a3b8', marginBottom: '1.25rem' }}>Stay Updated</p>
+            <div style={{ position: 'relative' }}>
+              <input type="email" placeholder="your@email.com" className="search-pill" style={{ paddingRight: '7rem' }} />
+              <button style={{ position: 'absolute', right: '0.35rem', top: '50%', transform: 'translateY(-50%)', background: '#0d1117', color: '#fff', border: 'none', borderRadius: 999, padding: '0.55rem 1.1rem', fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.08em', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+                Join
               </button>
             </div>
           </div>
-          
-          <div className="pt-10 border-t border-white/[0.05] flex flex-col md:flex-row justify-between items-center gap-6">
-            <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">© 2026 Eraya Digital Flagship. All rights reserved.</p>
-            <div className="flex gap-8 text-slate-500 text-[10px] font-black uppercase tracking-widest">
-              <Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
-              <Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
-            </div>
+        </div>
+
+        <div style={{ borderTop: '1px solid #f1f5f9', marginTop: '2.5rem', paddingTop: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+          <p style={{ fontSize: '0.62rem', fontWeight: 700, color: '#cbd5e1', letterSpacing: '0.2em', margin: 0 }}>© 2026 Eraya. All rights reserved.</p>
+          <div style={{ display: 'flex', gap: '2rem' }}>
+            {['Privacy','Terms','Cookies'].map(t => (
+              <Link key={t} to="#" style={{ fontSize: '0.62rem', fontWeight: 700, color: '#cbd5e1', textDecoration: 'none', letterSpacing: '0.1em', transition: 'color .2s' }}
+                onMouseEnter={e => e.currentTarget.style.color = '#0d1117'}
+                onMouseLeave={e => e.currentTarget.style.color = '#cbd5e1'}>{t}</Link>
+            ))}
           </div>
         </div>
       </div>
     </footer>
   );
-};
-
-export default Footer;
+}

@@ -4,13 +4,7 @@ import {
   Package, LogOut, MapPin, Phone, Mail, ArrowRight, 
   ShoppingBag, Edit, Camera, X, Save, Shield, 
   CreditCard, Bell, HelpCircle, ChevronRight, User as UserIcon, Command, Heart, Zap, Settings,
-  Truck,
-  Calendar,
-  Star,
-  ChevronDown,
-  Clock,
-  CheckCircle2,
-  XCircle
+  Truck, Calendar, Star, ChevronDown, Clock, CheckCircle2, XCircle, ExternalLink
 } from 'lucide-react';
 
 import useAuthStore from '../store/useAuthStore';
@@ -19,13 +13,28 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 
+/* ── design tokens (consistent with Home) ── */
+const C = {
+  t900: '#0d1117', t700: '#1f2937', t500: '#6b7280', t300: '#adb5bd',
+  bSoft: 'rgba(0,0,0,0.07)', bMed: 'rgba(0,0,0,0.12)',
+  bgCard: '#ffffff', bgPage: '#edf0f4', bgHero: '#f5f6f9', bgMuted: '#f3f5f8',
+  lime: '#cbff00', blue: '#3b82f6', rose: '#f43f5e', amber: '#f59e0b',
+  rSm: '0.85rem', rMd: '1.25rem', rLg: '1.5rem', r2xl: '2.5rem'
+};
+
+const fadeUp = (delay = 0) => ({
+  initial: { opacity: 0, y: 15 },
+  animate: { opacity: 1, y: 0 },
+  transition: { delay, duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+});
+
 const statusMap = {
-  Pending: { color: 'amber', icon: Clock },
-  Confirmed: { color: 'indigo', icon: Package },
-  Processing: { color: 'blue', icon: Zap },
-  Shipped: { color: 'purple', icon: Truck },
-  Delivered: { color: 'emerald', icon: CheckCircle2 },
-  Cancelled: { color: 'red', icon: XCircle },
+  Pending: { color: C.amber, icon: Clock, bg: '#fffbeb' },
+  Confirmed: { color: '#6366f1', icon: Package, bg: '#eef2ff' },
+  Processing: { color: C.blue, icon: Zap, bg: '#eff6ff' },
+  Shipped: { color: '#a855f7', icon: Truck, bg: '#f5f3ff' },
+  Delivered: { color: '#10b981', icon: CheckCircle2, bg: '#ecfdf5' },
+  Cancelled: { color: C.rose, icon: XCircle, bg: '#fff1f2' },
 };
 
 const OrderTrackbar = ({ status }) => {
@@ -34,56 +43,46 @@ const OrderTrackbar = ({ status }) => {
   const isCancelled = status === 'Cancelled';
 
   if (isCancelled) {
-    const config = statusMap.Cancelled;
-    const Icon = config.icon;
     return (
-      <div className="py-8 px-4 bg-red-50 rounded-[2rem] border border-red-100 flex items-center justify-center gap-4">
-        <Icon className="w-6 h-6 text-red-500" />
-        <div>
-          <p className="text-sm font-black text-red-900 uppercase tracking-widest">Order Cancelled</p>
-          <p className="text-[10px] font-bold text-red-400 mt-0.5 uppercase tracking-widest">This transaction has been terminated.</p>
-        </div>
+      <div style={{ padding: '1.5rem', background: '#fff1f2', borderRadius: C.rMd, border: `1px solid ${C.rose}20`, display: 'flex', alignItems: 'center', gap: '0.75rem', justifyContent: 'center' }}>
+        <XCircle style={{ width: 18, height: 18, color: C.rose }} />
+        <p style={{ fontSize: '0.7rem', fontWeight: 800, color: C.rose, letterSpacing: '0.05em', margin: 0 }}>Order Cancelled</p>
       </div>
     );
   }
 
-  // Determine current theme color based on status
-  const currentThemeColor = statusMap[status]?.color || 'amber';
-
   return (
-    <div className="py-8 px-2">
-      <div className="relative flex justify-between">
-        {/* Progress Line Background */}
-        <div className="absolute top-1/2 left-0 right-0 h-1 bg-slate-100 -translate-y-1/2 z-0 rounded-full" />
-        
-        {/* Active Progress Line */}
+    <div style={{ padding: '1rem 0', position: 'relative' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative', zIndex: 1 }}>
+        {/* Background Line */}
+        <div style={{ position: 'absolute', top: '15px', left: '5%', right: '5%', height: 2, background: '#e5e7eb', zIndex: -1 }} />
+        {/* Active Line */}
         <motion.div 
           initial={{ width: 0 }}
-          animate={{ width: `${(currentIndex / (steps.length - 1)) * 100}%` }}
-          className={`absolute top-1/2 left-0 h-1 bg-${currentThemeColor}-500 -translate-y-1/2 z-0 rounded-full transition-colors duration-1000`}
+          animate={{ width: `${(currentIndex / (steps.length - 1)) * 90}%` }}
+          style={{ position: 'absolute', top: '15px', left: '5%', height: 2, background: C.t900, zIndex: -1 }}
         />
 
-        {steps.map((step, index) => {
-          const isActive = index <= currentIndex;
-          const isCurrent = index === currentIndex;
+        {steps.map((step, i) => {
+          const isActive = i <= currentIndex;
+          const isCurrent = i === currentIndex;
           const config = statusMap[step];
-          const color = config.color;
-          const Icon = config.icon;
-
           return (
-            <div key={step} className="relative z-10 flex flex-col items-center gap-3">
-              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center border-4 transition-all duration-500 ${
-                isActive 
-                  ? `bg-${color}-500 border-white text-white shadow-lg shadow-${color}-200 scale-110` 
-                  : 'glass-card-light border-slate-50 text-slate-200'
-              }`}>
-                <Icon className={`w-4 h-4 ${isCurrent ? 'animate-pulse' : ''}`} strokeWidth={2.5} />
+            <div key={step} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+              <div style={{ 
+                width: 32, height: 32, borderRadius: '50%', 
+                background: isActive ? C.t900 : '#fff', 
+                border: `2px solid ${isActive ? C.t900 : '#e5e7eb'}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: isActive ? '#fff' : C.t300,
+                transition: 'all 0.3s ease',
+                boxShadow: isCurrent ? `0 0 0 4px ${C.t900}15` : 'none'
+              }}>
+                <config.icon style={{ width: 14, height: 14 }} strokeWidth={2.5} />
               </div>
-              <div className="text-center min-w-[80px]">
-                <p className={`text-[9px] font-black uppercase tracking-widest ${isActive ? `text-${color}-600` : 'text-slate-300'}`}>
-                  {step === 'Confirmed' ? 'Accepted' : step}
-                </p>
-              </div>
+              <span style={{ fontSize: '0.55rem', fontWeight: 800, color: isActive ? C.t900 : C.t300, letterSpacing: '0.04em' }}>
+                {step === 'Confirmed' ? 'Accepted' : step}
+              </span>
             </div>
           );
         })}
@@ -92,9 +91,8 @@ const OrderTrackbar = ({ status }) => {
   );
 };
 
-
 const Profile = () => {
-  useDocumentTitle('My Profile');
+  useDocumentTitle('Eraya — My Dashboard');
   const { user, token, logout, uploadAvatar, fetchProfile } = useAuthStore();
   const [orders, setOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
@@ -110,425 +108,227 @@ const Profile = () => {
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const paymentStatus = params.get('payment');
-    
-    if (paymentStatus === 'success') {
+    if (params.get('payment') === 'success') {
       toast.success('Payment completed successfully!');
-      // remove param without reloading
-      window.history.replaceState({}, document.title, location.pathname);
-    } else if (paymentStatus === 'failed') {
-      toast.error('Payment failed or cancelled.');
       window.history.replaceState({}, document.title, location.pathname);
     }
-  }, [location]);
-
-  useEffect(() => {
-    if (!token) {
-      navigate('/login');
-      return;
-    }
-    
-    if (isStaff) {
-      navigate('/admin');
-      return;
-    }
-    
-    fetchOrders();
+    if (!token) navigate('/login');
+    else if (isStaff) navigate('/admin');
+    else fetchOrders();
   }, [token, user, isStaff]);
 
   const fetchOrders = async () => {
     try {
-      const response = await api.get('/orders');
-      setOrders(response.data || []);
-    } catch (error) {
-      console.error('Failed to fetch orders', error);
-    } finally {
-      setLoadingOrders(false);
-    }
+      const r = await api.get('/orders');
+      setOrders(r.data || []);
+    } catch { } finally { setLoadingOrders(false); }
   };
 
   const handleAvatarChange = async (e) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('File is too large. Max 2MB allowed.');
-      return;
-    }
-
+    if (!file || file.size > 2 * 1024 * 1024) return toast.error('Max 2MB allowed');
     setAvatarUploading(true);
     try {
       await uploadAvatar(file);
-      toast.success('Profile photo updated!');
-    } catch (error) {
-      toast.error('Failed to update avatar');
-    } finally {
-      setAvatarUploading(false);
-    }
+      toast.success('Profile updated');
+    } catch { toast.error('Update failed'); } finally { setAvatarUploading(false); }
   };
-
-  const openReviewModal = (product) => {
-    setSelectedProduct(product);
-    setIsReviewModalOpen(true);
-  };
-
-  const toggleOrderExpansion = (orderId) => {
-    setExpandedOrderId(expandedOrderId === orderId ? null : orderId);
-  };
-
-  if (!user && token) {
-    return (
-      <div className="min-h-screen flex items-center justify-center glass-card-light">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-white/[0.1] border-t-slate-900 rounded-full animate-spin" />
-          <p className="text-sm font-bold text-slate-500 animate-pulse uppercase tracking-widest">Securing Session...</p>
-        </div>
-      </div>
-    );
-  }
 
   if (!user) return null;
 
   return (
-    <div className="min-h-screen pb-24 pt-28 px-4 md:px-6">
-      <div className="max-w-7xl mx-auto">
+    <div style={{ background: C.bgPage, minHeight: '100vh', padding: '5.2rem 1.5rem 4rem' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         
-        {/* Profile Header */}
-        <div className="glass-card-light rounded-[2rem] border border-white/[0.08] shadow-sm p-6 md:p-8 mb-8 flex flex-col md:flex-row items-center gap-8">
-          <div className="relative group">
-            <div className="w-28 h-28 rounded-full bg-slate-100 border-4 border-white shadow-lg overflow-hidden relative group">
+        {/* ── HEADER CARD ── */}
+        <motion.div {...fadeUp(0)} style={{
+          background: C.bgCard, borderRadius: C.r2xl, padding: '2rem',
+          border: `1px solid ${C.bSoft}`, marginBottom: '1.5rem',
+          display: 'flex', alignItems: 'center', gap: '2rem',
+          boxShadow: '0 4px 20px -4px rgba(0,0,0,0.05)'
+        }}>
+          <div style={{ position: 'relative' }}>
+            <div style={{ width: 90, height: 90, borderRadius: '50%', overflow: 'hidden', border: `3px solid #fff`, boxShadow: '0 8px 24px -6px rgba(0,0,0,0.12)' }}>
               {user.avatar_url ? (
-                <img 
-                  src={getImageUrl(user.avatar_url)} 
-                  className="w-full h-full object-cover" 
-                  alt="Avatar" 
-                />
+                <img src={getImageUrl(user.avatar_url)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-secondary text-5xl font-bold">
-                  {user.full_name?.charAt(0).toUpperCase()}
+                <div style={{ width: '100%', height: '100%', background: C.bgMuted, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: 800, color: C.t300 }}>
+                  {user.full_name?.charAt(0)}
                 </div>
               )}
             </div>
-            
-            <button 
-              onClick={() => fileInputRef.current.click()}
-              disabled={avatarUploading}
-              className="absolute bottom-0 right-0 w-9 h-9 bg-slate-900 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-secondary transition-all active:scale-95 disabled:opacity-50"
-            >
-              {avatarUploading ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" /> : <Camera className="w-4 h-4" />}
+            <button onClick={() => fileInputRef.current.click()} style={{
+              position: 'absolute', bottom: 0, right: 0, width: 30, height: 30,
+              background: C.t900, color: '#fff', border: 'none', borderRadius: '50%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
+            }}>
+              <Camera style={{ width: 14, height: 14 }} />
             </button>
-            <input ref={fileInputRef} type="file" className="hidden" accept="image/*" onChange={handleAvatarChange} />
+            <input ref={fileInputRef} type="file" hidden onChange={handleAvatarChange} />
           </div>
 
-          <div className="text-center md:text-left flex-grow">
-            <div className="flex flex-col md:flex-row md:items-center gap-3 mb-2">
-              <h1 className="text-2xl font-black text-white tracking-tight">{user.full_name}</h1>
-              {isStaff ? (
-                <span className="w-fit mx-auto md:mx-0 px-2 py-0.5 bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest rounded-full">Official Staff</span>
-              ) : (
-                <span className="w-fit mx-auto md:mx-0 px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-emerald-100">Verified Member</span>
-              )}
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.4rem' }}>
+              <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: C.t900, margin: 0, letterSpacing: '-0.02em' }}>{user.full_name}</h1>
+              <span style={{ fontSize: '0.6rem', fontWeight: 800, padding: '0.2rem 0.6rem', background: '#ecfdf5', color: '#10b981', borderRadius: 99, border: '1px solid #10b98120' }}>
+                Verified Buyer
+              </span>
             </div>
-            <div className="flex flex-wrap justify-center md:justify-start gap-4 text-slate-500 font-bold text-[11px] tracking-wider">
-              <div className="flex items-center gap-1.5">
-                <Mail className="w-3.5 h-3.5" /> {user.email}
-              </div>
-              {user.phone && (
-                <div className="flex items-center gap-2">
-                  <Phone className="w-4 h-4" /> {user.phone}
-                </div>
-              )}
-              {user.address && (
-                <div className="flex items-center gap-2 max-w-[200px] md:max-w-xs truncate" title={user.address}>
-                  <MapPin className="w-4 h-4 flex-shrink-0" /> <span className="truncate">{user.address}</span>
-                </div>
-              )}
-              <div className="flex items-center gap-2">
-                <Shield className="w-4 h-4" /> {user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase() : ''}
-              </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4" /> Joined {new Date(user.created_at).getFullYear()}
-              </div>
+            <div style={{ display: 'flex', gap: '1.25rem', color: C.t500, fontSize: '0.72rem', fontWeight: 600 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Mail style={{ width: 13, height: 13 }} /> {user.email}</div>
+              {user.phone && <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Phone style={{ width: 13, height: 13 }} /> {user.phone}</div>}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Calendar style={{ width: 13, height: 13 }} /> Joined {new Date(user.created_at).getFullYear()}</div>
             </div>
           </div>
 
-          <div className="flex gap-3">
-             <Link to="/profile/edit" className="px-5 py-2.5 border border-white/[0.08] rounded-xl font-black text-[10px] uppercase tracking-widest text-slate-400 hover:text-white hover:glass-card-light transition-all flex items-center gap-2">
-                <Settings className="w-3.5 h-3.5" /> Edit Profile
-             </Link>
-          </div>
-        </div>
+          <Link to="/profile/edit" style={{
+            padding: '0.6rem 1.25rem', borderRadius: C.rMd, border: `1px solid ${C.bSoft}`,
+            textDecoration: 'none', fontSize: '0.75rem', fontWeight: 800, color: C.t700,
+            display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all .2s'
+          }} onMouseEnter={e => e.currentTarget.style.background = C.bgMuted} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+            <Settings style={{ width: 14, height: 14 }} /> Edit Profile
+          </Link>
+        </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 18rem', gap: '1.5rem', alignItems: 'start' }}>
           
-          {/* Main Content Area */}
-          <div className="lg:col-span-8 space-y-10">
-            {isStaff ? (
-              <div className="bg-slate-900 text-white rounded-[2.5rem] p-10 relative overflow-hidden group">
-                 <div className="relative z-10">
-                    <Command className="w-12 h-12 text-secondary mb-6" />
-                    <h2 className="text-3xl font-black tracking-tighter mb-4">Management Console</h2>
-                    <p className="text-white/60 mb-8 max-w-md leading-relaxed">
-                      As a {user.role}, you have elevated permissions to manage products, categories, and store operations. Access your professional dashboard to monitor real-time stats.
-                    </p>
-                    <button 
-                      onClick={() => navigate('/admin')}
-                      className="px-8 py-4 bg-secondary text-white rounded-2xl font-bold flex items-center gap-3 hover:glass-card-light hover:text-white transition-all group-hover:scale-105"
-                    >
-                      Enter Admin Dashboard <ArrowRight className="w-5 h-5" />
-                    </button>
-                 </div>
-                 <div className="absolute top-0 right-0 w-64 h-64 glass-card-light/5 rounded-full blur-3xl -mr-32 -mt-32" />
-                 <div className="absolute bottom-0 left-0 w-64 h-64 bg-secondary/10 rounded-full blur-3xl -ml-32 -mb-32" />
+          {/* ── LEFT: ORDERS ── */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <motion.div {...fadeUp(0.05)} style={{ background: C.bgCard, borderRadius: C.rLg, padding: '1.75rem', border: `1px solid ${C.bSoft}` }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: C.t900, margin: 0 }}>Recent Orders</h2>
+                <Link to="/products" style={{ fontSize: '0.72rem', fontWeight: 800, color: C.t500, textDecoration: 'none' }}>Shop More →</Link>
               </div>
-            ) : (
-              <div className="glass-card-light rounded-[2rem] border border-white/[0.08] shadow-sm p-6 md:p-8">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-black text-white tracking-tight">Recent Orders</h2>
-                  <Link 
-                    to="/products" 
-                    className="group flex items-center gap-2 px-4 py-2 glass-card-light hover:bg-secondary text-white hover:text-white rounded-full transition-all duration-500 border border-white/[0.08] shadow-sm"
-                  >
-                    <span className="text-[9px] font-black uppercase tracking-[0.15em]">Shop More</span>
-                    <div className="w-5 h-5 rounded-full glass-card-light group-hover:glass-card-light/20 flex items-center justify-center transition-colors">
-                      <ShoppingBag className="w-2.5 h-2.5 group-hover:scale-110 transition-transform" />
-                    </div>
-                  </Link>
+
+              {loadingOrders ? (
+                <div style={{ padding: '3rem', textAlign: 'center' }}><div className="animate-spin" style={{ width: 24, height: 24, border: '3px solid #eee', borderTopColor: C.t900, borderRadius: '50%', margin: '0 auto' }} /></div>
+              ) : orders.length === 0 ? (
+                <div style={{ padding: '4rem 0', textAlign: 'center', color: C.t300 }}>
+                  <ShoppingBag style={{ width: 40, height: 40, marginBottom: '1rem', opacity: 0.2 }} />
+                  <p style={{ fontSize: '0.8rem', fontWeight: 700 }}>No orders found yet</p>
                 </div>
-
-                {loadingOrders ? (
-                  <div className="space-y-4">
-                    {[...Array(3)].map((_, i) => <div key={i} className="h-24 glass-card-light animate-pulse rounded-2xl" />)}
-                  </div>
-                ) : orders.length === 0 ? (
-                  <div className="text-center py-20 glass-card-light rounded-3xl border border-dashed border-white/[0.1]">
-                    <ShoppingBag className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                    <p className="text-slate-400 font-bold text-sm">No orders found yet.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    <div className="divide-y divide-slate-50">
-                      {orders.map((order) => {
-                        const subtotal = order.items?.reduce((sum, item) => sum + (item.price_at_purchase * item.quantity), 0) || 0;
-                        const shipping = order.total_price > subtotal ? order.total_price - subtotal : 0;
-                        const orderConfig = statusMap[order.order_status] || statusMap.Pending;
-                        const StatusIcon = orderConfig.icon;
-                        const statusColor = orderConfig.color;
-                        const isExpanded = expandedOrderId === order.id;
-
-                        return (
-                          <div key={order.id} className="overflow-hidden">
-                            <button 
-                              onClick={() => toggleOrderExpansion(order.id)}
-                              className={`w-full p-4 md:p-5 flex flex-col md:flex-row justify-between items-center gap-4 transition-all group ${isExpanded ? 'glass-card-light/80' : 'hover:glass-card-light/50'}`}
-                            >
-                              <div className="flex items-center gap-4">
-                                <div className={`w-11 h-11 rounded-xl flex items-center justify-center border transition-all ${
-                                  isExpanded 
-                                    ? `bg-${statusColor}-500 text-white border-${statusColor}-500 shadow-lg shadow-${statusColor}-100` 
-                                    : `bg-${statusColor}-50 border-${statusColor}-100 text-${statusColor}-500 group-hover:bg-${statusColor}-500 group-hover:text-white`
-                                }`}>
-                                  <StatusIcon className="w-5 h-5" strokeWidth={2.5} />
-                                </div>
-                                <div className="text-left">
-                                  <p className="font-black text-white text-sm tracking-tight">Order #{order.id}</p>
-                                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-2">
-                                    {new Date(order.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                                    <span className="w-1 h-1 bg-slate-200 rounded-full" />
-                                    <span className="text-secondary/70">{order.payment_method === 'cod' || order.payment_method === 'COD' ? 'Cash on Delivery' : order.payment_method}</span>
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-6">
-                                <div className="text-right">
-                                  <p className="text-lg font-black text-secondary tracking-tighter">৳{order.total_price.toLocaleString()}</p>
-                                  <div className={`text-[9px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-full border mt-1 flex items-center gap-1.5 justify-end ${
-                                    order.order_status === 'Delivered' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
-                                    order.order_status === 'Shipped' ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                                    order.order_status === 'Processing' ? 'bg-sky-50 text-sky-600 border-sky-100' :
-                                    order.order_status === 'Confirmed' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' :
-                                    order.order_status === 'Cancelled' ? 'bg-red-50 text-red-600 border-red-100' :
-                                    'bg-amber-50 text-amber-600 border-amber-100'
-                                  }`}>
-                                    <span className={`w-1.5 h-1.5 rounded-full ${
-                                       order.order_status === 'Delivered' ? 'bg-emerald-500' : 
-                                       order.order_status === 'Shipped' ? 'bg-blue-500' :
-                                       order.order_status === 'Processing' ? 'bg-sky-500' :
-                                       order.order_status === 'Confirmed' ? 'bg-indigo-500' :
-                                       order.order_status === 'Cancelled' ? 'bg-red-500' :
-                                       'bg-amber-500 animate-pulse'
-                                    }`} />
-                                    {order.order_status === 'Confirmed' ? 'Accepted' : order.order_status}
-                                  </div>
-                                </div>
-                                <ChevronDown className={`w-4 h-4 text-slate-300 transition-transform duration-500 ${isExpanded ? 'rotate-180 text-secondary' : 'group-hover:text-slate-500'}`} />
-                              </div>
-                            </button>
-
-                            <AnimatePresence>
-                              {isExpanded && (
-                                <motion.div
-                                  initial={{ height: 0, opacity: 0 }}
-                                  animate={{ height: 'auto', opacity: 1 }}
-                                  exit={{ height: 0, opacity: 0 }}
-                                  className="border-t border-slate-50 glass-card-light"
-                                >
-                                  <div className="p-6 space-y-10">
-                                    {/* Trackbar */}
-                                    <div className="max-w-xl mx-auto">
-                                       <OrderTrackbar status={order.order_status} />
-                                    </div>
-
-                                    {/* Items */}
-                                    <div className="space-y-2">
-                                      {order.items?.map((item) => (
-                                        <div key={item.id} className="flex items-center justify-between gap-3 p-3 glass-card-light/50 rounded-2xl border border-slate-50">
-                                          <Link to={`/products/${item.product?.slug}`} className="flex items-center gap-4 flex-grow group/item">
-                                            <div className="w-12 h-12 glass-card-light rounded-xl overflow-hidden border border-white/[0.08] shadow-sm group-hover/item:scale-105 transition-all">
-                                              <img src={getImageUrl(item.product?.image_url)} className="w-full h-full object-contain p-1.5" alt={item.product?.name} />
-                                            </div>
-                                            <div className="min-w-0 text-left">
-                                              <p className="text-xs font-bold text-slate-800 group-hover/item:text-secondary transition-colors truncate">{item.product?.name}</p>
-                                              <p className="text-[9px] font-black text-slate-400 mt-0.5 uppercase tracking-widest">{item.quantity} × ৳{item.price_at_purchase.toLocaleString()}</p>
-                                            </div>
-                                          </Link>
-                                          <div className="text-right shrink-0">
-                                            <p className="text-xs font-black text-white">৳{(item.price_at_purchase * item.quantity).toLocaleString()}</p>
-                                            {order.order_status === 'Delivered' && (
-                                              <button onClick={() => openReviewModal(item.product)} className="text-[9px] font-black text-secondary uppercase tracking-widest hover:underline mt-0.5">Review</button>
-                                            )}
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-
-                                    {/* Summary & Shipping */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                      <div className="bg-slate-900 text-white rounded-2xl p-5 relative overflow-hidden">
-                                        <div className="relative z-10 space-y-2">
-                                          <div className="flex justify-between items-center text-[10px]">
-                                            <span className="font-bold text-white/40 uppercase tracking-widest">Subtotal</span>
-                                            <span className="font-black">৳{subtotal.toLocaleString()}</span>
-                                          </div>
-                                          {shipping > 0 && (
-                                            <div className="flex justify-between items-center text-[10px]">
-                                              <span className="font-bold text-white/40 uppercase tracking-widest">Shipping</span>
-                                              <span className="font-black text-secondary">+ ৳{shipping.toLocaleString()}</span>
-                                            </div>
-                                          )}
-                                          <div className="pt-3 border-t border-white/10 flex justify-between items-end">
-                                            <div>
-                                              <span className="text-[9px] font-black text-white/30 uppercase tracking-widest block">Total</span>
-                                              <span className="text-[8px] font-bold text-white/40 block mt-0.5 italic uppercase">via {order.payment_method === 'cod' || order.payment_method === 'COD' ? 'Cash On Delivery' : order.payment_method}</span>
-                                            </div>
-                                            <span className="text-lg font-black text-white tracking-tighter">৳{order.total_price.toLocaleString()}</span>
-                                          </div>
-                                        </div>
-
-                                        {/* bKash Payment Info for Buyer */}
-                                        {(order.payment_method?.toLowerCase() === 'bkash' && (order.trx_id || order.sender_number)) && (
-                                          <div className="mt-6 pt-4 border-t border-white/10 space-y-3">
-                                            <div className="flex items-center gap-2 mb-1">
-                                              <div className="w-1.5 h-1.5 rounded-full bg-secondary shadow-[0_0_8px_rgba(255,51,102,0.5)]" />
-                                              <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">bKash Transaction Details</span>
-                                            </div>
-                                            <div className="grid grid-cols-2 gap-4">
-                                              {order.sender_number && (
-                                                <div>
-                                                  <p className="text-[8px] font-black text-white/20 uppercase tracking-widest mb-0.5">Sender Number</p>
-                                                  <p className="text-[11px] font-bold text-white/90">{order.sender_number}</p>
-                                                </div>
-                                              )}
-                                              {order.paid_amount && (
-                                                <div>
-                                                  <p className="text-[8px] font-black text-white/20 uppercase tracking-widest mb-0.5">Amount Sent</p>
-                                                  <p className="text-[11px] font-bold text-secondary">৳{order.paid_amount.toLocaleString()}</p>
-                                                </div>
-                                              )}
-                                              {order.trx_id && (
-                                                <div className="col-span-2">
-                                                  <p className="text-[8px] font-black text-white/20 uppercase tracking-widest mb-0.5">Transaction ID</p>
-                                                  <p className="text-[11px] font-bold text-white/90 tracking-wider font-mono">{order.trx_id}</p>
-                                                </div>
-                                              )}
-                                            </div>
-                                          </div>
-                                        )}
-                                      </div>
-
-                                      <div className="glass-card-light rounded-2xl p-5 border border-white/[0.08]">
-                                        <div className="flex items-center gap-2 mb-2">
-                                          <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                                          <h4 className="text-[9px] font-black text-white uppercase tracking-widest">Shipping</h4>
-                                        </div>
-                                        <p className="text-[10px] font-medium text-slate-500 leading-relaxed pl-5">{order.shipping_address}</p>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {orders.map((order) => {
+                    const cfg = statusMap[order.order_status] || statusMap.Pending;
+                    const isExp = expandedOrderId === order.id;
+                    return (
+                      <div key={order.id} style={{ border: `1px solid ${C.bSoft}`, borderRadius: C.rMd, overflow: 'hidden' }}>
+                        <button onClick={() => setExpandedOrderId(isExp ? null : order.id)} style={{
+                          width: '100%', padding: '1rem 1.25rem', background: '#fff', border: 'none',
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer'
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div style={{ width: 38, height: 38, borderRadius: '0.75rem', background: cfg.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: cfg.color }}>
+                              <cfg.icon style={{ width: 18, height: 18 }} />
+                            </div>
+                            <div style={{ textAlign: 'left' }}>
+                              <p style={{ fontSize: '0.8rem', fontWeight: 800, color: C.t900, margin: 0 }}>Order #{order.id}</p>
+                              <p style={{ fontSize: '0.62rem', fontWeight: 700, color: C.t300, margin: '0.1rem 0 0' }}>
+                                {new Date(order.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} • {order.payment_method}
+                              </p>
+                            </div>
                           </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                            <div style={{ textAlign: 'right' }}>
+                              <p style={{ fontSize: '0.9rem', fontWeight: 900, color: C.t900, margin: 0 }}>৳{order.total_price.toLocaleString()}</p>
+                              <span style={{ fontSize: '0.55rem', fontWeight: 800, color: cfg.color, letterSpacing: '0.04em' }}>{order.order_status}</span>
+                            </div>
+                            <ChevronDown style={{ width: 16, height: 16, color: C.t300, transform: isExp ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }} />
+                          </div>
+                        </button>
+
+                        <AnimatePresence>
+                          {isExp && (
+                            <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} style={{ overflow: 'hidden', background: '#fafafa', borderTop: `1px solid ${C.bSoft}` }}>
+                              <div style={{ padding: '1.5rem' }}>
+                                <OrderTrackbar status={order.order_status} />
+                                <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                  {order.items?.map(item => (
+                                    <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem', background: '#fff', borderRadius: '0.75rem', border: `1px solid ${C.bSoft}` }}>
+                                      <div style={{ width: 44, height: 44, borderRadius: '0.5rem', overflow: 'hidden', background: C.bgMuted }}>
+                                        <img src={getImageUrl(item.product?.image_url)} style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 4 }} alt="" />
+                                      </div>
+                                      <div style={{ flex: 1 }}>
+                                        <p style={{ fontSize: '0.75rem', fontWeight: 700, color: C.t900, margin: 0 }}>{item.product?.name}</p>
+                                        <p style={{ fontSize: '0.62rem', fontWeight: 600, color: C.t300, margin: 0 }}>{item.quantity} × ৳{item.price_at_purchase.toLocaleString()}</p>
+                                      </div>
+                                      <div style={{ textAlign: 'right' }}>
+                                        <p style={{ fontSize: '0.75rem', fontWeight: 800, color: C.t900, margin: 0 }}>৳{(item.quantity * item.price_at_purchase).toLocaleString()}</p>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                                <div style={{ marginTop: '1.25rem', padding: '1rem', background: C.t900, borderRadius: C.rMd, color: '#fff' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', marginBottom: '0.2rem', opacity: 0.6 }}>
+                                    <span>Shipping Address</span>
+                                    <span>Total Amount</span>
+                                  </div>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                    <p style={{ fontSize: '0.72rem', fontWeight: 500, margin: 0, maxWidth: '60%' }}>{order.shipping_address}</p>
+                                    <p style={{ fontSize: '1.1rem', fontWeight: 900, margin: 0 }}>৳{order.total_price.toLocaleString()}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </motion.div>
           </div>
 
-          {/* Right Column: Actions */}
-          <div className="lg:col-span-4 space-y-8">
-            <div className="glass-card-light rounded-[2.5rem] border border-white/[0.08] shadow-sm p-8">
-               <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-8">Account Services</h3>
-               <div className="space-y-2">
-                   {(isStaff ? [
-                    { label: 'Product Inventory', icon: Package, to: '/admin/products' },
-                    { label: 'Manage Categories', icon: Zap, to: '/admin/categories' },
-                    { label: 'Order Processing', icon: Truck, to: '/admin/orders' },
-                    { label: 'Account Security', icon: Shield, to: '/profile/edit' },
-                  ] : [
-                    { label: 'Shipping Addresses', icon: MapPin, to: '/profile/edit' },
-                    { label: 'Payment Methods', icon: CreditCard, to: '#' },
-                    { label: 'Wishlist Items', icon: Heart, to: '/wishlist' },
-                    { label: 'Account Security', icon: Shield, to: '/profile/edit' },
-                  ]).map((link) => (
-                    <button 
-                      key={link.label} 
-                      onClick={() => link.to !== '#' && navigate(link.to)}
-                      className="w-full flex items-center justify-between p-4 glass-card-light hover:glass-card-light border border-transparent hover:border-white/[0.08] hover:shadow-xl hover:shadow-slate-200/40 rounded-2xl transition-all group"
-                    >
-                       <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 glass-card-light rounded-xl flex items-center justify-center border border-white/[0.08] shadow-sm group-hover:bg-secondary group-hover:text-white transition-all">
-                             <link.icon className="w-5 h-5" />
-                          </div>
-                          <span className="font-bold text-sm text-slate-200">{link.label}</span>
-                       </div>
-                       <ChevronRight className="w-4 h-4 text-slate-300 group-hover:translate-x-1 transition-all" />
-                    </button>
-                  ))}
-               </div>
+          {/* ── RIGHT: SIDEBAR ── */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <motion.div {...fadeUp(0.1)} style={{ background: C.bgCard, borderRadius: C.rLg, padding: '1.5rem', border: `1px solid ${C.bSoft}` }}>
+              <h3 style={{ fontSize: '0.65rem', fontWeight: 800, color: C.t300, letterSpacing: '0.1em', marginBottom: '1.25rem' }}>Account Services</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {[
+                  { label: 'Saved Wishlist', icon: Heart, to: '/wishlist' },
+                  { label: 'Payment Methods', icon: CreditCard, to: '#' },
+                  { label: 'Shipping Center', icon: MapPin, to: '/profile/edit' },
+                  { label: 'Security Settings', icon: Shield, to: '/profile/edit' },
+                ].map((item, i) => (
+                  <button key={i} onClick={() => item.to !== '#' && navigate(item.to)} style={{
+                    width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '0.75rem', background: 'transparent', border: 'none', borderRadius: '0.75rem',
+                    cursor: 'pointer', transition: 'background .2s'
+                  }} onMouseEnter={e => e.currentTarget.style.background = C.bgMuted} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <item.icon style={{ width: 15, height: 15, color: C.t500 }} />
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: C.t700 }}>{item.label}</span>
+                    </div>
+                    <ChevronRight style={{ width: 14, height: 14, color: C.t300 }} />
+                  </button>
+                ))}
+              </div>
+              <div style={{ height: 1, background: C.bSoft, margin: '1rem 0' }} />
+              <button onClick={logout} style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem',
+                padding: '0.75rem', background: 'transparent', border: 'none', borderRadius: '0.75rem',
+                cursor: 'pointer', color: C.rose, transition: 'background .2s'
+              }} onMouseEnter={e => e.currentTarget.style.background = '#fff1f2'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                <LogOut style={{ width: 15, height: 15 }} />
+                <span style={{ fontSize: '0.75rem', fontWeight: 800 }}>Sign Out</span>
+              </button>
+            </motion.div>
 
-               <button 
-                onClick={logout}
-                className="w-full flex items-center gap-3 p-4 text-red-500 font-bold hover:bg-red-50 rounded-2xl transition-all mt-6 pt-6 border-t border-slate-50 group"
-               >
-                  <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-all">
-                     <LogOut className="w-5 h-5" />
-                  </div>
-                  Sign Out
-               </button>
-            </div>
-
-            <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden">
-               <div className="relative z-10">
-                  <Star className="w-8 h-8 text-amber-400 fill-amber-400 mb-4" />
-                  <h3 className="text-lg font-bold mb-2">Eraya Loyalty</h3>
-                  <p className="text-white/40 text-xs leading-relaxed">You've completed {orders.filter(o => o.order_status === 'Delivered').length} orders. Keep shopping to unlock premium perks!</p>
-               </div>
-               <div className="absolute top-0 right-0 w-32 h-32 glass-card-light/5 rounded-full blur-2xl -mr-16 -mt-16" />
-            </div>
+            <motion.div {...fadeUp(0.15)} style={{ 
+              background: C.t900, borderRadius: C.rLg, padding: '1.5rem', color: '#fff',
+              position: 'relative', overflow: 'hidden'
+            }}>
+              <div style={{ position: 'relative', zIndex: 1 }}>
+                <Star style={{ width: 24, height: 24, color: C.lime, fill: C.lime, marginBottom: '0.75rem' }} />
+                <h4 style={{ fontSize: '0.9rem', fontWeight: 800, margin: '0 0 0.4rem' }}>Loyalty Member</h4>
+                <p style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5, margin: 0 }}>
+                  You have {orders.filter(o => o.order_status === 'Delivered').length} successful deliveries. Unlock premium perks!
+                </p>
+              </div>
+              <div style={{ position: 'absolute', top: '-10%', right: '-10%', width: 80, height: 80, background: '#fff', opacity: 0.05, borderRadius: '50%', filter: 'blur(20px)' }} />
+            </motion.div>
           </div>
 
         </div>
@@ -551,108 +351,53 @@ const ReviewModal = ({ isOpen, onClose, product, onSubmit }) => {
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(false);
 
+  if (!isOpen) return null;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (rating === 0) {
-      toast.error('Please select a rating');
-      return;
-    }
+    if (rating === 0) return toast.error('Select rating');
     setLoading(true);
     try {
-      await api.post('/reviews', {
-        product_id: product.id,
-        rating,
-        comment,
-      });
-      toast.success('Thank you for your feedback!');
-      onSubmit();
-      onClose();
-    } catch (error) {
-      toast.error(error.response?.data?.error || 'Failed to submit review');
-    } finally {
-      setLoading(false);
-    }
+      await api.post('/reviews', { product_id: product.id, rating, comment });
+      toast.success('Review submitted');
+      onSubmit(); onClose();
+    } catch { toast.error('Failed to submit'); } finally { setLoading(false); }
   };
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
-          />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="relative glass-card-light w-full max-w-lg rounded-[3rem] p-10 shadow-2xl border border-white/[0.08] overflow-hidden"
-          >
-            <div className="relative z-10">
-              <div className="flex justify-between items-start mb-8">
-                <div>
-                  <h2 className="text-3xl font-black text-white tracking-tight mb-2">Share Feedback</h2>
-                  <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">{product?.name}</p>
-                </div>
-                <button onClick={onClose} className="p-2 hover:glass-card-light rounded-full transition-all">
-                  <X className="w-6 h-6 text-slate-400" />
-                </button>
-              </div>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)' }} />
+      <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} style={{
+        position: 'relative', background: '#fff', width: '100%', maxWidth: 420,
+        borderRadius: C.r2xl, padding: '2.5rem', boxShadow: '0 30px 60px -12px rgba(0,0,0,0.25)'
+      }}>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: C.t900, marginBottom: '0.25rem' }}>Share Experience</h2>
+        <p style={{ fontSize: '0.65rem', fontWeight: 700, color: C.t300, marginBottom: '1.5rem' }}>{product?.name}</p>
 
-              <form onSubmit={handleSubmit} className="space-y-8">
-                <div className="flex flex-col items-center gap-4 py-6 glass-card-light rounded-[2rem] border border-white/[0.08]">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">How would you rate this piece?</p>
-                  <div className="flex gap-2">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        type="button"
-                        onClick={() => setRating(star)}
-                        onMouseEnter={() => setHover(star)}
-                        onMouseLeave={() => setHover(0)}
-                        className="transition-all active:scale-90"
-                      >
-                        <Star 
-                          className={`w-10 h-10 ${
-                            (hover || rating) >= star 
-                              ? 'fill-amber-400 text-amber-400' 
-                              : 'text-slate-200'
-                          } transition-colors duration-200`}
-                        />
-                      </button>
-                    ))}
-                  </div>
-                  <p className="text-xs font-bold text-white">
-                    {rating === 5 ? 'Excellent' : rating === 4 ? 'Very Good' : rating === 3 ? 'Good' : rating === 2 ? 'Fair' : rating === 1 ? 'Poor' : 'Select Stars'}
-                  </p>
-                </div>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem' }}>
+            {[1, 2, 3, 4, 5].map(s => (
+              <Star key={s} 
+                onMouseEnter={() => setHover(s)} onMouseLeave={() => setHover(0)} onClick={() => setRating(s)}
+                style={{ width: 32, height: 32, cursor: 'pointer', fill: (hover || rating) >= s ? C.amber : 'none', color: (hover || rating) >= s ? C.amber : C.t300, transition: 'all 0.2s' }} 
+              />
+            ))}
+          </div>
 
-                <div className="space-y-3">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Your Experience (Optional)</label>
-                  <textarea
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                    placeholder="Tell us what you loved about this product..."
-                    className="w-full glass-card-light border border-white/[0.08] rounded-[2rem] p-6 text-sm font-medium outline-none focus:glass-card-light focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 transition-all min-h-[150px] resize-none"
-                  />
-                </div>
+          <textarea value={comment} onChange={e => setComment(e.target.value)} placeholder="How was the product?" style={{
+            width: '100%', height: 100, padding: '1rem', borderRadius: C.rMd, border: `1px solid ${C.bSoft}`,
+            background: C.bgMuted, outline: 'none', fontSize: '0.8rem', fontFamily: 'inherit', resize: 'none'
+          }} />
 
-                <button
-                  type="submit"
-                  disabled={loading || rating === 0}
-                  className="w-full py-5 bg-slate-900 text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-secondary transition-all shadow-xl shadow-slate-200 disabled:opacity-50 active:scale-95"
-                >
-                  {loading ? <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : 'Submit Feedback'}
-                </button>
-              </form>
-            </div>
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
+          <button type="submit" disabled={loading} style={{
+            padding: '1rem', background: C.t900, color: '#fff', border: 'none', borderRadius: C.rMd,
+            fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', transition: 'opacity 0.2s'
+          }}>
+            {loading ? 'Submitting...' : 'Post Review'}
+          </button>
+        </form>
+      </motion.div>
+    </div>
   );
 };
 

@@ -208,25 +208,25 @@ const AdminChat = () => {
     );
 
   return (
-    <div className="flex h-[calc(100vh-5rem)] glass-card-light overflow-hidden relative">
+    <div className="flex h-[calc(100vh-5rem)] bg-white overflow-hidden relative">
       {/* Sidebar */}
       <div className={`
         ${selectedAdminConv ? 'hidden md:flex' : 'flex'} 
-        w-full md:w-[400px] border-r border-white/[0.08] flex flex-col h-full glass-card-light/30
+        w-full md:w-[400px] border-r border-[#eaeef2] flex flex-col h-full bg-white
       `}>
         <div className="p-8">
           <div className="flex items-center justify-between mb-8">
-            <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-[#0d1117] tracking-tight flex items-center gap-3">
               Support <div className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse" />
             </h1>
           </div>
 
           <div className="relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-indigo-600 transition-colors" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748b] group-focus-within:text-indigo-600 transition-colors" />
             <input
               type="text"
               placeholder="Search conversations..."
-              className="w-full glass-card-light border border-white/[0.08] rounded-2xl py-4 pl-12 pr-4 text-xs font-bold focus:outline-none focus:ring-4 focus:ring-indigo-600/5 focus:border-indigo-600/20 transition-all shadow-sm"
+              className="w-full bg-white border border-[#eaeef2] rounded-2xl py-4 pl-12 pr-4 text-xs font-bold focus:outline-none focus:ring-4 focus:ring-indigo-600/5 focus:border-indigo-600/20 transition-all shadow-sm"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -236,14 +236,14 @@ const AdminChat = () => {
         <div className="flex-grow overflow-y-auto px-4 pb-8 space-y-2 custom-scrollbar">
           {/* Active Conversations */}
           <div className="mb-6">
-            <h2 className="px-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Conversations</h2>
+            <h2 className="px-4 text-[10px] font-black uppercase tracking-[0.2em] text-[#64748b] mb-4">Conversations</h2>
             {filteredConvs.map((conv) => (
               <button
                 key={conv.id}
                 onClick={() => handleSelectConversation(conv)}
                 className={`w-full flex items-center gap-4 p-5 rounded-3xl transition-all duration-300 relative group/conv mb-2 ${selectedAdminConv?.id === conv.id
-                    ? 'glass-card-light shadow-xl shadow-indigo-600/5 ring-1 ring-slate-100'
-                    : 'hover:glass-card-light/60 text-slate-400 hover:text-white'
+                    ? 'bg-white shadow-xl shadow-indigo-600/5 ring-1 ring-slate-100'
+                    : 'hover:bg-white text-[#64748b] hover:text-[#0d1117]'
                   }`}
               >
                 <div className="w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-xs shadow-inner shrink-0 overflow-hidden"
@@ -263,12 +263,12 @@ const AdminChat = () => {
                 </div>
                 <div className="flex-grow text-left min-w-0">
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className={`text-sm tracking-tight truncate pr-2 ${conv.unread_count > 0 ? 'font-black text-white' : 'font-bold text-slate-300'}`}>
+                    <span className={`text-sm tracking-tight truncate pr-2 ${conv.unread_count > 0 ? 'font-black text-[#0d1117]' : 'font-bold text-[#64748b]'}`}>
                       {conv.buyer_name || `Customer #${conv.buyer_id}`}
                     </span>
                     <div className="flex items-center gap-2">
                       {conv.unread_count > 0 && (
-                        <div className="w-5 h-5 bg-indigo-600 text-white text-[9px] font-black rounded-full flex items-center justify-center shadow-lg shadow-indigo-600/20 animate-pulse">
+                        <div className="w-5 h-5 bg-indigo-600 text-[#0d1117] text-[9px] font-black rounded-full flex items-center justify-center shadow-lg shadow-indigo-600/20 animate-pulse">
                           {conv.unread_count}
                         </div>
                       )}
@@ -308,7 +308,7 @@ const AdminChat = () => {
           {/* Global Search Results */}
           {search.trim().length > 0 && (
             <div className="mt-8">
-              <h2 className="px-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4 flex items-center gap-2">
+              <h2 className="px-4 text-[10px] font-black uppercase tracking-[0.2em] text-[#64748b] mb-4 flex items-center gap-2">
                 Global Users {isSearchingUsers && <div className="w-2 h-2 rounded-full bg-indigo-400 animate-ping" />}
               </h2>
               {globalUsers.length > 0 ? (
@@ -326,7 +326,7 @@ const AdminChat = () => {
                       setMessages([]); // Clear messages for a new conversation
                       setSearch(''); // Clear search
                     }}
-                    className="w-full flex items-center gap-4 p-4 rounded-3xl hover:glass-card-light transition-all group/user mb-2"
+                    className="w-full flex items-center gap-4 p-4 rounded-3xl hover:bg-white transition-all group/user mb-2"
                   >
                     <div className="w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-[10px] shadow-sm shrink-0 overflow-hidden"
                       style={{
@@ -338,14 +338,14 @@ const AdminChat = () => {
                       ) : u.full_name.substring(0, 1).toUpperCase()}
                     </div>
                     <div className="text-left min-w-0">
-                      <p className="text-sm font-bold text-white truncate tracking-tight">{u.full_name}</p>
+                      <p className="text-sm font-bold text-[#0d1117] truncate tracking-tight">{u.full_name}</p>
                       <p className="text-[9px] font-bold text-indigo-600 uppercase tracking-widest mt-0.5">{u.role}</p>
                     </div>
                   </button>
                 ))
               ) : !isSearchingUsers && (
                 <div className="px-4 py-4 text-center">
-                  <p className="text-[10px] font-bold text-slate-300">No matching users found</p>
+                  <p className="text-[10px] font-bold text-[#64748b]">No matching users found</p>
                 </div>
               )}
             </div>
@@ -357,17 +357,17 @@ const AdminChat = () => {
       {/* Main Chat Area */}
       <div className={`
         ${selectedAdminConv ? 'flex' : 'hidden md:flex'} 
-        flex-grow flex flex-col glass-card-light/50 relative
+        flex-grow flex flex-col bg-white relative
       `}>
         {selectedAdminConv ? (
           <>
             {/* Header */}
-            <div className="p-4 md:p-6 glass-card-light border-b border-white/[0.08] flex items-center justify-between">
+            <div className="p-4 md:p-6 bg-white border-b border-[#eaeef2] flex items-center justify-between">
               <div className="flex items-center gap-3 md:gap-4">
                 {/* Back button for mobile */}
                 <button
                   onClick={() => setSelectedAdminConv(null)}
-                  className="md:hidden p-2 -ml-2 rounded-xl text-slate-400 hover:glass-card-light"
+                  className="md:hidden p-2 -ml-2 rounded-xl text-[#64748b] hover:bg-white"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -387,12 +387,12 @@ const AdminChat = () => {
                   )}
                 </div>
                 <div>
-                  <h3 className="font-bold text-white text-sm tracking-tight">
+                  <h3 className="font-bold text-[#0d1117] text-sm tracking-tight">
                     {selectedAdminConv.buyer_name || `Customer #${selectedAdminConv.buyer_id}`}
                   </h3>
                   <div className="flex items-center gap-1.5">
                     <div className={`w-1.5 h-1.5 rounded-full ${isPartnerOnline ? 'bg-emerald-500' : 'bg-slate-300'}`} />
-                    <span className="text-[9px] font-bold text-slate-400 ">
+                    <span className="text-[9px] font-bold text-[#64748b] ">
                       {isPartnerOnline ? 'Online' : 'Offline'}
                     </span>
                   </div>
@@ -411,7 +411,7 @@ const AdminChat = () => {
                       <input
                         type="text"
                         placeholder="Search messages..."
-                        className="w-full glass-card-light border border-white/[0.08] rounded-xl py-2 pl-4 pr-4 text-[10px] font-bold focus:outline-none focus:ring-2 focus:ring-indigo-600/10 transition-all"
+                        className="w-full bg-white border border-[#eaeef2] rounded-xl py-2 pl-4 pr-4 text-[10px] font-bold focus:outline-none focus:ring-2 focus:ring-indigo-600/10 transition-all"
                         value={msgSearch}
                         onChange={(e) => setMsgSearch(e.target.value)}
                         autoFocus
@@ -425,7 +425,7 @@ const AdminChat = () => {
                     setShowMsgSearch(!showMsgSearch);
                     if (showMsgSearch) setMsgSearch('');
                   }}
-                  className={`p-3 rounded-2xl transition-all shadow-sm ${showMsgSearch ? 'bg-indigo-600 text-white' : 'glass-card-light text-slate-400 hover:bg-slate-100'}`}
+                  className={`p-3 rounded-2xl transition-all shadow-sm ${showMsgSearch ? 'bg-indigo-600 text-[#0d1117]' : 'bg-white text-[#64748b] hover:bg-slate-100'}`}
                   title="Search Messages"
                 >
                   <Search className="w-4 h-4" />
@@ -436,7 +436,7 @@ const AdminChat = () => {
                     setIsSelectionMode(!isSelectionMode);
                     if (isSelectionMode) setSelectedMsgIDs([]);
                   }}
-                  className={`p-3 rounded-2xl transition-all shadow-sm ${isSelectionMode ? 'bg-indigo-600 text-white' : 'glass-card-light text-slate-400 hover:bg-slate-100'}`}
+                  className={`p-3 rounded-2xl transition-all shadow-sm ${isSelectionMode ? 'bg-indigo-600 text-[#0d1117]' : 'bg-white text-[#64748b] hover:bg-slate-100'}`}
                   title="Select Messages"
                 >
                   <CheckCheck className="w-4 h-4" />
@@ -483,7 +483,7 @@ const AdminChat = () => {
                       <React.Fragment key={msg.id || i}>
                         {showDateSeparator && (
                           <div className="flex justify-center my-8">
-                            <div className="px-5 py-2 rounded-2xl glass-card-light shadow-sm border border-white/[0.08] text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                            <div className="px-5 py-2 rounded-2xl bg-white shadow-sm border border-[#eaeef2] text-[10px] font-black text-[#64748b] uppercase tracking-wider">
                               {new Date(msg.created_at).toLocaleDateString(undefined, {
                                 weekday: 'long',
                                 month: 'short',
@@ -518,7 +518,7 @@ const AdminChat = () => {
                   })}
                 {msgSearch && messages.filter(m => (m.message_text || '').toLowerCase().includes(msgSearch.toLowerCase())).length === 0 && (
                   <div className="py-20 text-center">
-                    <p className="text-[10px] font-bold text-slate-300">No matching messages found</p>
+                    <p className="text-[10px] font-bold text-[#64748b]">No matching messages found</p>
                   </div>
                 )}
               </div>
@@ -530,13 +530,13 @@ const AdminChat = () => {
                     initial={{ y: 50, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     exit={{ y: 50, opacity: 0 }}
-                    className="fixed bottom-32 left-1/2 -translate-x-1/2 z-[200] bg-slate-900 text-white px-8 py-4 rounded-[2rem] shadow-2xl flex items-center gap-8 border border-white/10 backdrop-blur-xl"
+                    className="fixed bottom-32 left-1/2 -translate-x-1/2 z-[200] bg-[#0d1117] text-[#0d1117] px-8 py-4 rounded-[2rem] shadow-2xl flex items-center gap-8 border border-[#eaeef2] backdrop-blur-xl"
                   >
                     <div className="flex flex-col">
                       <span className="text-[10px] font-bold opacity-50 uppercase tracking-widest">Selected</span>
                       <span className="text-xl font-black">{selectedMsgIDs.length} Messages</span>
                     </div>
-                    <div className="h-8 w-px glass-card-light/10" />
+                    <div className="h-8 w-px bg-white" />
                     <div className="flex gap-4">
                       <button
                         onClick={handleBulkDelete}
@@ -547,7 +547,7 @@ const AdminChat = () => {
                       </button>
                       <button
                         onClick={() => { setIsSelectionMode(false); setSelectedMsgIDs([]); }}
-                        className="p-2 hover:glass-card-light/10 rounded-xl transition-all"
+                        className="p-2 hover:bg-white rounded-xl transition-all"
                       >
                         <X className="w-5 h-5" />
                       </button>
@@ -565,7 +565,7 @@ const AdminChat = () => {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.5, y: 20 }}
                   onClick={scrollToBottom}
-                  className="absolute bottom-32 right-12 w-14 h-14 glass-card-light text-white rounded-full shadow-2xl border border-white/[0.08] flex items-center justify-center hover:glass-card-light transition-all z-[100] group"
+                  className="absolute bottom-32 right-12 w-14 h-14 bg-white text-[#0d1117] rounded-full shadow-2xl border border-[#eaeef2] flex items-center justify-center hover:bg-white transition-all z-[100] group"
                 >
                   <div className="absolute inset-0 bg-indigo-500/10 rounded-full animate-ping" />
                   <ArrowDown className="w-6 h-6 group-hover:translate-y-0.5 transition-transform relative z-10" />
@@ -585,11 +585,11 @@ const AdminChat = () => {
                   >
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-bold text-indigo-600 ">Editing Message:</span>
-                      <span className="text-[10px] font-bold text-slate-300 truncate max-w-[200px]">"{editingMessage.message_text}"</span>
+                      <span className="text-[10px] font-bold text-[#64748b] truncate max-w-[200px]">"{editingMessage.message_text}"</span>
                     </div>
                     <button
                       onClick={() => { setEditingMessage(null); setInput(''); }}
-                      className="p-1 hover:bg-indigo-100 rounded-lg transition-all text-indigo-400"
+                      className="p-1 hover:bg-indigo-100 rounded-lg transition-all text-[#6366f1]"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -610,14 +610,14 @@ const AdminChat = () => {
                       <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
                       <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" />
                     </div>
-                    <span className="text-[10px] font-bold text-slate-400 ">Buyer is typing...</span>
+                    <span className="text-[10px] font-bold text-[#64748b] ">Buyer is typing...</span>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
 
             {/* Input */}
-            <div className="p-4 md:p-8 glass-card-light border-t border-white/[0.08]">
+            <div className="p-4 md:p-8 bg-white border-t border-[#eaeef2]">
               <ChatReplyPreview
                 replyingTo={replyingTo}
                 onClear={() => setReplyingTo(null)}
@@ -634,12 +634,12 @@ const AdminChat = () => {
                   }}
                   onBlur={() => sendTyping(false)}
                   placeholder="Type your reply..."
-                  className="w-full glass-card-light border border-white/[0.08] rounded-[1.5rem] py-5 pl-8 pr-20 text-xs font-bold focus:outline-none focus:ring-4 focus:ring-slate-900/5 focus:glass-card-light focus:border-white/[0.1] transition-all"
+                  className="w-full bg-white border border-[#eaeef2] rounded-[1.5rem] py-5 pl-8 pr-20 text-xs font-bold focus:outline-none focus:ring-4 focus:ring-slate-900/5 focus:bg-white focus:border-[#eaeef2] transition-all"
                 />
                 <button
                   type="submit"
                   disabled={!input.trim()}
-                  className="absolute right-3 w-12 h-12 bg-slate-900 text-white rounded-2xl flex items-center justify-center hover:bg-indigo-600 transition-all shadow-lg shadow-slate-900/20 disabled:opacity-20"
+                  className="absolute right-3 w-12 h-12 bg-indigo-600 text-white rounded-2xl flex items-center justify-center hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20 disabled:opacity-20"
                 >
                   <Send className="w-5 h-5" />
                 </button>
@@ -648,11 +648,11 @@ const AdminChat = () => {
           </>
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-center p-20">
-            <div className="w-24 h-24 glass-card-light rounded-[2.5rem] shadow-xl flex items-center justify-center mb-8">
-              <MessageSquare className="w-10 h-10 text-slate-100" />
+            <div className="w-24 h-24 bg-white rounded-[2.5rem] shadow-xl flex items-center justify-center mb-8">
+              <MessageSquare className="w-10 h-10 text-[#374151]" />
             </div>
-            <h3 className="text-xl font-bold text-white mb-2">Select a Conversation</h3>
-            <p className="text-slate-400 text-xs font-bold  leading-loose max-w-[300px]">
+            <h3 className="text-xl font-bold text-[#0d1117] mb-2">Select a Conversation</h3>
+            <p className="text-[#64748b] text-xs font-bold  leading-loose max-w-[300px]">
               Click on a conversation in the sidebar to start chatting with buyers.
             </p>
           </div>
