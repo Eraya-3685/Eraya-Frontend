@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 const CompleteProfile = () => {
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
-  const { user, updateProfile } = useAuthStore();
+  const { user, loading, updateProfile } = useAuthStore();
   const navigate = useNavigate();
 
   const [errors, setErrors] = useState({});
