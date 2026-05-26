@@ -105,20 +105,20 @@ const ProductCard = ({
 
   // ─── VARIANT: DEFAULT (As requested in the reference image) ───
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', position: 'relative' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', position: 'relative' }}>
       
       {/* Image Container */}
-      <div style={{ position: 'relative', borderRadius: '2.5rem', overflow: 'hidden', aspectRatio: '1/1.1', background: C.bgMuted, border: `1px solid ${C.bSoft}` }}>
+      <div style={{ position: 'relative', borderRadius: '1.25rem', overflow: 'hidden', aspectRatio: '1/1.1', background: C.bgMuted, border: `1px solid ${C.bSoft}` }}>
         <Link to={`/products/${product.slug}`} style={{ display: 'block', height: '100%' }}>
           {img && <img src={getImageUrl(img)} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.4s' }} onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'} onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'} />}
         </Link>
         
         {/* Badges */}
-        <div style={{ position: 'absolute', top: '1rem', left: '1rem', display: 'flex', gap: '0.5rem' }}>
+        <div style={{ position: 'absolute', top: '0.65rem', left: '0.65rem', display: 'flex', gap: '0.35rem' }}>
           {outOfStock ? (
-            <div style={{ padding: '0.4rem 0.8rem', background: '#fff', borderRadius: '0.75rem', fontSize: '0.65rem', fontWeight: 800, color: C.t300, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>Sold out</div>
+            <div style={{ padding: '0.25rem 0.5rem', background: '#fff', borderRadius: '0.5rem', fontSize: '0.55rem', fontWeight: 800, color: C.t300, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>Sold out</div>
           ) : isNew ? (
-            <div style={{ padding: '0.4rem 0.8rem', background: '#dcfce7', borderRadius: '0.75rem', fontSize: '0.65rem', fontWeight: 800, color: '#166534' }}>New in</div>
+            <div style={{ padding: '0.25rem 0.5rem', background: '#dcfce7', borderRadius: '0.5rem', fontSize: '0.55rem', fontWeight: 800, color: '#166534' }}>New in</div>
           ) : null}
         </div>
 
@@ -127,36 +127,36 @@ const ProductCard = ({
             {/* Quick Action - Shopping Bag */}
             <div 
               onClick={() => onCart(product)}
-              style={{ position: 'absolute', bottom: '1rem', right: '1rem', width: 38, height: 38, background: 'rgba(255,255,255,0.95)', borderRadius: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+              style={{ position: 'absolute', bottom: '0.65rem', right: '0.65rem', width: 32, height: 32, background: 'rgba(255,255,255,0.95)', borderRadius: '0.65rem', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
               onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
               onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
             >
-               <ShoppingBag style={{ width: 16, height: 16, color: C.t900 }} />
+               <ShoppingBag style={{ width: 13, height: 13, color: C.t900 }} />
             </div>
 
             {/* Wishlist Heart */}
             <div 
               onClick={() => onWishlist(product)}
-              style={{ position: 'absolute', top: '1rem', right: '1rem', width: 38, height: 38, background: 'rgba(255,255,255,0.95)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+              style={{ position: 'absolute', top: '0.65rem', right: '0.65rem', width: 32, height: 32, background: 'rgba(255,255,255,0.95)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
               onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
               onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
             >
-              <Heart style={{ width: 16, height: 14, color: inWishlist ? C.rose : C.t300, fill: inWishlist ? C.rose : 'none' }} />
+              <Heart style={{ width: 13, height: 12, color: inWishlist ? C.rose : C.t300, fill: inWishlist ? C.rose : 'none' }} />
             </div>
           </>
         )}
       </div>
 
       {/* Info Section */}
-      <div style={{ padding: '0 0.5rem' }}>
-        <h3 style={{ fontSize: '1rem', fontWeight: 800, color: C.t900, margin: '0 0 0.4rem', letterSpacing: '-0.02em' }}>{product.name}</h3>
+      <div style={{ padding: '0 0.25rem' }}>
+        <h3 style={{ fontSize: '0.8rem', fontWeight: 800, color: C.t900, margin: '0 0 0.25rem', letterSpacing: '-0.02em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product.name}</h3>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <p style={{ fontSize: '1.05rem', fontWeight: 900, color: C.t900, margin: 0 }}>৳{product.base_price?.toLocaleString()}</p>
+          <p style={{ fontSize: '0.9rem', fontWeight: 900, color: C.t900, margin: 0 }}>৳{product.base_price?.toLocaleString()}</p>
           
           {/* Colors Swatches */}
-          <div style={{ display: 'flex', gap: '0.4rem' }}>
+          <div style={{ display: 'flex', gap: '0.25rem' }}>
             {['#f3f4f6', '#fbbf24', '#60a5fa'].map((c, i) => (
-              <div key={i} style={{ width: 10, height: 10, borderRadius: '50%', background: c, border: `1px solid ${C.bSoft}` }} />
+              <div key={i} style={{ width: 8, height: 8, borderRadius: '50%', background: c, border: `1px solid ${C.bSoft}` }} />
             ))}
           </div>
         </div>
