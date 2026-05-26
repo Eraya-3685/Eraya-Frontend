@@ -6,55 +6,83 @@
   --font: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
 
   /* Background */
-  --bg-page:   #edf0f4;   /* page bg — cool light grey-blue */
-  --bg-card:   #ffffff;   /* card surfaces */
-  --bg-hero:   #f5f6f9;   /* hero card — ever so slightly tinted */
-  --bg-muted:  #f3f5f8;   /* subtle muted fill */
-  --bg-input:  #f5f6f9;   /* search / input bg */
+  --bg-page: #edf0f4;
+  /* page bg — cool light grey-blue */
+  --bg-card: #ffffff;
+  /* card surfaces */
+  --bg-hero: #f5f6f9;
+  /* hero card — ever so slightly tinted */
+  --bg-muted: #f3f5f8;
+  /* subtle muted fill */
+  --bg-input: #f5f6f9;
+  /* search / input bg */
 
   /* Text */
-  --t-900: #0d1117;   /* headings — near black */
-  --t-700: #1f2937;   /* strong body */
-  --t-500: #6b7280;   /* secondary / muted */
-  --t-300: #adb5bd;   /* very light */
-  --t-200: #d1d5db;   /* placeholder */
+  --t-900: #0d1117;
+  /* headings — near black */
+  --t-700: #1f2937;
+  /* strong body */
+  --t-500: #6b7280;
+  /* secondary / muted */
+  --t-300: #adb5bd;
+  /* very light */
+  --t-200: #d1d5db;
+  /* placeholder */
 
   /* Borders */
-  --b-soft:    rgba(0,0,0,0.07);
-  --b-medium:  rgba(0,0,0,0.10);
+  --b-soft: rgba(0, 0, 0, 0.07);
+  --b-medium: rgba(0, 0, 0, 0.10);
 
   /* Accents */
-  --lime:  #cbff00;   /* exact lime from image */
-  --blue:  #3b82f6;   /* blue stats card */
-  --rose:  #f43f5e;
+  --lime: #cbff00;
+  /* exact lime from image */
+  --blue: #3b82f6;
+  /* blue stats card */
+  --rose: #f43f5e;
 
   /* Radii */
-  --r-xs:  0.5rem;    /* 8px  — tags */
-  --r-sm:  0.875rem;  /* 14px — small cards, dropdowns */
-  --r-md:  1.25rem;   /* 20px — buttons, inputs */
-  --r-lg:  1.5rem;    /* 24px — cards */
-  --r-xl:  2rem;      /* 32px — large cards */
-  --r-2xl: 2.5rem;    /* 40px — hero card */
-  --r-full: 9999px;   /* pill */
+  --r-xs: 0.5rem;
+  /* 8px  — tags */
+  --r-sm: 0.875rem;
+  /* 14px — small cards, dropdowns */
+  --r-md: 1.25rem;
+  /* 20px — buttons, inputs */
+  --r-lg: 1.5rem;
+  /* 24px — cards */
+  --r-xl: 2rem;
+  /* 32px — large cards */
+  --r-2xl: 2.5rem;
+  /* 40px — hero card */
+  --r-full: 9999px;
+  /* pill */
 
   /* Shadows */
-  --shadow-card:  0 2px 16px -4px rgba(0,0,0,0.08);
-  --shadow-hover: 0 8px 32px -8px rgba(0,0,0,0.12);
-  --shadow-nav:   0 1px 0 0 var(--b-soft);
-  --shadow-drop:  0 20px 60px -12px rgba(0,0,0,0.14);
+  --shadow-card: 0 2px 16px -4px rgba(0, 0, 0, 0.08);
+  --shadow-hover: 0 8px 32px -8px rgba(0, 0, 0, 0.12);
+  --shadow-nav: 0 1px 0 0 var(--b-soft);
+  --shadow-drop: 0 20px 60px -12px rgba(0, 0, 0, 0.14);
 
   /* Legacy aliases */
-  --primary:   var(--t-900);
+  --primary: var(--t-900);
   --secondary: var(--lime);
-  --accent:    var(--blue);
+  --accent: var(--blue);
 }
 
 /* ══════════════════════════════════════════════
    BASE
 ══════════════════════════════════════════════ */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
-html { scroll-behavior: smooth; font-size: 16px; }
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+}
 
 body {
   font-family: var(--font);
@@ -77,6 +105,7 @@ body {
   overflow: hidden;
   transition: box-shadow 0.4s ease, transform 0.4s ease;
 }
+
 .card:hover {
   box-shadow: var(--shadow-hover);
   transform: translateY(-2px);
@@ -108,19 +137,24 @@ body {
   color: var(--t-900);
   text-decoration: none;
   cursor: pointer;
-  box-shadow: 0 4px 20px -4px rgba(203,255,0,0.5);
+  box-shadow: 0 4px 20px -4px rgba(203, 255, 0, 0.5);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   white-space: nowrap;
 }
+
 .btn-lime:hover {
   transform: scale(1.04);
-  box-shadow: 0 8px 28px -4px rgba(203,255,0,0.6);
+  box-shadow: 0 8px 28px -4px rgba(203, 255, 0, 0.6);
 }
+
 .btn-lime .icon-circle {
-  width: 2rem; height: 2rem;
+  width: 2rem;
+  height: 2rem;
   background: var(--t-900);
   border-radius: var(--r-full);
-  display: flex; align-items: center; justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: #fff;
   flex-shrink: 0;
 }
@@ -129,8 +163,11 @@ body {
    ICON BUTTON  — navbar action buttons
 ══════════════════════════════════════════════ */
 .icon-btn {
-  width: 2.25rem; height: 2.25rem;
-  display: flex; align-items: center; justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: var(--bg-card);
   border: 1px solid var(--b-soft);
   border-radius: var(--r-full);
@@ -141,6 +178,7 @@ body {
   flex-shrink: 0;
   position: relative;
 }
+
 .icon-btn:hover {
   background: var(--bg-muted);
   border-color: var(--b-medium);
@@ -163,18 +201,24 @@ body {
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
-.search-pill::placeholder { color: var(--t-300); }
+
+.search-pill::placeholder {
+  color: var(--t-300);
+}
+
 .search-pill:focus {
   background: #fff;
   border-color: var(--b-medium);
-  box-shadow: 0 0 0 3px rgba(0,0,0,0.04);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.04);
 }
 
 /* ══════════════════════════════════════════════
    BADGE / LABEL
 ══════════════════════════════════════════════ */
 .badge {
-  display: inline-flex; align-items: center; gap: 0.35rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   background: var(--bg-muted);
   border: 1px solid var(--b-soft);
   border-radius: var(--r-sm);
@@ -188,7 +232,19 @@ body {
 /* ══════════════════════════════════════════════
    SCROLLBAR
 ══════════════════════════════════════════════ */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}

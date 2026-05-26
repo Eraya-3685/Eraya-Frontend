@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import api from '../api/axios';
+import useAuthStore from './useAuthStore';
 
 const useWishlistStore = create(
   persist(
@@ -10,6 +11,15 @@ const useWishlistStore = create(
       
       fetchWishlist: async () => {
         if (!localStorage.getItem('token')) return;
+        
+        const currentUser = useAuthStore.getState().user;
+        if (currentUser) {
+          const role = currentUser.role?.toLowerCase();
+          if (role === 'admin' || role === 'moderator') {
+            return;
+          }
+        }
+
         set({ loading: true });
         try {
           const res = await api.get('/wishlist');
@@ -27,6 +37,14 @@ const useWishlistStore = create(
         const { items, fetchWishlist } = get();
         const token = localStorage.getItem('token');
         if (!token) return;
+
+        const currentUser = useAuthStore.getState().user;
+        if (currentUser) {
+          const role = currentUser.role?.toLowerCase();
+          if (role === 'admin' || role === 'moderator') {
+            return;
+          }
+        }
 
         if (items.length > 0) {
           console.log('Syncing local wishlist to backend...');

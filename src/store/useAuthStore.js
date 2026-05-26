@@ -215,10 +215,10 @@ const useAuthStore = create((set, get) => ({
   },
 
   // Admin: Bulk update user roles
-  bulkUpdateUserRole: async (userIds, role, permissions, otp, password) => {
+  bulkUpdateUserRole: async (userIds, role, permissions, password) => {
     set({ loading: true });
     try {
-      await api.post('/users/bulk-role', { ids: userIds, role, permissions, otp, password });
+      await api.post('/users/bulk-role', { ids: userIds, role, permissions, password });
       set({ loading: false });
     } catch (error) {
       set({ loading: false });

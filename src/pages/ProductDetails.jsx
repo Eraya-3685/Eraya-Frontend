@@ -265,10 +265,10 @@ const ProductDetails = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <div style={{ width: 34, height: 34, borderRadius: '50%', background: C.bgMuted, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: C.t300, fontSize: '0.65rem' }}>
-                      {rev.user?.first_name?.[0] || 'U'}
+                      {rev.user?.full_name?.[0] || 'U'}
                     </div>
                     <div>
-                      <p style={{ fontSize: '0.85rem', fontWeight: 900, color: C.t900, margin: 0 }}>{rev.user?.first_name} {rev.user?.last_name}</p>
+                      <p style={{ fontSize: '0.85rem', fontWeight: 900, color: C.t900, margin: 0 }}>{rev.user?.full_name}</p>
                       <div style={{ display: 'flex', gap: '0.1rem', marginTop: '0.1rem' }}>
                         {[1,2,3,4,5].map(s => <Star key={s} style={{ width: 8, height: 8, fill: s <= rev.rating ? '#fbbf24' : 'none', color: s <= rev.rating ? '#fbbf24' : C.t300 }} />)}
                       </div>

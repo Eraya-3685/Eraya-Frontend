@@ -50,13 +50,7 @@ const AdminProfile = () => {
       
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-        <div>
-           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-              <div style={{ width: 32, height: 32, background: '#e11d4810', borderRadius: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e11d48' }}><User style={{ width: 18, height: 18 }} /></div>
-              <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#e11d48', textTransform: 'uppercase', letterSpacing: '0.15em' }}>Identity Management</span>
-           </div>
            <h1 style={{ fontSize: '2.5rem', fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.03em' }}>My Profile</h1>
-        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '400px 1fr', gap: '2.5rem' }}>
@@ -72,15 +66,15 @@ const AdminProfile = () => {
                   <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={handleAvatarChange} />
                </div>
                <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0f172a', margin: '0 0 0.5rem' }}>{user?.full_name}</h2>
-               <div style={{ display: 'inline-flex', padding: '0.5rem 1rem', background: '#e11d4810', color: '#e11d48', borderRadius: '1rem', fontSize: '0.65rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{user?.role}</div>
+               <div style={{ display: 'inline-flex', padding: '0.5rem 1rem', background: '#e11d4810', color: '#e11d48', borderRadius: '1rem', fontSize: '0.65rem', fontWeight: 900, textTransform: 'capitalize' }}>{user?.role}</div>
                
                <div style={{ marginTop: '3rem', paddingTop: '3rem', borderTop: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                     <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Auth Status</span>
+                     <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8' }}>Auth Status</span>
                      <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#10b981' }}>Verified</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                     <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Member Since</span>
+                     <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8' }}>Member Since</span>
                      <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#0f172a' }}>{new Date(user?.created_at).getFullYear()}</span>
                   </div>
                </div>
@@ -97,22 +91,22 @@ const AdminProfile = () => {
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                     <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em', marginLeft: '1rem' }}>Full Name</label>
+                     <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', marginLeft: '1rem' }}>Full Name</label>
                      <input type="text" value={form.full_name} onChange={(e) => setForm({...form, full_name: e.target.value})} style={{ width: '100%', background: '#f8f9fc', border: '1px solid #f1f5f9', padding: '1.25rem 1.75rem', borderRadius: '1.5rem', fontSize: '0.9rem', fontWeight: 700, outline: 'none' }} />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                     <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em', marginLeft: '1rem' }}>Phone Number</label>
+                     <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', marginLeft: '1rem' }}>Phone Number</label>
                      <input type="text" value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value})} style={{ width: '100%', background: '#f8f9fc', border: '1px solid #f1f5f9', padding: '1.25rem 1.75rem', borderRadius: '1.5rem', fontSize: '0.9rem', fontWeight: 700, outline: 'none' }} />
                   </div>
                </div>
 
                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em', marginLeft: '1rem' }}>Email Address (Read Only)</label>
+                  <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', marginLeft: '1rem' }}>Email Address (Read Only)</label>
                   <input type="email" value={form.email} readOnly style={{ width: '100%', background: '#f8f9fc', border: '1px solid #f1f5f9', padding: '1.25rem 1.75rem', borderRadius: '1.5rem', fontSize: '0.9rem', fontWeight: 700, outline: 'none', color: '#94a3b8', cursor: 'not-allowed' }} />
                </div>
 
                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em', marginLeft: '1rem' }}>Address</label>
+                  <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', marginLeft: '1rem' }}>Address</label>
                   <textarea rows={4} value={form.address} onChange={(e) => setForm({...form, address: e.target.value})} style={{ width: '100%', background: '#f8f9fc', border: '1px solid #f1f5f9', padding: '1.25rem 1.75rem', borderRadius: '1.5rem', fontSize: '0.9rem', fontWeight: 700, outline: 'none', resize: 'none' }} />
                </div>
 

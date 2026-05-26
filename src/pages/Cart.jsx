@@ -134,7 +134,7 @@ const Cart = () => {
           </p>
         ) : (
           <p style={{ textAlign:'center', fontSize:'0.78rem', fontWeight:700, color:C.green, margin:'0 0 1rem' }}>
-            🎉 You've unlocked FREE SHIPPING!
+            You've unlocked FREE SHIPPING!
           </p>
         )}
         {/* Bar */}

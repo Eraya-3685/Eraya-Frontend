@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-let baseAssetsUrl = import.meta.env.VITE_ASSETS_URL;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
+let baseAssetsUrl = import.meta.env.VITE_ASSETS_URL || 'https://fkbeweyymacvmugwhako.supabase.co/storage/v1/object/public/eraya';
 if (baseAssetsUrl && !baseAssetsUrl.endsWith('/')) {
   baseAssetsUrl += '/';
 }

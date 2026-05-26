@@ -55,7 +55,16 @@ const useChatStore = create((set, get) => {
         oldSocket.close();
       }
 
-      const wsUrl = `${import.meta.env.VITE_WS_URL || 'ws://localhost:8080/api/v1'}/chat/ws?with=${withID}&token=${token}`;
+      let baseWsUrl = import.meta.env.VITE_WS_URL;
+      if (!baseWsUrl) {
+        const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
+        baseWsUrl = apiBase.replace(/^http/, 'ws');
+      }
+      // Automatically fallback to ws:// if running on non-secure HTTP local development
+      if (window.location.protocol === 'http:' && baseWsUrl.startsWith('wss://')) {
+        baseWsUrl = baseWsUrl.replace(/^wss:/, 'ws:');
+      }
+      const wsUrl = `${baseWsUrl}/chat/ws?with=${withID}&token=${token}`;
       const socket = new WebSocket(wsUrl);
       set({ socket, isConnected: false });
 
@@ -117,7 +126,15 @@ const useChatStore = create((set, get) => {
               }
 
               if (msg.type === 'delete') {
-                return { messages: nextMessages.filter(m => String(m.id) !== String(msg.id)) };
+                const deletedMsg = nextMessages.find(m => String(m.id) === String(msg.id));
+                const remainingMessages = nextMessages.filter(m => String(m.id) !== String(msg.id));
+                const lastMsg = remainingMessages[remainingMessages.length - 1];
+                const convId = deletedMsg?.conversation_id || msg.conversation_id;
+                
+                const nextConvs = conversations.map(c => 
+                  String(c.id) === String(convId) ? { ...c, last_message: lastMsg ? lastMsg.message_text : null } : c
+                );
+                return { messages: remainingMessages, conversations: nextConvs };
               }
 
               if (msg.type === 'delete_conversation') {
@@ -275,6 +292,37 @@ const useChatStore = create((set, get) => {
           type: 'delete',
           id: msgID.toString()
         }));
+
+        // Optimistic delete in frontend
+        set((state) => {
+          const remainingMessages = state.messages.filter(m => String(m.id) !== String(msgID));
+          const lastMsg = remainingMessages[remainingMessages.length - 1];
+          const deletedMsg = state.messages.find(m => String(m.id) === String(msgID));
+          const convId = deletedMsg?.conversation_id || state.selectedAdminConv?.id;
+          
+          const nextConvs = state.conversations.map(c => 
+            String(c.id) === String(convId) ? { ...c, last_message: lastMsg ? lastMsg.message_text : null } : c
+          );
+          return { messages: remainingMessages, conversations: nextConvs };
+        });
+      }
+    },
+
+    deleteConversation: async (convID) => {
+      try {
+        await api.delete(`/chat/conversation/${convID}`);
+        set((state) => {
+          const isCurrent = state.selectedAdminConv && String(state.selectedAdminConv.id) === String(convID);
+          return {
+            conversations: state.conversations.filter(c => String(c.id) !== String(convID)),
+            selectedAdminConv: isCurrent ? null : state.selectedAdminConv,
+            messages: isCurrent ? [] : state.messages
+          };
+        });
+        return true;
+      } catch (err) {
+        console.error('Failed to delete conversation', err);
+        return false;
       }
     },
 

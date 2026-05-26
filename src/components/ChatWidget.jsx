@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, X, Send, Minus, ChevronLeft, Search, User, Trash2, ArrowDown } from 'lucide-react';
+import { MessageCircle, X, Send, Minus, ChevronLeft, Search, User, Trash2, ArrowDown, MoreVertical } from 'lucide-react';
 import useChatStore from '../store/useChatStore';
 import ConfirmModal from './ConfirmModal';
 import useAuthStore from '../store/useAuthStore';
@@ -27,6 +27,7 @@ const ChatWidget = () => {
   });
   const [search, setSearch] = useState('');
   const [msgSearch, setMsgSearch] = useState('');
+  const [showMenu, setShowMenu] = useState(false);
   const [firstUnreadMsgId, setFirstUnreadMsgId] = useState(null);
   const [showMsgSearch, setShowMsgSearch] = useState(false);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
@@ -37,9 +38,13 @@ const ChatWidget = () => {
     messages, connect, disconnect, sendMessage, setMessages, isConnected,
     currentWithID, socket, conversations, setConversations, deleteMessage,
     isTyping, sendTyping, editingMessage, setEditingMessage, editMessage,
-    markAsRead, totalUnreadCount, fetchTotalUnread, setIsOpen: setIsOpenStore
+    markAsRead, totalUnreadCount, fetchTotalUnread, setIsOpen: setIsOpenStore,
+    isPartnerOnline
   } = useChatStore();
   
+  const filteredMessages = msgSearch.trim()
+    ? messages.filter(m => (m.message_text || '').toLowerCase().includes(msgSearch.toLowerCase()))
+    : messages;
   const { user } = useAuthStore();
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
@@ -133,7 +138,16 @@ const ChatWidget = () => {
     sb();
     const timer = setTimeout(sb, 100);
     return () => clearTimeout(timer);
-  }, [messages, isOpen, isAdminView]);
+  }, [messages, isOpen, isAdminView, showMsgSearch]);
+
+  // Scroll to bottom when search is cleared
+  useEffect(() => {
+    if (!msgSearch.trim()) {
+      const sb = () => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; };
+      const timer = setTimeout(sb, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [msgSearch]);
 
   useEffect(() => {
     if (editingMessage) {
@@ -188,32 +202,72 @@ const ChatWidget = () => {
                   <div>
                     <h4 style={{ fontSize: '0.9rem', fontWeight: 800, margin: 0 }}>Eraya support</h4>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginTop: '0.1rem' }}>
-                      <div style={{ width: 6, height: 6, background: '#10b981', borderRadius: '50%' }} />
-                      <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'rgba(255,255,255,0.5)' }}>Online now</span>
+                      {isPartnerOnline ? (
+                        <>
+                          <div style={{ width: 6, height: 6, background: '#10b981', borderRadius: '50%' }} />
+                          <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'rgba(255,255,255,0.5)' }}>Online now</span>
+                        </>
+                      ) : (
+                        <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'rgba(255,255,255,0.5)' }}>Offline</span>
+                      )}
                     </div>
                   </div>
                 </div>
-                <button onClick={() => setIsOpen(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer' }}>
-                  <Minus size={20} />
-                </button>
+                {/* Header right actions */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', position: 'relative' }}>
+                  <button onClick={() => setShowMsgSearch(v => !v)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: '0.25rem' }} title="Search messages">
+                    <Search size={16} />
+                  </button>
+                  <button onClick={() => setShowMenu(v => !v)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: '0.25rem' }} title="More options">
+                    <MoreVertical size={16} />
+                  </button>
+                  {showMenu && (
+                    <div style={{ position: 'absolute', top: '2rem', right: '0', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '0.5rem', boxShadow: '0 4px 16px rgba(0,0,0,0.12)', zIndex: 20, minWidth: 140, overflow: 'hidden' }}>
+                      <button onClick={() => { setMessages([]); setShowMenu(false); }} style={{ background: 'none', border: 'none', padding: '0.6rem 1rem', width: '100%', textAlign: 'left', cursor: 'pointer', fontSize: '0.8rem', color: '#374151' }}>Clear chat</button>
+                      <button onClick={() => { setIsOpen(false); setShowMenu(false); }} style={{ background: 'none', border: 'none', padding: '0.6rem 1rem', width: '100%', textAlign: 'left', cursor: 'pointer', fontSize: '0.8rem', color: '#374151' }}>Close chat</button>
+                    </div>
+                  )}
+                  <button onClick={() => setIsOpen(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', padding: '0.25rem' }}>
+                    <Minus size={20} />
+                  </button>
+                </div>
               </div>
             </div>
 
             {/* Messages */}
             <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+              {/* Sticky search bar */}
+              {showMsgSearch && (
+                <div style={{ padding: '0.5rem 1rem', borderBottom: '1px solid #e5e7eb', background: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Search size={14} color="#94a3b8" style={{ flexShrink: 0 }} />
+                  <input
+                    autoFocus
+                    type="text"
+                    placeholder="Search messages..."
+                    value={msgSearch}
+                    onChange={e => setMsgSearch(e.target.value)}
+                    style={{ flex: 1, border: 'none', outline: 'none', fontSize: '0.8rem', fontWeight: 600, background: 'transparent', color: '#374151' }}
+                  />
+                  {msgSearch && (
+                    <button onClick={() => setMsgSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 0, display: 'flex' }} title="Clear">
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+              )}
               <div 
                 ref={scrollRef} onScroll={handleScroll}
                 style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}
               >
-                {messages.length === 0 ? (
+                {filteredMessages.length === 0 ? (
                   <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity: 0.3 }}>
                     <MessageCircle size={40} style={{ marginBottom: '1rem' }} />
                     <p style={{ fontSize: '0.75rem', fontWeight: 600 }}>Start a conversation</p>
                   </div>
                 ) : (
-                  messages.map((msg, i) => {
+                  filteredMessages.map((msg, i) => {
                     const isMe = msg.sender_id === user?.id;
-                    const prevMsgDate = i > 0 ? new Date(messages[i - 1].created_at) : null;
+                    const prevMsgDate = i > 0 ? new Date(filteredMessages[i - 1].created_at) : null;
                     const showDateSeparator = !prevMsgDate || new Date(msg.created_at).toDateString() !== prevMsgDate.toDateString();
                     return (
                       <React.Fragment key={msg.id || i}>
@@ -308,9 +362,9 @@ const ChatWidget = () => {
               initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
               style={{
                 position: 'absolute', top: -5, right: -5, minWidth: 22, height: 22,
-                background: C.rose, color: '#fff', fontSize: '0.7rem', fontWeight: 900,
+                background: C.blue, color: '#fff', fontSize: '0.7rem', fontWeight: 900,
                 borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                border: '3px solid #fff', boxShadow: '0 5px 10px rgba(244,63,94,0.3)'
+                border: '3px solid #fff', boxShadow: '0 5px 10px rgba(59,130,246,0.3)'
               }}
             >
               {totalUnreadCount > 9 ? '9+' : totalUnreadCount}

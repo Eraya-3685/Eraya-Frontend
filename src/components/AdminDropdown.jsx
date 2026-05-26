@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, ShieldAlert, ShieldCheck, User as UserIcon } from 'lucide-react';
 import useClickOutside from '../hooks/useClickOutside';
 
 const AdminDropdown = ({ 
@@ -9,16 +9,10 @@ const AdminDropdown = ({
   options, 
   onChange, 
   placeholder = 'Select option',
-  renderOption,
-  renderValue,
   className = '',
-  buttonClassName = '',
   disabled = false,
-  multiple = false,
-  searchable = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
   const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
   const dropdownRef = useRef(null);
   const menuRef = useRef(null);
@@ -50,88 +44,113 @@ const AdminDropdown = ({
 
   const handleSelect = (option) => {
     if (disabled) return;
-    
-    if (multiple) {
-      const currentValues = Array.isArray(value) ? value : [];
-      const isSelected = currentValues.includes(option);
-      if (isSelected) {
-        onChange(currentValues.filter(v => v !== option));
-      } else {
-        onChange([...currentValues, option]);
-      }
-    } else {
-      onChange(option);
-      setIsOpen(false);
-    }
+    onChange(option);
+    setIsOpen(false);
   };
 
-  const filteredOptions = searchable 
-    ? options.filter(opt => {
-        const label = typeof opt === 'object' ? (opt.label || opt.name) : opt;
-        return String(label).toLowerCase().includes(searchTerm.toLowerCase());
-      })
-    : options;
-
-  const isSelected = (option) => {
-    if (multiple) {
-      return Array.isArray(value) && value.includes(option);
-    }
-    return value === option;
+  // Exquisite custom themes for each user role
+  const roleThemes = {
+    admin: { bg: '#fff1f2', text: '#e11d48', border: '#ffe4e6', ring: 'rgba(225,29,72,0.15)', dot: '#e11d48', label: 'Admin', icon: ShieldAlert },
+    moderator: { bg: '#eff6ff', text: '#3b82f6', border: '#dbeafe', ring: 'rgba(59,130,246,0.15)', dot: '#3b82f6', label: 'Moderator', icon: ShieldCheck },
+    buyer: { bg: '#f8f9fc', text: '#64748b', border: '#e2e8f0', ring: 'rgba(100,116,139,0.1)', dot: '#64748b', label: 'Buyer', icon: UserIcon },
+    customer: { bg: '#f8f9fc', text: '#64748b', border: '#e2e8f0', ring: 'rgba(100,116,139,0.1)', dot: '#64748b', label: 'Buyer', icon: UserIcon },
   };
+
+  const currentTheme = roleThemes[value?.toLowerCase()] || roleThemes.buyer;
 
   const dropdownMenu = (
     <AnimatePresence>
       {isOpen && (
         <motion.div
           ref={menuRef}
-          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+          initial={{ opacity: 0, y: 8, scale: 0.96 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+          exit={{ opacity: 0, y: 8, scale: 0.96 }}
+          transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
           style={{
             position: 'absolute',
-            top: coords.top,
+            top: coords.top + 6,
             left: coords.left,
             width: coords.width,
             zIndex: 9999
           }}
-          className="fixed mt-2 min-w-[200px] bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.2)] border border-[#eaeef2] p-2 overflow-hidden"
+          className="absolute bg-white rounded-2xl shadow-[0_20px_40px_rgba(15,23,42,0.15)] border border-[#f1f5f9] p-1 overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
-          {searchable && (
-            <div className="p-2 border-b border-slate-50 mb-1">
-              <input
-                type="text"
-                autoFocus
-                placeholder="Search..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-white border border-[#eaeef2] rounded-xl py-2 px-3 text-[10px] font-bold uppercase tracking-widest outline-none focus:ring-2 focus:ring-secondary/20 transition-all"
-              />
-            </div>
-          )}
-          <div className="max-h-[300px] overflow-y-auto custom-scrollbar space-y-1 p-1">
-            {filteredOptions.length > 0 ? filteredOptions.map((option, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => handleSelect(option)}
-                className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all group text-left ${
-                  isSelected(option) ? 'bg-secondary/10' : 'hover:bg-white'
-                }`}
-              >
-                {renderOption ? renderOption(option, isSelected(option)) : (
-                  <span className={`text-[10px] font-black uppercase tracking-widest ${
-                    isSelected(option) ? 'text-secondary' : 'text-[#64748b] group-hover:text-secondary'
-                  }`}>
-                    {typeof option === 'object' ? (option.label || option.name) : option}
-                  </span>
-                )}
-              </button>
-            )) : (
-              <div className="p-4 text-center">
-                <p className="text-[10px] font-black text-[#64748b] uppercase tracking-widest">No options found</p>
-              </div>
-            )}
+          <div className="space-y-0.5 p-0.5">
+            {options.map((option, idx) => {
+              const isSelected = value?.toLowerCase() === option?.toLowerCase();
+              const theme = roleThemes[option?.toLowerCase()] || roleThemes.buyer;
+              
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => handleSelect(option)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    width: '100%',
+                    padding: '0.55rem 0.75rem',
+                    borderRadius: '0.75rem',
+                    border: 'none',
+                    background: isSelected ? '#f8f9fc' : 'transparent',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    position: 'relative'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isSelected) e.currentTarget.style.background = '#f8f9fc';
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSelected) e.currentTarget.style.background = 'transparent';
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {/* Pulsing indicator dot */}
+                    <div style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: '50%',
+                      background: theme.dot,
+                      boxShadow: isSelected ? `0 0 0 4px ${theme.ring}` : 'none',
+                      transition: 'all 0.2s'
+                    }} />
+                    <span style={{
+                      fontSize: '0.7rem',
+                      fontWeight: isSelected ? 800 : 600,
+                      color: isSelected ? '#0f172a' : '#64748b',
+                      transition: 'all 0.2s'
+                    }}>
+                      {theme.label}
+                    </span>
+                  </div>
+
+                  {/* Icon on the right */}
+                  <theme.icon 
+                    size={11} 
+                    style={{ 
+                      color: isSelected ? theme.text : '#cbd5e1',
+                      transition: 'all 0.2s'
+                    }} 
+                  />
+
+                  {/* Left Brand Glow Bar when selected */}
+                  {isSelected && (
+                    <div style={{
+                      position: 'absolute',
+                      left: 0,
+                      top: '25%',
+                      bottom: '25%',
+                      width: 3,
+                      background: theme.dot,
+                      borderRadius: '0 4px 4px 0'
+                    }} />
+                  )}
+                </button>
+              );
+            })}
           </div>
         </motion.div>
       )}
@@ -144,23 +163,54 @@ const AdminDropdown = ({
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className={`w-full flex items-center justify-between gap-3 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border shadow-sm ${
-          isOpen 
-            ? 'bg-white border-indigo-500 text-[#6366f1] ring-4 ring-secondary/5' 
-            : (buttonClassName || 'bg-white text-[#64748b] border-[#eaeef2] hover:border-[#eaeef2]')
-        } ${disabled ? 'opacity-70 cursor-not-allowed grayscale-[0.2]' : ''}`}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          width: '100%',
+          padding: '0.45rem 0.75rem',
+          borderRadius: '9999px', // Gorgeous pill shape
+          border: `1px solid ${isOpen ? currentTheme.text : currentTheme.border}`,
+          background: currentTheme.bg,
+          color: currentTheme.text,
+          boxShadow: isOpen ? `0 0 0 3px ${currentTheme.ring}` : 'none',
+          cursor: 'pointer',
+          transition: 'all 0.25s ease',
+          outline: 'none'
+        }}
+        onMouseEnter={(e) => {
+          if (!isOpen) {
+            e.currentTarget.style.borderColor = currentTheme.text;
+            e.currentTarget.style.boxShadow = `0 2px 8px ${currentTheme.ring}`;
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!isOpen) {
+            e.currentTarget.style.borderColor = currentTheme.border;
+            e.currentTarget.style.boxShadow = 'none';
+          }
+        }}
       >
-        <div className="flex items-center gap-2 truncate">
-          {renderValue ? renderValue(value) : (
-            <span className="truncate">
-              {multiple 
-                ? (Array.isArray(value) && value.length > 0 ? `${value.length} Selected` : placeholder)
-                : (value || placeholder)
-              }
-            </span>
-          )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0 }}>
+          <currentTheme.icon size={11} style={{ shrink: 0 }} />
+          <span style={{ 
+            fontSize: '0.68rem', 
+            fontWeight: 800, 
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap'
+          }}>
+            {currentTheme.label}
+          </span>
         </div>
-        <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-500 shrink-0 ${isOpen ? 'rotate-180 text-secondary' : 'text-[#64748b]'}`} />
+        <ChevronDown 
+          size={11} 
+          style={{ 
+            transform: isOpen ? 'rotate(180deg)' : 'none', 
+            transition: 'transform 0.3s ease',
+            flexShrink: 0
+          }} 
+        />
       </button>
 
       {createPortal(dropdownMenu, document.body)}

@@ -93,8 +93,11 @@ const RootAuthHandler = ({ children }) => {
     if (token && !user && !syncing) {
       fetchProfile();
     }
-    if (token) {
-      useWishlistStore.getState().syncWishlist();
+    if (token && user) {
+      const role = user.role?.toLowerCase();
+      if (role !== 'admin' && role !== 'moderator') {
+        useWishlistStore.getState().syncWishlist();
+      }
     }
   }, [token, user, syncing, fetchProfile]);
 
@@ -168,7 +171,7 @@ function App() {
                   <Route path="/products" element={<AdminGuard allowedRoles={['admin', 'moderator']}><AdminProducts /></AdminGuard>} />
                   <Route path="/categories" element={<AdminGuard allowedRoles={['admin', 'moderator']}><AdminCategories /></AdminGuard>} />
                   <Route path="/chat" element={<AdminGuard allowedRoles={['admin', 'moderator']}><AdminChat /></AdminGuard>} />
-                  <Route path="/users" element={<AdminGuard allowedRoles={['admin']}><AdminUsers /></AdminGuard>} />
+                  <Route path="/users" element={<AdminGuard allowedRoles={['admin', 'moderator']}><AdminUsers /></AdminGuard>} />
                   <Route path="/orders" element={<AdminGuard allowedRoles={['admin', 'moderator']}><AdminOrders /></AdminGuard>} />
                   <Route path="/store-settings" element={<AdminGuard allowedRoles={['admin', 'moderator']}><AdminSettings /></AdminGuard>} />
                   <Route path="/settings" element={<AdminGuard allowedRoles={['admin', 'moderator']}><AdminSettings /></AdminGuard>} />
