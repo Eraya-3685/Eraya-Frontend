@@ -39,7 +39,23 @@ export default function AdminLayout({ children }) {
   const [filteredResults, setFilteredResults] = useState({ users: [], orders: [], products: [], categories: [], reviews: [], conversations: [] });
 
   // Premium Notifications State
-  const [notifications, setNotifications] = useState([]);
+  const [notifications, setNotifications] = useState(() => {
+    try {
+      const saved = localStorage.getItem('admin_notifications');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('admin_notifications', JSON.stringify(notifications));
+    } catch (err) {
+      console.error('Failed to save admin notifications to localStorage', err);
+    }
+  }, [notifications]);
+
   const [notiOpen, setNotiOpen] = useState(false);
   const [signOutModalOpen, setSignOutModalOpen] = useState(false);
 
@@ -254,7 +270,15 @@ export default function AdminLayout({ children }) {
 
   useEffect(() => {
     if (!token) return;
-    const wsUrl = `${import.meta.env.VITE_API_BASE_URL.replace(/^http/, 'ws')}/admin/orders/ws?token=${token}`;
+    
+    const apiBase = import.meta.env.VITE_API_BASE_URL || `${window.location.origin}/api/v1`;
+    let baseWsUrl = apiBase.replace(/^http/, 'ws');
+    // Fallback to ws:// if running on non-secure HTTP local development
+    if (window.location.protocol === 'http:' && baseWsUrl.startsWith('wss://')) {
+      baseWsUrl = baseWsUrl.replace(/^wss:/, 'ws:');
+    }
+    const wsUrl = `${baseWsUrl}/admin/orders/ws?token=${token}`;
+
     const connect = () => {
       wsRef.current = new WebSocket(wsUrl);
       wsRef.current.onopen = () => {
@@ -266,6 +290,8 @@ export default function AdminLayout({ children }) {
           const data = JSON.parse(event.data);
           const type = data.type;
           const message = data.message || '';
+          const orderId = data.order_id;
+
           // Show toast based on event type
           if (type === 'NEW_ORDER') {
             toast.success(`🔔 New order! ${message}`);
@@ -279,15 +305,27 @@ export default function AdminLayout({ children }) {
             toast(message);
           }
 
-          // Add dynamically to administrative notifications
+          // Generate a unique ID based on the order ID if available to prevent duplicates
+          const notiId = (type === 'NEW_ORDER' && orderId)
+            ? `pending-order-${orderId}`
+            : `order-event-${type}-${orderId || Date.now() + Math.random().toString(36).substr(2, 9)}`;
+
           const newNoti = {
-            id: Date.now() + Math.random().toString(36).substr(2, 9),
+            id: notiId,
             type: type || 'SYSTEM',
             message: message,
             time: new Date(),
             read: false
           };
-          setNotifications(prev => [newNoti, ...prev]);
+
+          setNotifications(prev => {
+            const exists = prev.some(n => n.id === notiId);
+            if (exists) {
+              // Update the existing notification
+              return prev.map(n => n.id === notiId ? { ...n, message, time: new Date(), read: false } : n);
+            }
+            return [newNoti, ...prev];
+          });
 
           // Dispatch custom event for other components to refresh data
           window.dispatchEvent(new Event('admin-order-update'));
@@ -309,10 +347,86 @@ export default function AdminLayout({ children }) {
       };
     };
     connect();
+
     return () => {
-      wsRef.current?.close();
+      if (wsRef.current) {
+        // Remove listeners to avoid unmounted callback execution & connection leaks
+        wsRef.current.onclose = null;
+        wsRef.current.onerror = null;
+        wsRef.current.close();
+      }
     };
   }, [token]);
+
+  // Auto-sync pending orders from database to keep notifications updated
+  useEffect(() => {
+    if (!token || !user) return;
+    const role = user?.role?.toLowerCase();
+    if (role !== 'admin' && role !== 'moderator') return;
+
+    const syncPendingOrders = async () => {
+      try {
+        const res = await api.get('/admin/orders');
+        const orders = res.data || [];
+        const pendingOrders = orders.filter(o => o.order_status === 'Pending');
+
+        setNotifications(prev => {
+          let updated = [...prev];
+          let changed = false;
+
+          // 1. Inject pending orders as new unread notifications if not present
+          pendingOrders.forEach(order => {
+            const notiId = `pending-order-${order.id}`;
+            const exists = updated.some(n => n.id === notiId);
+            if (!exists) {
+              const newNoti = {
+                id: notiId,
+                type: 'NEW_ORDER',
+                message: `Order #${order.id} is pending review.`,
+                time: new Date(order.created_at),
+                read: false
+              };
+              updated.push(newNoti);
+              changed = true;
+            }
+          });
+
+          // 2. Automatically mark existing notifications as read if the order is no longer pending
+          updated = updated.map(n => {
+            if (n.id.startsWith('pending-order-')) {
+              const orderId = parseInt(n.id.replace('pending-order-', ''), 10);
+              const order = orders.find(o => o.id === orderId);
+              if (order && order.order_status !== 'Pending' && !n.read) {
+                changed = true;
+                return { ...n, read: true };
+              }
+            }
+            return n;
+          });
+
+          if (changed) {
+            // Sort notifications: newest first
+            updated.sort((a, b) => new Date(b.time) - new Date(a.time));
+            return updated;
+          }
+          return prev;
+        });
+      } catch (err) {
+        console.error('Failed to sync pending orders for notifications:', err);
+      }
+    };
+
+    syncPendingOrders();
+
+    // Listen to administrative updates to re-sync notifications
+    const handleUpdate = () => {
+      syncPendingOrders();
+    };
+    window.addEventListener('admin-order-update', handleUpdate);
+    return () => {
+      window.removeEventListener('admin-order-update', handleUpdate);
+    };
+  }, [token, user]);
 
   const navItems = NAV_ITEMS.filter(item => {
     const role = user?.role?.toLowerCase();
@@ -489,7 +603,7 @@ export default function AdminLayout({ children }) {
             </button>
             <div>
               <span style={{ fontWeight: 900, fontSize: '0.9rem', color: '#0f172a', display: 'block', lineHeight: 1.1 }}>Eraya.</span>
-              <span style={{ fontSize: '0.55rem', color: '#e11d48', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Admin Portal</span>
+              <span style={{ fontSize: '0.55rem', color: '#e11d48', fontWeight: 700, letterSpacing: '0.05em' }}>Admin Portal</span>
             </div>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>

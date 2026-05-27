@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Minus, ArrowRight, ShieldCheck, Truck, Flame, Phone, RefreshCcw, X, Bookmark } from 'lucide-react';
+import { Plus, Minus, ArrowRight, ShieldCheck, Truck, Phone, RefreshCcw, X, Bookmark } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import useCartStore from '../store/useCartStore';
 import useAuthStore from '../store/useAuthStore';
@@ -48,14 +48,16 @@ const Cart = () => {
     } finally { setIsRefreshing(false); }
   };
 
-  const subtotal   = items.reduce((s, i) => s + i.base_price * i.quantity, 0);
+  const subtotal   = items.reduce((s, i) => {
+    const price = i.discount_price && i.discount_price > 0 ? i.discount_price : i.base_price;
+    return s + price * i.quantity;
+  }, 0);
   const threshold  = settings.free_shipping_threshold || 1000;
   const shipping   = subtotal >= threshold ? 0 : settings.standard_delivery_fee || 60;
   const total      = subtotal + shipping;
   const progress   = Math.min((subtotal / threshold) * 100, 100);
   const freeLeft   = threshold - subtotal;
-  const cashbackAt = threshold * 1.5; // fictional cashback milestone at 150% of free shipping
-  const cashbackPct = Math.min((subtotal / cashbackAt) * 100, 100);
+
 
   const confirmRemove = async () => {
     if (!itemToRemove) return;
@@ -108,11 +110,7 @@ const Cart = () => {
           <span>/</span>
           <span style={{ color:C.t900, fontWeight:700 }}>Cart</span>
         </div>
-        {/* Urgency */}
-        <div style={{ display:'flex', alignItems:'center', gap:'0.5rem', fontSize:'0.75rem', fontWeight:700, color:C.orange }}>
-          <Flame style={{ width:14, height:14 }} />
-          Hurry up! Your items are reserved for 10 minutes
-        </div>
+
         {/* Help */}
         <div style={{ display:'flex', alignItems:'center', gap:'0.5rem', fontSize:'0.72rem', fontWeight:600, color:C.t500 }}>
           <Phone style={{ width:13, height:13 }} />
@@ -123,31 +121,41 @@ const Cart = () => {
       {/* ── Page title ── */}
       <h1 style={{ fontSize:'2rem', fontWeight:800, color:C.t900, margin:'0 0 1.75rem', letterSpacing:'-0.04em' }}>Shopping Cart</h1>
 
-      {/* ── Progress bar ── */}
-      <div style={{ background:C.bgCard, border:`1px solid ${C.bLine}`, borderRadius:'1.5rem', padding:'1.25rem 2rem', marginBottom:'1.5rem' }}>
-        {subtotal < threshold ? (
-          <p style={{ textAlign:'center', fontSize:'0.78rem', fontWeight:600, color:C.t500, margin:'0 0 1rem' }}>
-            Great! You have been{' '}
-            <strong style={{ color:C.green }}>FREE SHIPPING</strong>,{' '}
-            Only <strong style={{ color:C.t900 }}>৳{freeLeft.toLocaleString()}</strong> away from getting{' '}
-            <strong style={{ color:C.orange }}>3% EXTRA CASHBACK</strong>
-          </p>
-        ) : (
-          <p style={{ textAlign:'center', fontSize:'0.78rem', fontWeight:700, color:C.green, margin:'0 0 1rem' }}>
-            You've unlocked FREE SHIPPING!
-          </p>
-        )}
-        {/* Bar */}
-        <div style={{ position:'relative', height:8, background:C.bgMuted, borderRadius:999, overflow:'hidden' }}>
-          <div style={{ position:'absolute', left:0, top:0, height:'100%', width:`${progress}%`, background:'linear-gradient(to right, #3b82f6, #6366f1)', borderRadius:999, transition:'width .6s ease' }} />
-          {/* Thumb */}
-          <div style={{ position:'absolute', left:`${progress}%`, top:'50%', transform:'translate(-50%,-50%)', width:16, height:16, background:C.blue, borderRadius:'50%', border:'3px solid #fff', boxShadow:'0 2px 6px rgba(59,130,246,0.4)', transition:'left .6s ease' }} />
-        </div>
-        {/* Labels */}
-        <div style={{ display:'flex', justifyContent:'space-between', marginTop:'0.5rem' }}>
-          <span style={{ fontSize:'0.65rem', fontWeight:700, color:C.t300 }}>৳0</span>
-          <span style={{ fontSize:'0.65rem', fontWeight:800, color:C.blue, letterSpacing:'0.02em' }}>Free Shipping ৳{threshold.toLocaleString()}</span>
-          <span style={{ fontSize:'0.65rem', fontWeight:800, color:C.orange, letterSpacing:'0.02em' }}>3% Cashback ৳{cashbackAt.toLocaleString()}</span>
+      {/* ── Milestone Progress Card ── */}
+      <div style={{ marginBottom: '1.5rem' }}>
+        {/* Milestone: Free Shipping */}
+        <div style={{
+          background: '#fff', border: `1px solid ${subtotal >= threshold ? '#bbf7d0' : C.bSoft}`,
+          borderRadius: '1.5rem', padding: '1.25rem 1.5rem',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.02)',
+          display: 'flex', flexDirection: 'column', gap: '0.65rem',
+          transition: 'all 0.3s ease-in-out'
+        }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.04)'; }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.02)'; }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: C.t300, letterSpacing: '0.04em' }}>Milestone 1</span>
+            {subtotal >= threshold ? (
+              <span style={{ background: '#dcfce7', color: '#166534', fontSize: '0.65rem', fontWeight: 800, padding: '0.2rem 0.6rem', borderRadius: 9999 }}>Unlocked</span>
+            ) : (
+              <span style={{ background: C.bgMuted, color: C.t700, fontSize: '0.65rem', fontWeight: 800, padding: '0.2rem 0.6rem', borderRadius: 9999 }}>Active</span>
+            )}
+          </div>
+          <div>
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 900, color: C.t900, margin: '0 0 0.15rem' }}>Free Shipping</h3>
+            {subtotal >= threshold ? (
+              <p style={{ fontSize: '0.78rem', color: '#166534', fontWeight: 600, margin: 0 }}>Awesome! Free delivery has been applied to this order.</p>
+            ) : (
+              <p style={{ fontSize: '0.78rem', color: C.t500, fontWeight: 500, margin: 0 }}>
+                Add <strong>৳{(threshold - subtotal).toLocaleString()}</strong> more to unlock free delivery.
+              </p>
+            )}
+          </div>
+          {/* Mini progress bar */}
+          <div style={{ position: 'relative', height: 6, background: C.bgMuted, borderRadius: 999, overflow: 'hidden', marginTop: '0.25rem' }}>
+            <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${Math.min((subtotal / threshold) * 100, 100)}%`, background: subtotal >= threshold ? '#22c55e' : 'linear-gradient(to right, #3b82f6, #6366f1)', borderRadius: 999, transition: 'width .6s ease' }} />
+          </div>
         </div>
       </div>
 
@@ -192,7 +200,18 @@ const Cart = () => {
               <motion.div key={item.id}
                 initial={{ opacity:0, y:-8 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, height:0 }}
                 transition={{ duration:0.25, delay: idx*0.04 }}
-                style={{ display:'grid', gridTemplateColumns:'3fr 0.85fr 1fr 1.1fr 0.9fr', gap:0, padding:'1.25rem 1.75rem', borderBottom: idx < items.length-1 ? `1px solid ${C.bLine}` : 'none', alignItems:'center' }}
+                style={{
+                  display:'grid',
+                  gridTemplateColumns:'3fr 0.85fr 1fr 1.1fr 0.9fr',
+                  gap:0,
+                  padding:'1.25rem 1.75rem',
+                  borderBottom: idx < items.length-1 ? `1px solid ${C.bLine}` : 'none',
+                  alignItems:'center',
+                  transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                  borderRadius: '1.25rem',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.04)'; e.currentTarget.style.background = '#fff'; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.background = 'transparent'; }}
               >
                 {/* Product cell */}
                 <div style={{ display:'flex', alignItems:'center', gap:'1rem', minWidth:0 }}>
@@ -227,31 +246,48 @@ const Cart = () => {
 
                 {/* Price */}
                 <div style={{ textAlign:'center', paddingLeft:'0.5rem' }}>
-                  <span style={{ fontSize:'0.88rem', fontWeight:700, color:C.t900, letterSpacing:'-0.02em' }}>৳{item.base_price?.toLocaleString()}</span>
+                  {item.discount_price && item.discount_price > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.2rem' }}>
+                      <span style={{ fontSize:'0.88rem', fontWeight:700, color:C.rose, letterSpacing:'-0.02em' }}>৳{item.discount_price?.toLocaleString()}</span>
+                      <span style={{ fontSize:'0.72rem', color:C.t300, textDecoration:'line-through' }}>৳{item.base_price?.toLocaleString()}</span>
+                      <span style={{ fontSize: '0.58rem', fontWeight: 800, color: '#166534', background: '#dcfce7', padding: '0.05rem 0.25rem', borderRadius: '0.25rem', whiteSpace: 'nowrap' }}>
+                        {Math.round(((item.base_price - item.discount_price) / item.base_price) * 100)}% Off
+                      </span>
+                    </div>
+                  ) : (
+                    <span style={{ fontSize:'0.88rem', fontWeight:700, color:C.t900, letterSpacing:'-0.02em' }}>৳{item.base_price?.toLocaleString()}</span>
+                  )}
                 </div>
 
                 {/* Qty stepper */}
                 <div style={{ display:'flex', justifyContent:'center' }}>
-                  <div style={{ display:'inline-flex', alignItems:'center', border:`1.5px solid ${C.bLine}`, borderRadius:9999, overflow:'hidden', background:'#fff', boxShadow:'0 1px 4px rgba(0,0,0,0.05)' }}>
+                  <div style={{ display:'inline-flex', alignItems:'center', background:C.bgMuted, borderRadius:9999, padding:'0.2rem', gap:'0.2rem' }}>
                     <button onClick={() => handleQty(item, item.quantity-1)} disabled={outOfStock}
-                      style={{ width:30, height:30, display:'flex', alignItems:'center', justifyContent:'center', background:'none', border:'none', cursor:outOfStock?'not-allowed':'pointer', color:C.t500, transition:'background .12s' }}
-                      onMouseEnter={e=>{ if(!outOfStock) e.currentTarget.style.background=C.bgMuted; }}
-                      onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
-                      <Minus style={{ width:11, height:11 }} />
+                      style={{ width:26, height:26, borderRadius:'50%', border:'none', background:'#fff', cursor:outOfStock?'not-allowed':'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:C.t900, transition:'all .15s', boxShadow:'0 1px 4px rgba(0,0,0,0.06)' }}
+                      onMouseEnter={e=>{ if(!outOfStock) e.currentTarget.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'; }}
+                      onMouseLeave={e=>e.currentTarget.style.boxShadow='0 1px 4px rgba(0,0,0,0.06)'}>
+                      <Minus style={{ width:10, height:10 }} />
                     </button>
-                    <span style={{ minWidth:24, textAlign:'center', fontSize:'0.82rem', fontWeight:800, color:C.t900, padding:'0 0.25rem' }}>{item.quantity}</span>
+                    <span style={{ minWidth:26, textAlign:'center', fontSize:'0.82rem', fontWeight:800, color:C.t900 }}>{item.quantity}</span>
                     <button onClick={() => handleQty(item, item.quantity+1)} disabled={outOfStock}
-                      style={{ width:30, height:30, display:'flex', alignItems:'center', justifyContent:'center', background:'none', border:'none', cursor:outOfStock?'not-allowed':'pointer', color:C.t500, transition:'background .12s' }}
-                      onMouseEnter={e=>{ if(!outOfStock) e.currentTarget.style.background=C.bgMuted; }}
-                      onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
-                      <Plus style={{ width:11, height:11 }} />
+                      style={{ width:26, height:26, borderRadius:'50%', border:'none', background:'#fff', cursor:outOfStock?'not-allowed':'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:C.t900, transition:'all .15s', boxShadow:'0 1px 4px rgba(0,0,0,0.06)' }}
+                      onMouseEnter={e=>{ if(!outOfStock) e.currentTarget.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'; }}
+                      onMouseLeave={e=>e.currentTarget.style.boxShadow='0 1px 4px rgba(0,0,0,0.06)'}>
+                      <Plus style={{ width:10, height:10 }} />
                     </button>
                   </div>
                 </div>
 
                 {/* Line total */}
                 <div style={{ textAlign:'right', paddingRight:'0.25rem' }}>
-                  <span style={{ fontSize:'0.88rem', fontWeight:800, color:C.t900, letterSpacing:'-0.02em' }}>৳{(item.base_price * item.quantity).toLocaleString()}</span>
+                  {item.discount_price && item.discount_price > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                      <span style={{ fontSize:'0.88rem', fontWeight:800, color:C.t900, letterSpacing:'-0.02em' }}>৳{(item.discount_price * item.quantity).toLocaleString()}</span>
+                      <span style={{ fontSize:'0.72rem', color:C.t300, textDecoration:'line-through' }}>৳{(item.base_price * item.quantity).toLocaleString()}</span>
+                    </div>
+                  ) : (
+                    <span style={{ fontSize:'0.88rem', fontWeight:800, color:C.t900, letterSpacing:'-0.02em' }}>৳{(item.base_price * item.quantity).toLocaleString()}</span>
+                  )}
                 </div>
               </motion.div>
             );
@@ -260,42 +296,53 @@ const Cart = () => {
       </div>
 
       {/* ── Bottom actions ── */}
-      {/* Use same grid as table so Sub Total lines up with Total column */}
-      <div style={{ background:C.bgCard, border:`1px solid ${C.bLine}`, borderRadius:'1.5rem', padding:'1.25rem 1.75rem', display:'grid', gridTemplateColumns:'3fr 0.85fr 1fr 1.1fr 0.9fr', gap:0, alignItems:'center' }}>
-
+      <div style={{
+        background: C.bgCard, border: `1px solid ${C.bLine}`, borderRadius: '1.5rem',
+        padding: '1.5rem 2rem', display: 'flex', justifyContent: 'space-between',
+        alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem'
+      }}>
         {/* Left — info badges */}
-        <div style={{ display:'flex', alignItems:'center', gap:'0.75rem', gridColumn:'1 / 4' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:'0.4rem', padding:'0.45rem 0.85rem', background:C.bgMuted, border:`1px solid ${C.bLine}`, borderRadius:9999 }}>
-            <Truck style={{ width:13, height:13, color:C.blue }} />
-            <span style={{ fontSize:'0.68rem', fontWeight:600, color:C.t500 }}>
-              {shipping===0 ? <strong style={{ color:C.green }}>Free Shipping!</strong> : `৳${shipping} delivery`}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.45rem 0.85rem', background: C.bgMuted, border: `1px solid ${C.bLine}`, borderRadius: 9999 }}>
+            <Truck style={{ width: 13, height: 13, color: C.blue }} />
+            <span style={{ fontSize: '0.68rem', fontWeight: 600, color: C.t500 }}>
+              {shipping === 0 ? <strong style={{ color: C.green }}>Free Shipping!</strong> : `৳${shipping} Delivery`}
             </span>
           </div>
-          <div style={{ display:'flex', alignItems:'center', gap:'0.4rem', padding:'0.45rem 0.85rem', background:C.bgMuted, border:`1px solid ${C.bLine}`, borderRadius:9999 }}>
-            <ShieldCheck style={{ width:13, height:13, color:C.green }} />
-            <span style={{ fontSize:'0.68rem', fontWeight:600, color:C.t500 }}>SSL Secured</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.45rem 0.85rem', background: C.bgMuted, border: `1px solid ${C.bLine}`, borderRadius: 9999 }}>
+            <ShieldCheck style={{ width: 13, height: 13, color: C.green }} />
+            <span style={{ fontSize: '0.68rem', fontWeight: 600, color: C.t500 }}>SSL Secured</span>
           </div>
         </div>
 
-        {/* Quantity column — blank spacer */}
-        <div />
-
-        {/* Sub Total — aligned under Total column */}
-        <div style={{ textAlign:'right', paddingRight:'0.25rem' }}>
-          <p style={{ fontSize:'0.75rem', fontWeight:800, color:C.t500, margin:'0 0 0.2rem' }}>Sub Total</p>
-          <p style={{ fontSize:'1.1rem', fontWeight:800, color:C.t900, margin:'0 0 0.1rem', letterSpacing:'-0.03em', whiteSpace:'nowrap' }}>
-            ৳{subtotal.toLocaleString()}
-          </p>
-          <p style={{ fontSize:'0.58rem', color:C.t300, fontWeight:500, margin:0, whiteSpace:'nowrap' }}>Excl. Tax &amp; Delivery</p>
+        {/* Right — Beautiful pricing breakdown */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '240px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: C.t500, fontWeight: 600 }}>
+            <span>Subtotal</span>
+            <span style={{ color: C.t900 }}>৳{subtotal.toLocaleString()}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: C.t500, fontWeight: 600, alignItems: 'center' }}>
+            <span>Delivery Charge</span>
+            {shipping === 0 ? (
+              <span style={{ color: '#166534', background: '#dcfce7', fontSize: '0.68rem', fontWeight: 800, padding: '0.15rem 0.5rem', borderRadius: 9999 }}>Free</span>
+            ) : (
+              <span style={{ color: C.t900 }}>৳{shipping.toLocaleString()}</span>
+            )}
+          </div>
+          <div style={{ height: '1px', background: C.bLine, margin: '0.25rem 0' }} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <span style={{ fontSize: '0.9rem', fontWeight: 800, color: C.t900 }}>Total</span>
+            <span style={{ fontSize: '1.25rem', fontWeight: 900, color: C.t900, letterSpacing: '-0.03em' }}>৳{total.toLocaleString()}</span>
+          </div>
         </div>
       </div>
 
       {/* Buttons row */}
       <div style={{ display:'flex', justifyContent:'flex-end', gap:'0.75rem', marginTop:'1rem' }}>
         <Link to="/products"
-          style={{ padding:'0.75rem 1.75rem', background:'transparent', border:`1.5px solid ${C.bLine}`, borderRadius:'0.875rem', fontSize:'0.8rem', fontWeight:800, color:C.t700, textDecoration:'none', transition:'border-color .2s, color .2s', display:'flex', alignItems:'center' }}
-          onMouseEnter={e=>{ e.currentTarget.style.borderColor=C.t900; e.currentTarget.style.color=C.t900; }}
-          onMouseLeave={e=>{ e.currentTarget.style.borderColor=C.bLine; e.currentTarget.style.color=C.t700; }}>
+          style={{ padding:'0.75rem 1.75rem', background:'transparent', border:`1.5px solid ${C.bLine}`, borderRadius:'1.25rem', fontSize:'0.8rem', fontWeight:800, color:C.t700, textDecoration:'none', transition:'all .2s', display:'flex', alignItems:'center' }}
+          onMouseEnter={e=>{ e.currentTarget.style.borderColor=C.t900; e.currentTarget.style.color=C.t900; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+          onMouseLeave={e=>{ e.currentTarget.style.borderColor=C.bLine; e.currentTarget.style.color=C.t700; e.currentTarget.style.transform = 'none'; }}>
           Continue Shopping
         </Link>
         <button
@@ -307,9 +354,9 @@ const Cart = () => {
             navigate('/checkout');
           }}
           disabled={isNavigating || items.some(i => i.stock_count <= 0)}
-          style={{ padding:'0.75rem 1.75rem', background:C.t900, color:'#fff', border:'none', borderRadius:'0.875rem', fontSize:'0.8rem', fontWeight:800, cursor:'pointer', fontFamily:'inherit', transition:'background .2s, opacity .2s', opacity: isNavigating || items.some(i=>i.stock_count<=0)?0.55:1, display:'flex', alignItems:'center', gap:'0.5rem' }}
-          onMouseEnter={e=>{ if(!isNavigating) e.currentTarget.style.background='#1e293b'; }}
-          onMouseLeave={e=>e.currentTarget.style.background=C.t900}>
+          style={{ padding:'0.75rem 1.75rem', background:C.t900, color:'#fff', border:'none', borderRadius:'1.25rem', fontSize:'0.8rem', fontWeight:800, cursor:'pointer', fontFamily:'inherit', transition:'all .25s cubic-bezier(0.4, 0, 0.2, 1)', opacity: isNavigating || items.some(i=>i.stock_count<=0)?0.55:1, display:'flex', alignItems:'center', gap:'0.5rem', boxShadow: '0 8px 24px rgba(13, 17, 23, 0.15)' }}
+          onMouseEnter={e=>{ if(!isNavigating) { e.currentTarget.style.background='#1e293b'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 28px rgba(13, 17, 23, 0.25)'; } }}
+          onMouseLeave={e=>{ e.currentTarget.style.background=C.t900; e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(13, 17, 23, 0.15)'; }}>
           {isNavigating ? <><RefreshCcw style={{ width:14, height:14, animation:'spin 0.8s linear infinite' }} />Processing…</> : <>Go to Checkout <ArrowRight style={{ width:14, height:14 }} /></>}
         </button>
       </div>

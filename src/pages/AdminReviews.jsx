@@ -132,7 +132,7 @@ const AdminReviews = () => {
                           </div>
                        </div>
                     </div>
-                    <div style={{ padding: '0.4rem 0.85rem', borderRadius: '0.85rem', background: rev.is_approved ? '#ecfdf5' : '#fff7ed', color: rev.is_approved ? '#10b981' : '#f97316', fontSize: '0.6rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{rev.is_approved ? 'Live' : 'Pending'}</div>
+                    <div style={{ padding: '0.4rem 0.85rem', borderRadius: '0.85rem', background: rev.is_approved ? '#ecfdf5' : '#fff7ed', color: rev.is_approved ? '#10b981' : '#f97316', fontSize: '0.6rem', fontWeight: 900, letterSpacing: '0.05em' }}>{rev.is_approved ? 'Live' : 'Pending'}</div>
                  </div>
 
                  <div style={{ background: '#f8f9fc', borderRadius: '1.5rem', padding: '1.25rem', textAlign: 'left' }}>

@@ -136,6 +136,293 @@ const AdminOrders = () => {
     return sortableItems;
   }, [filtered, sortConfig]);
 
+  const handlePrintInvoice = (order) => {
+    const printWindow = window.open('', '_blank');
+    const itemsHtml = order.items?.map(item => `
+      <tr>
+        <td style="padding: 16px; border-bottom: 1px solid #f1f5f9; text-align: left;"><span class="item-name">${item.product?.name || 'Product'}</span></td>
+        <td style="padding: 16px; border-bottom: 1px solid #f1f5f9; text-align: center;">${item.quantity}</td>
+        <td style="padding: 16px; border-bottom: 1px solid #f1f5f9; text-align: right;">৳${item.price_at_purchase.toLocaleString()}</td>
+        <td style="padding: 16px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 700; color: #0f172a;">৳${(item.price_at_purchase * item.quantity).toLocaleString()}</td>
+      </tr>
+    `).join('') || '';
+
+    const shippingInfo = order.shipping_address || '';
+    const parts = shippingInfo.split('|');
+    const recipientName = parts[0]?.replace('Recipient:', '')?.trim() || order.user?.full_name || 'N/A';
+    const recipientPhone = parts[1]?.replace('Phone:', '')?.trim() || 'N/A';
+    const recipientAddr = parts[2]?.replace('Address:', '')?.trim() || shippingInfo;
+
+    const subtotal = order.items?.reduce((sum, item) => sum + (item.price_at_purchase * item.quantity), 0) || 0;
+    const tax = Math.round(subtotal * 0.05);
+    const shipping = Math.max(0, Math.round(order.total_price - subtotal - tax));
+
+    const statusText = getStatusDisplayName(order.order_status);
+    const statusLower = (order.order_status || 'Pending').toLowerCase();
+    const badgeClass = `badge-${statusLower}`;
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Invoice - Eraya #${order.id}</title>
+          <link rel="preconnect" href="https://fonts.googleapis.com">
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+          <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+          <style>
+            @media print {
+              @page {
+                size: A4;
+                margin: 1.6cm 2cm;
+              }
+              body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+            }
+            body {
+              font-family: 'Plus Jakarta Sans', sans-serif;
+              color: #1e293b;
+              margin: 0;
+              padding: 0;
+              background: #fff;
+              line-height: 1.6;
+            }
+            .invoice-container {
+              max-width: 800px;
+              margin: 0 auto;
+              padding: 20px;
+            }
+            .header {
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              border-bottom: 2px solid #f1f5f9;
+              padding-bottom: 30px;
+              margin-bottom: 30px;
+            }
+            .logo-container {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+            }
+            .logo-icon {
+              width: 32px;
+              height: 32px;
+              background: #e11d48;
+              border-radius: 8px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: #fff;
+              font-weight: 800;
+              font-size: 18px;
+            }
+            .logo-text {
+              font-size: 24px;
+              font-weight: 800;
+              color: #0f172a;
+              letter-spacing: -0.03em;
+            }
+            .invoice-title {
+              font-size: 32px;
+              font-weight: 800;
+              color: #0f172a;
+              margin: 0;
+              letter-spacing: -0.03em;
+              text-align: right;
+            }
+            .invoice-number {
+              font-size: 14px;
+              color: #64748b;
+              font-weight: 600;
+              text-align: right;
+              margin-top: 4px;
+            }
+            .meta-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 40px;
+              margin-bottom: 40px;
+            }
+            .meta-card {
+              background: #f8fafc;
+              border-radius: 12px;
+              padding: 20px;
+              border: 1px solid #f1f5f9;
+            }
+            .meta-title {
+              font-size: 11px;
+              font-weight: 800;
+              color: #94a3b8;
+              text-transform: uppercase;
+              letter-spacing: 0.05em;
+              margin-bottom: 12px;
+            }
+            .meta-value {
+              font-size: 13.5px;
+              font-weight: 600;
+              color: #334155;
+              line-height: 1.6;
+            }
+            .meta-value strong {
+              color: #0f172a;
+              font-size: 15px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 30px;
+            }
+            th {
+              background: #f8fafc;
+              border-bottom: 2px solid #e2e8f0;
+              padding: 12px 16px;
+              font-size: 11px;
+              font-weight: 800;
+              color: #64748b;
+              text-transform: uppercase;
+              letter-spacing: 0.05em;
+            }
+            .item-name {
+              font-weight: 700;
+              color: #0f172a;
+            }
+            .totals-section {
+              display: flex;
+              justify-content: flex-end;
+              margin-top: 20px;
+            }
+            .totals-table {
+              width: 320px;
+              margin-bottom: 0;
+            }
+            .totals-table td {
+              padding: 8px 16px;
+              border: none;
+              font-size: 14px;
+              font-weight: 600;
+              color: #64748b;
+            }
+            .totals-table tr.grand-total td {
+              border-top: 2px solid #f1f5f9;
+              padding-top: 14px;
+              font-size: 18px;
+              font-weight: 800;
+              color: #0f172a;
+            }
+            .footer {
+              text-align: center;
+              margin-top: 60px;
+              padding-top: 30px;
+              border-top: 1px dashed #e2e8f0;
+              font-size: 12px;
+              color: #94a3b8;
+              font-weight: 600;
+            }
+            .badge {
+              display: inline-block;
+              padding: 2px 8px;
+              border-radius: 6px;
+              font-size: 10px;
+              font-weight: 800;
+              text-transform: uppercase;
+              letter-spacing: 0.03em;
+            }
+            .badge-pending { background: #fffbeb; color: #d97706; }
+            .badge-confirmed { background: #ecfdf5; color: #059669; }
+            .badge-processing { background: #eff6ff; color: #2563eb; }
+            .badge-shipped { background: #faf5ff; color: #7c3aed; }
+            .badge-delivered { background: #f0fdf4; color: #16a34a; }
+            .badge-cancelled { background: #fef2f2; color: #dc2626; }
+          </style>
+        </head>
+        <body>
+          <div class="invoice-container">
+            <div class="header">
+              <div>
+                <div class="logo-container">
+                  <div class="logo-icon">E</div>
+                  <div class="logo-text">Eraya</div>
+                </div>
+                <div style="font-size: 11px; color: #94a3b8; font-weight: 700; margin-top: 6px; text-transform: uppercase; letter-spacing: 0.05em;">Exclusive E-commerce Hub</div>
+              </div>
+              <div>
+                <h1 class="invoice-title">INVOICE</h1>
+                <div class="invoice-number">Order #${order.id}</div>
+              </div>
+            </div>
+
+            <div class="meta-grid">
+              <div class="meta-card">
+                <div class="meta-title">Shipped To</div>
+                <div class="meta-value">
+                  <strong>${recipientName}</strong><br/>
+                  <span style="color: #64748b; font-size: 12px;">Phone:</span> ${recipientPhone}<br/>
+                  <span style="color: #64748b; font-size: 12px;">Address:</span> ${recipientAddr}
+                </div>
+              </div>
+              <div class="meta-card">
+                <div class="meta-title">Invoice Details</div>
+                <div class="meta-value">
+                  <span style="color: #64748b; font-size: 12px;">Date:</span> ${new Date(order.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}<br/>
+                  <span style="color: #64748b; font-size: 12px;">Payment:</span> ${order.payment_method === 'COD' ? 'Cash on Delivery' : 'bKash Wallet'}<br/>
+                  <span style="color: #64748b; font-size: 12px;">Status:</span> <span class="badge ${badgeClass}">${statusText}</span>
+                </div>
+              </div>
+            </div>
+
+            <table>
+              <thead>
+                <tr>
+                  <th style="text-align: left; width: 50%;">Item Description</th>
+                  <th style="text-align: center; width: 10%;">Qty</th>
+                  <th style="text-align: right; width: 20%;">Unit Price</th>
+                  <th style="text-align: right; width: 20%;">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsHtml}
+              </tbody>
+            </table>
+
+            <div class="totals-section">
+              <table class="totals-table">
+                <tr>
+                  <td style="text-align: left;">Subtotal</td>
+                  <td style="text-align: right;">৳${subtotal.toLocaleString()}</td>
+                </tr>
+                <tr>
+                  <td style="text-align: left;">Delivery Charge</td>
+                  <td style="text-align: right;">৳${shipping.toLocaleString()}</td>
+                </tr>
+                <tr>
+                  <td style="text-align: left;">VAT / Tax (5%)</td>
+                  <td style="text-align: right;">৳${tax.toLocaleString()}</td>
+                </tr>
+                <tr class="grand-total">
+                  <td style="text-align: left;">Grand Total</td>
+                  <td style="text-align: right;">৳${order.total_price.toLocaleString()}</td>
+                </tr>
+              </table>
+            </div>
+
+            <div class="footer">
+              Thank you for shopping with Eraya! For support, contact 09678-ERAYA or email support@eraya.com
+            </div>
+          </div>
+
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(function() { window.close(); }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   const tabs = [
     { id: 'All', label: 'All', count: orders.length },
     { id: 'Pending', label: 'Pending', count: orders.filter(o => o.order_status === 'Pending').length },
@@ -360,6 +647,12 @@ const AdminOrders = () => {
                      const StatusIcon = cfg.icon;
                      const isExpanded = expandedId === order.id;
 
+                     const shippingInfo = order.shipping_address || '';
+                     const parts = shippingInfo.split('|');
+                     const recipientName = parts[0]?.replace('Recipient:', '')?.trim() || order.user?.full_name || 'N/A';
+                     const recipientPhone = parts[1]?.replace('Phone:', '')?.trim() || 'N/A';
+                     const recipientAddr = parts[2]?.replace('Address:', '')?.trim() || shippingInfo;
+
                      return (
                        <React.Fragment key={order.id}>
                          <tr 
@@ -451,93 +744,125 @@ const AdminOrders = () => {
                               </div>
                            </td>
                          </tr>
-
-                         {/* Expanded details container inside Table tr */}
                          {isExpanded && (
-                           <tr style={{ background: '#fcfdfe' }}>
-                             <td colSpan={5} style={{ padding: '1.25rem', borderBottom: '1px solid #f1f5f9' }}>
-                                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.25fr 1fr', gap: '1.25rem' }}>
-                                   <div>
-                                      <p style={{ fontSize: '0.7rem', fontWeight: 900, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.75rem', textAlign: 'left' }}>Items</p>
-                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                         {order.items?.map((item, i) => (
-                                           <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.65rem 0.85rem', background: '#f8f9fc', borderRadius: '0.75rem' }}>
-                                              <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0f172a', margin: 0, textAlign: 'left' }}>{item.quantity}× {item.product?.name}</p>
-                                              <p style={{ fontSize: '0.75rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>৳{(item.price_at_purchase * item.quantity).toLocaleString()}</p>
-                                           </div>
-                                         ))}
-                                      </div>
-                                   </div>
-                                   <div style={{ background: '#f8f9fc', borderRadius: '1rem', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                      <div style={{ textAlign: 'left' }}>
-                                         <p style={{ fontSize: '0.6rem', fontWeight: 800, color: '#94a3b8', margin: '0 0 0.35rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Shipping Address</p>
-                                         <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0f172a', margin: 0, lineHeight: 1.4 }}><MapPin size={11} style={{ display: 'inline', marginRight: '0.2rem', verticalAlign: 'text-bottom' }} /> {order.shipping_address}</p>
-                                      </div>
-                                      
-                                      <div style={{ textAlign: 'left', borderTop: '1px dashed #e2e8f0', paddingTop: '0.75rem' }}>
-                                         <p style={{ fontSize: '0.6rem', fontWeight: 800, color: '#94a3b8', margin: '0 0 0.35rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Payment Details</p>
-                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', fontWeight: 700, color: '#0f172a' }}>
-                                            <CreditCard size={12} style={{ color: '#64748b' }} />
-                                            <span>Method: {order.payment_method === 'COD' ? 'Cash on Delivery (COD)' : 'Paid via bKash'}</span>
-                                         </div>
-                                         {order.payment_method === 'bKash' && (
-                                           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.35rem', padding: '0.5rem 0.75rem', background: '#fff', borderRadius: '0.5rem', border: '1px solid #e2e8f0', fontSize: '0.65rem', color: '#475569' }}>
-                                              <p style={{ margin: 0 }}><strong>TrxID:</strong> <span style={{ letterSpacing: '0.03em', fontFamily: 'monospace' }}>{order.trx_id || 'N/A'}</span></p>
-                                              <p style={{ margin: 0 }}><strong>Sender:</strong> {order.sender_number || 'N/A'}</p>
-                                              <p style={{ margin: 0 }}><strong>Paid Amount:</strong> ৳{(order.paid_amount || order.total_price).toLocaleString()}</p>
-                                           </div>
-                                         )}
-                                      </div>
+                            <tr style={{ background: '#fcfdfe' }}>
+                              <td colSpan={5} style={{ padding: '1.25rem', borderBottom: '1px solid #f1f5f9' }}>
+                                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.25fr 1fr', gap: '1.25rem' }}>
+                                    {/* Column 1: Items list */}
+                                    <div>
+                                       <p style={{ fontSize: '0.7rem', fontWeight: 900, color: '#0f172a', letterSpacing: '0.05em', marginBottom: '0.75rem', textAlign: 'left' }}>Items</p>
+                                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                          {order.items?.map((item, i) => (
+                                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.65rem 0.85rem', background: '#f8f9fc', borderRadius: '0.75rem' }}>
+                                               <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0f172a', margin: 0, textAlign: 'left' }}>{item.quantity}× {item.product?.name}</p>
+                                               <p style={{ fontSize: '0.75rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>৳{(item.price_at_purchase * item.quantity).toLocaleString()}</p>
+                                            </div>
+                                          ))}
+                                       </div>
+                                       <button
+                                          onClick={() => handlePrintInvoice(order)}
+                                          style={{
+                                            width: '100%', padding: '0.65rem',
+                                            borderRadius: '0.75rem', border: 'none',
+                                            background: '#0d1117', color: '#fff',
+                                            fontSize: '0.72rem', fontWeight: 800,
+                                            cursor: 'pointer', transition: 'all 0.2s',
+                                            display: 'flex', alignItems: 'center',
+                                            justifyContent: 'center', gap: '0.35rem',
+                                            marginTop: '0.75rem', boxShadow: '0 4px 12px rgba(13, 17, 23, 0.1)'
+                                          }}
+                                          onMouseEnter={e => e.currentTarget.style.background = '#1e293b'}
+                                          onMouseLeave={e => e.currentTarget.style.background = '#0d1117'}
+                                       >
+                                          Print Invoice / Receipt
+                                       </button>
+                                    </div>
 
-                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%', borderTop: '1px solid #e2e8f0', paddingTop: '0.75rem' }}>
-                                         <p style={{ fontSize: '0.6rem', fontWeight: 800, color: '#94a3b8', margin: 0, textAlign: 'left', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Update Status</p>
-                                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
-                                            {Object.keys(statusColors).map((st) => {
-                                              const isCurrent = order.order_status === st;
-                                              const sCfg = statusColors[st];
-                                              return (
-                                                <button
-                                                  key={st}
-                                                  onClick={() => triggerStatusUpdateConfirm(order.id, st)}
-                                                  style={{
-                                                    padding: '0.35rem 0.65rem',
-                                                    borderRadius: '0.5rem',
-                                                    fontSize: '0.6rem',
-                                                    fontWeight: 800,
-                                                    cursor: 'pointer',
-                                                    transition: 'all 0.2s',
-                                                    background: isCurrent ? sCfg.bg : '#fff',
-                                                    color: isCurrent ? sCfg.text : '#64748b',
-                                                    border: `1px solid ${isCurrent ? sCfg.border : '#e2e8f0'}`,
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '0.2rem'
-                                                  }}
-                                                  onMouseEnter={e => {
-                                                    if (!isCurrent) {
-                                                      e.currentTarget.style.borderColor = sCfg.border;
-                                                      e.currentTarget.style.color = sCfg.text;
-                                                      e.currentTarget.style.background = sCfg.bg;
-                                                    }
-                                                  }}
-                                                  onMouseLeave={e => {
-                                                    if (!isCurrent) {
-                                                      e.currentTarget.style.borderColor = '#e2e8f0';
-                                                      e.currentTarget.style.color = '#64748b';
-                                                      e.currentTarget.style.background = '#fff';
-                                                    }
-                                                  }}
-                                                >
-                                                  {getStatusDisplayName(st)}
-                                                </button>
-                                              );
-                                            })}
-                                         </div>
-                                      </div>
-                                   </div>
-                                </div>
-                             </td>
-                           </tr>
+                                    {/* Column 2: Shipping, Payment, and Status Update */}
+                                    <div style={{ background: '#f8f9fc', borderRadius: '1rem', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                       <div style={{ textAlign: 'left' }}>
+                                          <p style={{ fontSize: '0.6rem', fontWeight: 800, color: '#94a3b8', margin: '0 0 0.5rem', letterSpacing: '0.05em' }}>SHIPPING DETAILS</p>
+                                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', background: '#fff', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0' }}>
+                                            <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                                              👤 {recipientName}
+                                            </p>
+                                            <p style={{ fontSize: '0.7rem', fontWeight: 700, color: '#475569', margin: 0 }}>
+                                              📞 {recipientPhone}
+                                            </p>
+                                            <p style={{ fontSize: '0.7rem', fontWeight: 600, color: '#475569', margin: 0, lineHeight: 1.4 }}>
+                                              📍 {recipientAddr}
+                                            </p>
+                                          </div>
+                                       </div>
+                                       
+                                       <div style={{ textAlign: 'left', borderTop: '1px dashed #e2e8f0', paddingTop: '0.75rem' }}>
+                                          <p style={{ fontSize: '0.6rem', fontWeight: 800, color: '#94a3b8', margin: '0 0 0.5rem', letterSpacing: '0.05em' }}>PAYMENT DETAILS</p>
+                                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', background: '#fff', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.72rem', fontWeight: 800, color: '#0f172a' }}>
+                                               <CreditCard size={12} style={{ color: '#e11d48' }} />
+                                               <span>{order.payment_method === 'COD' ? 'Cash on Delivery (COD)' : 'Paid via bKash'}</span>
+                                            </div>
+                                            {order.payment_method === 'bKash' && (
+                                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '0.25rem', borderTop: '1px solid #f1f5f9', paddingTop: '0.25rem', fontSize: '0.65rem', color: '#475569' }}>
+                                                 <p style={{ margin: 0 }}><strong>TrxID:</strong> <span style={{ letterSpacing: '0.03em', fontFamily: 'monospace' }}>{order.trx_id || 'N/A'}</span></p>
+                                                 <p style={{ margin: 0 }}><strong>Sender:</strong> {order.sender_number || 'N/A'}</p>
+                                                 <p style={{ margin: 0 }}><strong>Paid Amount:</strong> ৳{(order.paid_amount || order.total_price).toLocaleString()}</p>
+                                              </div>
+                                            )}
+                                          </div>
+                                       </div>
+
+                                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%', borderTop: '1px solid #e2e8f0', paddingTop: '0.75rem' }}>
+                                          <p style={{ fontSize: '0.6rem', fontWeight: 800, color: '#94a3b8', margin: 0, textAlign: 'left', letterSpacing: '0.05em' }}>Update Status</p>
+                                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                                             {Object.keys(statusColors).map((st) => {
+                                               const isCurrent = order.order_status === st;
+                                               const sCfg = statusColors[st];
+                                               return (
+                                                 <button
+                                                   key={st}
+                                                   disabled={isCurrent}
+                                                   onClick={() => triggerStatusUpdateConfirm(order.id, st)}
+                                                   style={{
+                                                     padding: '0.35rem 0.65rem',
+                                                     borderRadius: '0.5rem',
+                                                     fontSize: '0.6rem',
+                                                     fontWeight: 800,
+                                                     cursor: isCurrent ? 'not-allowed' : 'pointer',
+                                                     transition: 'all 0.2s',
+                                                     background: isCurrent ? '#f8fafc' : '#fff',
+                                                     color: isCurrent ? '#94a3b8' : '#64748b',
+                                                     border: `1px solid ${isCurrent ? '#cbd5e1' : '#e2e8f0'}`,
+                                                     display: 'flex',
+                                                     alignItems: 'center',
+                                                     gap: '0.2rem',
+                                                     opacity: isCurrent ? 0.75 : 1
+                                                   }}
+                                                   onMouseEnter={e => {
+                                                     if (!isCurrent) {
+                                                       e.currentTarget.style.borderColor = sCfg.border;
+                                                       e.currentTarget.style.color = sCfg.text;
+                                                       e.currentTarget.style.background = sCfg.bg;
+                                                     }
+                                                   }}
+                                                   onMouseLeave={e => {
+                                                     if (!isCurrent) {
+                                                       e.currentTarget.style.borderColor = '#e2e8f0';
+                                                       e.currentTarget.style.color = '#64748b';
+                                                       e.currentTarget.style.background = '#fff';
+                                                     }
+                                                   }}
+                                                 >
+                                                   {getStatusDisplayName(st)} {isCurrent && '✓'}
+                                                 </button>
+                                               );
+                                             })}
+                                          </div>
+                                       </div>
+                                    </div>
+                                 </div>
+                              </td>
+                            </tr>
                          )}
                        </React.Fragment>
                      );

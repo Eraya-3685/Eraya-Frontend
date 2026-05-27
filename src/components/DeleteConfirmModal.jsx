@@ -113,7 +113,7 @@ const DeleteConfirmModal = ({
 
                 {/* Password Input Block */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <label style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  <label style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748b', letterSpacing: '0.05em' }}>
                     Confirm Admin Password
                   </label>
                   

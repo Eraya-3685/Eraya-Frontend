@@ -94,16 +94,18 @@ export default function Wishlist() {
             </span>
           </div>
         </div>
-        <div style={{ display:'flex', alignItems:'center', gap:'0.75rem' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:'0.65rem' }}>
           <button onClick={refreshStock} disabled={isRefreshing}
-            style={{ display:'flex', alignItems:'center', gap:'0.4rem', fontSize:'0.68rem', fontWeight:700, color:C.t300, background:'none', border:'none', cursor:'pointer', fontFamily:'inherit', opacity:isRefreshing?0.5:1 }}>
+            style={{ display:'flex', alignItems:'center', gap:'0.4rem', fontSize:'0.72rem', fontWeight:800, color:C.t700, background:'#fff', border:`1px solid ${C.bSoft}`, cursor:'pointer', fontFamily:'inherit', padding:'0.5rem 0.85rem', borderRadius:'0.875rem', transition:'all .15s', opacity:isRefreshing?0.5:1, boxShadow:'0 2px 6px rgba(0,0,0,0.02)' }}
+            onMouseEnter={e => { e.currentTarget.style.background = C.bgMuted; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.transform = 'none'; }}>
             <RefreshCcw style={{ width:12, height:12, animation:isRefreshing?'spin 1s linear infinite':'none' }} />
             Refresh
           </button>
           <button onClick={() => setShowClearModal(true)}
-            style={{ display:'flex', alignItems:'center', gap:'0.4rem', fontSize:'0.72rem', fontWeight:700, color:C.rose, background:'none', border:'none', cursor:'pointer', fontFamily:'inherit', padding:'0.5rem 0.75rem', borderRadius:'0.75rem', transition:'background .15s' }}
-            onMouseEnter={e => e.currentTarget.style.background='#fff1f2'}
-            onMouseLeave={e => e.currentTarget.style.background='transparent'}>
+            style={{ display:'flex', alignItems:'center', gap:'0.4rem', fontSize:'0.72rem', fontWeight:800, color:C.rose, background:'#fff', border:`1px solid ${C.bSoft}`, cursor:'pointer', fontFamily:'inherit', padding:'0.5rem 0.85rem', borderRadius:'0.875rem', transition:'all .15s', boxShadow:'0 2px 6px rgba(0,0,0,0.02)' }}
+            onMouseEnter={e => { e.currentTarget.style.background='#fff1f2'; e.currentTarget.style.borderColor = '#fecdd3'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background='#fff'; e.currentTarget.style.borderColor = C.bSoft; e.currentTarget.style.transform = 'none'; }}>
             <X style={{ width:13, height:13 }} /> Clear All
           </button>
         </div>

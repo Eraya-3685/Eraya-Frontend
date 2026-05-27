@@ -43,7 +43,10 @@ const useCartStore = create(
       // Backend uses base_price field
       getTotal: () => {
         return get()
-          .items.reduce((total, item) => total + item.base_price * item.quantity, 0)
+          .items.reduce((total, item) => {
+            const price = item.discount_price && item.discount_price > 0 ? item.discount_price : item.base_price;
+            return total + price * item.quantity;
+          }, 0)
           .toFixed(2);
       },
     }),

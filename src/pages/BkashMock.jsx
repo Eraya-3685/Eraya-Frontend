@@ -89,21 +89,21 @@ const BkashMock = () => {
           <div style={{ background: '#fff', padding: '0.4rem 1.25rem', borderRadius: '1rem', display: 'inline-block', marginBottom: '1.5rem', boxShadow: '0 8px 20px rgba(0,0,0,0.1)' }}>
              <img src="https://www.logo.wine/a/logo/BKash/BKash-bKash-Logo.wine.svg" alt="bKash" style={{ height: 28 }} />
           </div>
-          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', margin: 0 }}>Eraya Merchant</p>
+          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.15em', margin: 0 }}>Eraya Merchant</p>
           <h2 style={{ color: '#fff', fontSize: '2.25rem', fontWeight: 900, margin: '0.5rem 0 0', letterSpacing: '-0.02em' }}>৳{amount}</h2>
-          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '0.25rem' }}>Inv: {invoice}</p>
+          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.1em', marginTop: '0.25rem' }}>Inv: {invoice}</p>
         </div>
 
         {/* Form area */}
         <div style={{ padding: '2.5rem 2rem' }}>
           <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-             <span style={{ background: '#f1f5f9', padding: '0.4rem 1rem', borderRadius: '2rem', fontSize: '0.65rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Secure Sandbox</span>
+             <span style={{ background: '#f1f5f9', padding: '0.4rem 1rem', borderRadius: '2rem', fontSize: '0.65rem', fontWeight: 800, color: '#64748b', letterSpacing: '0.08em' }}>Secure Sandbox</span>
           </div>
 
           <div style={{ minHeight: 120 }}>
             {step === 1 && (
               <div style={{ animation: 'fadeIn 0.4s ease' }}>
-                <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 800, color: C.t500, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.75rem', paddingLeft: '0.5rem' }}>Your bKash Number</label>
+                <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 800, color: C.t500, letterSpacing: '0.05em', marginBottom: '0.75rem', paddingLeft: '0.5rem' }}>Your bKash Number</label>
                 <input 
                   type="text"
                   value={number}
@@ -119,7 +119,7 @@ const BkashMock = () => {
 
             {step === 2 && (
               <div style={{ animation: 'fadeIn 0.4s ease' }}>
-                <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 800, color: C.t500, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.75rem', paddingLeft: '0.5rem' }}>Verification Code</label>
+                <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 800, color: C.t500, letterSpacing: '0.05em', marginBottom: '0.75rem', paddingLeft: '0.5rem' }}>Verification Code</label>
                 <input 
                   type="text"
                   value={otp}
@@ -134,7 +134,7 @@ const BkashMock = () => {
 
             {step === 3 && (
               <div style={{ animation: 'fadeIn 0.4s ease' }}>
-                <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 800, color: C.t500, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.75rem', paddingLeft: '0.5rem' }}>Enter PIN</label>
+                <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 800, color: C.t500, letterSpacing: '0.05em', marginBottom: '0.75rem', paddingLeft: '0.5rem' }}>Enter PIN</label>
                 <input 
                   type="password"
                   value={pin}
@@ -153,14 +153,14 @@ const BkashMock = () => {
           <div style={{ display: 'flex', gap: '0.75rem', marginTop: '2.5rem' }}>
             <button 
               onClick={handleCancel}
-              style={{ flex: 1, height: 48, border: 'none', background: '#f1f5f9', color: C.t500, borderRadius: '1.15rem', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', cursor: 'pointer', transition: 'all 0.2s' }}
+              style={{ flex: 1, height: 48, border: 'none', background: '#f1f5f9', color: C.t500, borderRadius: '1.15rem', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.05em', cursor: 'pointer', transition: 'all 0.2s' }}
             >Close</button>
             <button 
               onClick={handleNext}
               disabled={loading}
               style={{ 
                 flex: 1.5, height: 48, border: 'none', background: C.bkash, color: '#fff', 
-                borderRadius: '1.15rem', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', 
+                borderRadius: '1.15rem', fontSize: '0.75rem', fontWeight: 800, 
                 letterSpacing: '0.05em', cursor: 'pointer', transition: 'all 0.2s',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
                 boxShadow: '0 10px 25px -5px rgba(209,32,83,0.3)', opacity: loading ? 0.7 : 1

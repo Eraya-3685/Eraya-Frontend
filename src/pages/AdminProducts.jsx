@@ -526,7 +526,7 @@ const AdminProducts = () => {
             background: #f8f9fc;
             color: #64748b;
             font-weight: 800;
-            text-transform: uppercase;
+            
             font-size: 0.65rem;
             letter-spacing: 0.05em;
             padding: 1rem;
@@ -1284,7 +1284,7 @@ const AdminProducts = () => {
               style={{ position: 'fixed', right: 0, top: 0, bottom: 0, width: isMobile ? '100%' : 380, background: '#fff', boxShadow: '-10px 0 40px rgba(15,23,42,0.1)', zIndex: 999, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 1.5rem', borderBottom: '1px solid #f1f5f9' }}>
-                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Product Details</span>
+                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', letterSpacing: '0.05em' }}>Product Details</span>
                 <button onClick={() => { setSelectedProductDetails(null); setActiveImageIndex(0); }} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={18} /></button>
               </div>
 
@@ -1330,12 +1330,12 @@ const AdminProducts = () => {
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginBottom: '0.5rem' }}>
                     {selectedProductDetails.categories && selectedProductDetails.categories.length > 0 ? (
                       selectedProductDetails.categories.map(c => (
-                        <span key={c.id} style={{ fontSize: '0.6rem', fontWeight: 800, color: '#e11d48', textTransform: 'uppercase', background: '#fff1f2', padding: '0.25rem 0.5rem', borderRadius: '0.5rem', display: 'inline-block' }}>
+                        <span key={c.id} style={{ fontSize: '0.6rem', fontWeight: 800, color: '#e11d48', background: '#fff1f2', padding: '0.25rem 0.5rem', borderRadius: '0.5rem', display: 'inline-block' }}>
                           {c.name}
                         </span>
                       ))
                     ) : (
-                      <span style={{ fontSize: '0.6rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', background: '#f1f5f9', padding: '0.25rem 0.5rem', borderRadius: '0.5rem', display: 'inline-block' }}>
+                      <span style={{ fontSize: '0.6rem', fontWeight: 800, color: '#94a3b8', background: '#f1f5f9', padding: '0.25rem 0.5rem', borderRadius: '0.5rem', display: 'inline-block' }}>
                         General
                       </span>
                     )}
@@ -1346,21 +1346,21 @@ const AdminProducts = () => {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', background: '#f8f9fc', padding: '1rem', borderRadius: '1rem', border: '1px solid #f1f5f9' }}>
                   <div>
-                    <p style={{ fontSize: '0.55rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', margin: '0 0 0.15rem', letterSpacing: '0.05em' }}>Base Price</p>
+                    <p style={{ fontSize: '0.55rem', fontWeight: 800, color: '#94a3b8', margin: '0 0 0.15rem', letterSpacing: '0.05em' }}>Base Price</p>
                     <p style={{ fontSize: '0.85rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>৳{selectedProductDetails.base_price.toLocaleString()}</p>
                   </div>
                   <div>
-                    <p style={{ fontSize: '0.55rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', margin: '0 0 0.15rem', letterSpacing: '0.05em' }}>Offer Price</p>
+                    <p style={{ fontSize: '0.55rem', fontWeight: 800, color: '#94a3b8', margin: '0 0 0.15rem', letterSpacing: '0.05em' }}>Offer Price</p>
                     <p style={{ fontSize: '0.85rem', fontWeight: 800, color: selectedProductDetails.discount_price ? '#e11d48' : '#64748b', margin: 0 }}>
                       {selectedProductDetails.discount_price ? `৳${selectedProductDetails.discount_price.toLocaleString()}` : '-'}
                     </p>
                   </div>
                   <div>
-                    <p style={{ fontSize: '0.55rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', margin: '0 0 0.15rem', letterSpacing: '0.05em' }}>Stock Available</p>
+                    <p style={{ fontSize: '0.55rem', fontWeight: 800, color: '#94a3b8', margin: '0 0 0.15rem', letterSpacing: '0.05em' }}>Stock Available</p>
                     <p style={{ fontSize: '0.85rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>{selectedProductDetails.stock_count.toLocaleString()}</p>
                   </div>
                   <div>
-                    <p style={{ fontSize: '0.55rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', margin: '0 0 0.15rem', letterSpacing: '0.05em' }}>Status</p>
+                    <p style={{ fontSize: '0.55rem', fontWeight: 800, color: '#94a3b8', margin: '0 0 0.15rem', letterSpacing: '0.05em' }}>Status</p>
                     <div style={{ marginTop: '0.1rem' }}>
                       <StatusBadge product={selectedProductDetails} />
                     </div>
@@ -1368,7 +1368,7 @@ const AdminProducts = () => {
                 </div>
 
                 <div>
-                  <h4 style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', margin: '0 0 0.35rem', letterSpacing: '0.05em' }}>Product Description</h4>
+                  <h4 style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748b', margin: '0 0 0.35rem', letterSpacing: '0.05em' }}>Product Description</h4>
                   <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#475569', margin: 0, whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
                     {selectedProductDetails.description || 'No description provided for this product.'}
                   </p>

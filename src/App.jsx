@@ -141,13 +141,24 @@ const RootAuthHandler = ({ children }) => {
   const isFetchingProfile = token && !user;
 
   if ((syncing && !token) || isFetchingProfile) return (
-    <div className="h-screen flex items-center justify-center bg-white">
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-        <p className="text-sm font-bold text-[#94a3b8] animate-pulse">
-          {isFetchingProfile ? 'Authenticating...' : 'Syncing your account...'}
-        </p>
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#fff', gap: '1.25rem' }}>
+      <div style={{
+        width: 48, height: 48, position: 'relative',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <div style={{
+          position: 'absolute', inset: 0,
+          border: '3px solid #f3f5f8',
+          borderTopColor: '#0d1117',
+          borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite',
+        }} />
+        <div style={{ width: 16, height: 16, background: '#0d1117', borderRadius: '0.35rem' }} />
       </div>
+      <p style={{ fontSize: '0.78rem', fontWeight: 800, color: '#adb5bd', letterSpacing: '0.04em', margin: 0 }}>
+        {isFetchingProfile ? 'Authenticating…' : 'Syncing your account…'}
+      </p>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 

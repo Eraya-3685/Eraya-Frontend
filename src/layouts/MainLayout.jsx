@@ -25,7 +25,7 @@ const MainLayout = ({ children }) => {
           transition={{ duration: 0.25 }}
           style={{ flexGrow: 1, paddingTop: '4.5rem' }}
         >
-          <div style={{ maxWidth: '1800px', margin: '0 auto', padding: '1.5rem 2.5rem 5rem' }}>
+          <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '1.5rem 1.5rem 5rem' }}>
             {children}
           </div>
         </motion.main>

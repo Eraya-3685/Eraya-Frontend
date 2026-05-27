@@ -1,21 +1,39 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Star, ShoppingBag, Shield, Truck, RotateCcw, Plus, Minus, Heart, MapPin, Info, ChevronRight, X, Bookmark, Share2 } from 'lucide-react';
+import {
+  Star, ShoppingBag, Shield, Truck, RotateCcw,
+  Plus, Minus, Heart, ChevronRight, ChevronLeft, Share2,
+  Loader2, Check, Package, ArrowRight, ZoomIn, Flame,
+} from 'lucide-react';
 import api, { getImageUrl } from '../api/axios';
 import useCartStore from '../store/useCartStore';
 import useAuthStore from '../store/useAuthStore';
 import useWishlistStore from '../store/useWishlistStore';
 import toast from 'react-hot-toast';
-import useSettingsStore from '../store/useSettingsStore';
 import ProductCard from '../components/ProductCard';
+import LoginModal from '../components/LoginModal';
+import { ProductDetailsSkeleton, LoadingSpinner } from '../components/Skeleton';
 
 const C = {
-  t900:'#0d1117', t700:'#1f2937', t500:'#6b7280', t300:'#adb5bd',
-  bSoft:'rgba(0,0,0,0.07)', bLine:'#edf0f4',
-  bgPage:'#f7f8fa', bgCard:'#fff', bgMuted:'#f3f5f8',
-  lime:'#cbff00', blue:'#3b82f6', rose:'#f43f5e', green:'#22c55e', orange:'#f97316',
+  t900: '#0d1117', t700: '#1f2937', t500: '#6b7280', t300: '#adb5bd',
+  bSoft: 'rgba(0,0,0,0.07)', bMed: 'rgba(0,0,0,0.10)',
+  bgPage: '#edf0f4', bgCard: '#fff', bgMuted: '#f3f5f8',
+  lime: '#cbff00', blue: '#3b82f6', rose: '#f43f5e', green: '#22c55e',
 };
+
+/* ── Stars row ── */
+const Stars = ({ rating, size = 12 }) => (
+  <div style={{ display: 'flex', gap: 2 }}>
+    {[1, 2, 3, 4, 5].map(i => (
+      <Star key={i} style={{
+        width: size, height: size,
+        fill: i <= Math.round(rating) ? '#fbbf24' : 'none',
+        color: i <= Math.round(rating) ? '#fbbf24' : C.t300,
+      }} />
+    ))}
+  </div>
+);
 
 const ProductDetails = () => {
   const { slug } = useParams();
@@ -26,41 +44,37 @@ const ProductDetails = () => {
   const [quantity, setQuantity] = useState(1);
   const [addingToCart, setAddingToCart] = useState(false);
   const [buyingNow, setBuyingNow] = useState(false);
+  const [addedToCart, setAddedToCart] = useState(false);
+  const [wishLoading, setWishLoading] = useState(false);
   const [similarProducts, setSimilarProducts] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [fetchingReviews, setFetchingReviews] = useState(false);
-  
-  const addItem = useCartStore((state) => state.addItem);
+  const [loginModal, setLoginModal] = useState(false);
+  const [zoom, setZoom] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const addItem = useCartStore(s => s.addItem);
   const { toggleWishlist, isInWishlist } = useWishlistStore();
   const { user } = useAuthStore();
   const isAdmin = ['admin', 'moderator'].includes(user?.role?.toLowerCase());
 
-  useEffect(() => {
-    fetchProduct();
-  }, [slug]);
+  useEffect(() => { fetchProduct(); }, [slug]);
 
   const fetchProduct = async () => {
     setLoading(true);
     try {
-      const response = await api.get(`/products/${slug}`);
-      setProduct(response.data);
-      if (response.data.images?.length > 0) {
-        const primary = response.data.images.find((img) => img.is_primary) || response.data.images[0];
-        setSelectedImage(primary.image_url);
-      }
-      
-      // Fetch reviews
+      const res = await api.get(`/products/${slug}`);
+      setProduct(res.data);
+      const primary = res.data.images?.find(i => i.is_primary) || res.data.images?.[0];
+      if (primary) setSelectedImage(primary.image_url);
       setFetchingReviews(true);
-      api.get(`/reviews/${response.data.id}`)
+      api.get(`/reviews/${res.data.id}`)
         .then(r => setReviews(r.data || []))
-        .catch(e => console.error('Reviews fail', e))
+        .catch(() => {})
         .finally(() => setFetchingReviews(false));
-
-      // Fetch similar products
-      const similarRes = await api.get(`/products?category_id=${response.data.categories?.[0]?.id || ''}&limit=6`);
-      setSimilarProducts(similarRes.data.data?.filter(p => p.id !== response.data.id) || []);
-    } catch (error) {
-      console.error('Failed to fetch product', error);
+      const simRes = await api.get(`/products?category_id=${res.data.categories?.[0]?.id || ''}&limit=6`);
+      setSimilarProducts(simRes.data.data?.filter(p => p.id !== res.data.id) || []);
+    } catch {
       toast.error('Product not found');
     } finally {
       setLoading(false);
@@ -68,244 +82,519 @@ const ProductDetails = () => {
   };
 
   const handleAddToCart = async () => {
-    if (product.stock_count <= 0) return;
+    if (product.stock_count <= 0 || addingToCart) return;
     setAddingToCart(true);
-    await new Promise(r => setTimeout(r, 600));
-    addItem({ ...product, image_url: selectedImage || product.images?.[0]?.image_url }, quantity);
+    await new Promise(r => setTimeout(r, 500));
+    addItem({ ...product, image_url: getImageUrl(selectedImage || product.images?.[0]?.image_url) }, quantity);
     setAddingToCart(false);
-    toast.success('Added to cart');
+    setAddedToCart(true);
+    toast.success('Added to cart!');
+    setTimeout(() => setAddedToCart(false), 2500);
   };
 
   const handleBuyNow = async () => {
-    if (product.stock_count <= 0) return;
+    if (product.stock_count <= 0 || buyingNow) return;
     setBuyingNow(true);
-    await new Promise(r => setTimeout(r, 600));
-    addItem({ ...product, image_url: selectedImage || product.images?.[0]?.image_url }, quantity);
+    await new Promise(r => setTimeout(r, 400));
+    addItem({ ...product, image_url: getImageUrl(selectedImage || product.images?.[0]?.image_url) }, quantity);
     navigate('/checkout');
   };
 
-  if (loading) return (
-    <div style={{ height:'80vh', display:'flex', alignItems:'center', justifyContent:'center' }}>
-       <div style={{ width:40, height:40, border:`3px solid ${C.bSoft}`, borderTopColor:C.t900, borderRadius:'50%', animation:'spin 0.8s linear infinite' }} />
-       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-    </div>
-  );
+  const handleWishlist = async () => {
+    if (!user) { setLoginModal(true); return; }
+    setWishLoading(true);
+    toggleWishlist(product);
+    await new Promise(r => setTimeout(r, 400));
+    setWishLoading(false);
+  };
+
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  const handlePrevImg = (e) => {
+    e.stopPropagation();
+    if (!product.images || product.images.length <= 1) return;
+    const idx = product.images.findIndex(img => img.image_url === selectedImage);
+    const prevIdx = (idx - 1 + product.images.length) % product.images.length;
+    setSelectedImage(product.images[prevIdx].image_url);
+  };
+
+  const handleNextImg = (e) => {
+    e.stopPropagation();
+    if (!product.images || product.images.length <= 1) return;
+    const idx = product.images.findIndex(img => img.image_url === selectedImage);
+    const nextIdx = (idx + 1) % product.images.length;
+    setSelectedImage(product.images[nextIdx].image_url);
+  };
+
+  /* ── Loading ── */
+  if (loading) return <ProductDetailsSkeleton />;
 
   if (!product) return (
-    <div style={{ height:'60vh', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:'1rem' }}>
-      <h2 style={{ fontSize:'1.5rem', fontWeight:800, color:C.t900 }}>Product not found</h2>
-      <Link to="/products" style={{ color:C.blue, fontWeight:700, textDecoration:'none' }}>← Back to Shop</Link>
+    <div style={{ height: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
+      <Package style={{ width: 48, height: 48, color: C.t300 }} />
+      <h2 style={{ fontSize: '1.2rem', fontWeight: 900, color: C.t900, margin: 0 }}>Product not found</h2>
+      <Link to="/products" style={{ color: C.blue, fontWeight: 700, textDecoration: 'none', fontSize: '0.85rem' }}>← Back to Collection</Link>
     </div>
   );
 
   const outOfStock = product.stock_count <= 0;
-  const avgRating = product.average_rating || 5.0;
+  const avgRating = product.average_rating ?? null; // null if no real rating
+  const inWL = isInWishlist(product.id);
+  // Compute actual avg from loaded reviews
+  const computedAvg = reviews.length > 0
+    ? (reviews.reduce((s, r) => s + (r.rating || 0), 0) / reviews.length)
+    : null;
+  const displayRating = avgRating ?? computedAvg;
+  const pct = product.discount_price && product.base_price ? Math.round(((product.base_price - product.discount_price) / product.base_price) * 100) : 0;
 
   return (
-    <div style={{ minHeight: '100vh', paddingBottom: '4rem' }}>
-      {/* Breadcrumb */}
-      <div style={{ display: 'flex', gap: '0.5rem', fontSize: '0.7rem', color: C.t300, marginBottom: '1.25rem', fontWeight: 600 }}>
-        <Link to="/" style={{ color: 'inherit', textDecoration: 'none' }}>Home</Link>
-        <span style={{ opacity: 0.5 }}>/</span>
-        <Link to="/products" style={{ color: 'inherit', textDecoration: 'none' }}>Collection</Link>
-        <span style={{ opacity: 0.5 }}>/</span>
-        <span style={{ color: C.t900 }}>{product.name}</span>
-      </div>
+    <div style={{ paddingBottom: '4rem' }}>
 
-      {/* Main Container - Compact Card */}
-      <div style={{ 
-        background: '#fff', border: `1px solid ${C.bSoft}`, borderRadius: '2rem', 
-        padding: '2rem', boxShadow: '0 8px 30px rgba(0,0,0,0.02)',
-        marginBottom: '2.5rem', maxWidth: '1400px', margin: '0 auto 2.5rem'
-      }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '0.9fr 1.1fr', gap: '3rem' }}>
-          
-          {/* Left: Gallery */}
+      {/* Breadcrumb */}
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        style={{ display: 'flex', gap: '0.4rem', fontSize: '0.72rem', color: C.t300, marginBottom: '1.25rem', fontWeight: 600, alignItems: 'center' }}
+      >
+        {[['Home', '/'], ['Collection', '/products']].map(([label, to]) => (
+          <React.Fragment key={to}>
+            <Link to={to} style={{ color: 'inherit', textDecoration: 'none', transition: 'color .15s' }}
+              onMouseEnter={e => e.currentTarget.style.color = C.t900}
+              onMouseLeave={e => e.currentTarget.style.color = C.t300}>{label}</Link>
+            <ChevronRight style={{ width: 10, height: 10, opacity: 0.5 }} />
+          </React.Fragment>
+        ))}
+        <span style={{ color: C.t900, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product.name}</span>
+      </motion.div>
+
+      {/* ══ MAIN CARD ══ */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+        style={{
+          background: '#fff', border: `1px solid ${C.bSoft}`, borderRadius: '2rem',
+          padding: '2rem', boxShadow: '0 2px 24px -6px rgba(0,0,0,0.08)', marginBottom: '1.25rem',
+        }}
+      >
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2.5rem' }}>
+
+          {/* ── LEFT: Gallery ── */}
           <div style={{ display: 'flex', gap: '0.75rem' }}>
             {/* Thumbnails */}
             {product.images?.length > 1 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', width: 50 }}>
-                {product.images.map((img) => (
-                  <div 
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: 56, flexShrink: 0 }}>
+                {product.images.map(img => (
+                  <button
                     key={img.id}
                     onClick={() => setSelectedImage(img.image_url)}
-                    style={{ 
-                      aspectRatio: '1/1', 
-                      borderRadius: '0.5rem', 
-                      overflow: 'hidden', 
-                      cursor: 'pointer',
+                    style={{
+                      aspectRatio: '1/1', borderRadius: '0.75rem', overflow: 'hidden',
                       border: `2px solid ${selectedImage === img.image_url ? C.t900 : 'transparent'}`,
-                      transition: 'all 0.2s',
-                      background: C.bgMuted
+                      background: C.bgMuted, cursor: 'pointer', padding: 0,
+                      transition: 'all .2s', flexShrink: 0,
                     }}
                   >
                     <img src={getImageUrl(img.image_url)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
-                  </div>
+                  </button>
                 ))}
               </div>
             )}
-            {/* Main Image */}
-            <div style={{ flex: 1, position: 'relative', borderRadius: '1.5rem', overflow: 'hidden', background: C.bgMuted, minHeight: 380, border: `1px solid ${C.bSoft}` }}>
-              <img src={getImageUrl(selectedImage)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt={product.name} />
+
+            {/* Main image */}
+            <div style={{ flex: 1, position: 'relative', borderRadius: '1.5rem', overflow: 'hidden', background: C.bgMuted, border: `1px solid ${C.bSoft}`, height: 340, cursor: 'zoom-in' }}
+              onClick={() => setZoom(true)}>
+              {pct > 0 && (
+                <div style={{
+                  position: 'absolute', top: '0.85rem', left: '0.85rem',
+                  background: C.rose, color: '#fff', padding: '0.35rem 0.75rem',
+                  borderRadius: 9999, fontWeight: 900, fontSize: '0.72rem',
+                  boxShadow: '0 4px 12px rgba(244, 63, 94, 0.4)', letterSpacing: '0.02em',
+                  zIndex: 10, display: 'flex', alignItems: 'center', gap: '0.2rem'
+                }}>
+                  <Flame style={{ width: 11, height: 11, fill: '#fff' }} />
+                  {pct}% Off
+                </div>
+              )}
+
+              {product.images?.length > 1 && (
+                <>
+                  {/* Left Arrow */}
+                  <button onClick={handlePrevImg} style={{
+                    position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)',
+                    background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(8px)', borderRadius: '50%',
+                    width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    border: `1px solid ${C.bSoft}`, boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                    cursor: 'pointer', zIndex: 15, transition: 'all .15s'
+                  }}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.transform = 'translateY(-50%) scale(1.08)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.9)'; e.currentTarget.style.transform = 'translateY(-50%)'; }}
+                  >
+                    <ChevronLeft style={{ width: 14, height: 14, color: C.t900 }} />
+                  </button>
+
+                  {/* Right Arrow */}
+                  <button onClick={handleNextImg} style={{
+                    position: 'absolute', right: '0.85rem', top: '50%', transform: 'translateY(-50%)',
+                    background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(8px)', borderRadius: '50%',
+                    width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    border: `1px solid ${C.bSoft}`, boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                    cursor: 'pointer', zIndex: 15, transition: 'all .15s'
+                  }}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.transform = 'translateY(-50%) scale(1.08)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.9)'; e.currentTarget.style.transform = 'translateY(-50%)'; }}
+                  >
+                    <ChevronRight style={{ width: 14, height: 14, color: C.t900 }} />
+                  </button>
+                </>
+              )}
+              <AnimatePresence mode="wait">
+                <motion.img
+                  key={selectedImage}
+                  src={getImageUrl(selectedImage)}
+                  alt={product.name}
+                  initial={{ opacity: 0, scale: 1.03 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                />
+              </AnimatePresence>
+              {/* Zoom hint */}
+              <div style={{ position: 'absolute', top: '0.85rem', right: '0.85rem', background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(8px)', borderRadius: '50%', width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+                <ZoomIn style={{ width: 14, height: 14, color: C.t700 }} />
+              </div>
               {outOfStock && (
                 <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ background: C.t900, color: '#fff', padding: '0.4rem 1.25rem', borderRadius: 9999, fontWeight: 900, fontSize: '0.75rem' }}>Out of Stock</span>
+                  <span style={{ background: C.t900, color: '#fff', padding: '0.5rem 1.5rem', borderRadius: 9999, fontWeight: 900, fontSize: '0.78rem' }}>Out of Stock</span>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Right: Details */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', paddingTop: '0.25rem' }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginBottom: '0.5rem' }}>
-                {[1,2,3,4,5].map(i => (
-                  <Star key={i} style={{ width: 10, height: 10, fill: i <= Math.round(avgRating) ? '#fbbf24' : 'none', color: i <= Math.round(avgRating) ? '#fbbf24' : C.t300 }} />
-                ))}
-                <span style={{ fontSize: '0.7rem', fontWeight: 800, marginLeft: '0.4rem', color: C.t900 }}>{avgRating.toFixed(1)} / 5.0</span>
+          {/* ── RIGHT: Details ── */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+
+            {/* Top: rating + share */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                {displayRating != null && (
+                  <>
+                    <Stars rating={displayRating} size={13} />
+                    <span style={{ fontSize: '0.72rem', fontWeight: 800, color: C.t900 }}>{displayRating.toFixed(1)}</span>
+                  </>
+                )}
+                {reviews.length > 0 && (
+                  <span style={{ fontSize: '0.65rem', color: C.t300, fontWeight: 600 }}>({reviews.length} reviews)</span>
+                )}
               </div>
-              <h1 style={{ fontSize: '1.6rem', fontWeight: 900, color: C.t900, margin: '0 0 0.4rem', letterSpacing: '-0.02em', lineHeight: 1.1 }}>{product.name}</h1>
-              <p style={{ fontSize: '1.35rem', fontWeight: 900, color: C.t900, margin: 0 }}>৳{product.base_price?.toLocaleString()}</p>
+              <button onClick={handleShare} style={{
+                display: 'flex', alignItems: 'center', gap: '0.35rem',
+                padding: '0.35rem 0.85rem', background: copied ? '#f0fdf4' : C.bgMuted,
+                border: `1px solid ${copied ? '#bbf7d0' : C.bSoft}`,
+                borderRadius: 9999, cursor: 'pointer', fontSize: '0.65rem', fontWeight: 700,
+                color: copied ? '#16a34a' : C.t500, transition: 'all .2s', fontFamily: 'inherit',
+              }}>
+                {copied ? <Check style={{ width: 11, height: 11 }} /> : <Share2 style={{ width: 11, height: 11 }} />}
+                {copied ? 'Copied!' : 'Share'}
+              </button>
+            </div>
+
+            {/* Title + price */}
+            <div>
+              {product.category && (
+                <span style={{ fontSize: '0.65rem', fontWeight: 700, color: C.t300, background: C.bgMuted, padding: '0.2rem 0.6rem', borderRadius: '0.5rem', display: 'inline-block', marginBottom: '0.5rem' }}>
+                  {product.category?.name || product.categories?.[0]?.name}
+                </span>
+              )}
+              <h1 style={{ fontSize: '1.8rem', fontWeight: 900, color: C.t900, margin: '0 0 0.75rem', letterSpacing: '-0.03em', lineHeight: 1.05 }}>
+                {product.name}
+              </h1>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.65rem', flexWrap: 'wrap' }}>
+                {product.discount_price && product.discount_price > 0 ? (
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.65rem', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '2rem', fontWeight: 900, color: C.rose, letterSpacing: '-0.04em' }}>
+                      ৳{product.discount_price?.toLocaleString()}
+                    </span>
+                    <span style={{ fontSize: '1.25rem', fontWeight: 700, color: C.t300, textDecoration: 'line-through', letterSpacing: '-0.02em' }}>
+                      ৳{product.base_price?.toLocaleString()}
+                    </span>
+                    <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#166534', background: '#dcfce7', padding: '0.15rem 0.5rem', borderRadius: '0.5rem', marginLeft: '0.25rem', verticalAlign: 'middle', height: 'fit-content' }}>
+                      {Math.round(((product.base_price - product.discount_price) / product.base_price) * 100)}% Off
+                    </span>
+                  </div>
+                ) : (
+                  <span style={{ fontSize: '2rem', fontWeight: 900, color: C.t900, letterSpacing: '-0.04em' }}>
+                    ৳{product.base_price?.toLocaleString()}
+                  </span>
+                )}
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: C.t300 }}>BDT</span>
+                {product.stock_count > 0 && product.stock_count <= 10 && (
+                  <span style={{ fontSize: '0.65rem', fontWeight: 800, color: C.rose, background: '#fff1f2', padding: '0.2rem 0.6rem', borderRadius: '0.5rem' }}>
+                    Only {product.stock_count} left!
+                  </span>
+                )}
+              </div>
             </div>
 
             <div style={{ height: 1, background: C.bSoft }} />
 
-            {/* Description Preview */}
-            <div>
-              <p style={{ fontSize: '0.8rem', color: C.t700, lineHeight: 1.5, margin: 0 }}>
-                {product.description || 'This premium collection features refined materials and minimalist design, offering both form and function at an exceptional point.'}
-              </p>
-            </div>
+            {/* Description */}
+            <p style={{ fontSize: '0.82rem', color: C.t500, lineHeight: 1.65, margin: 0, fontWeight: 500 }}>
+              {product.description || 'Premium craftsmanship with refined materials for the modern lifestyle.'}
+            </p>
 
-            {/* Quantity Selector */}
+            {/* Quantity */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-               <p style={{ fontSize: '0.75rem', fontWeight: 900, color: C.t900, margin: 0 }}>Quantity</p>
-               <div style={{ display: 'flex', alignItems: 'center', background: C.bgMuted, borderRadius: '9999px', padding: '0.2rem' }}>
-                  <button onClick={() => setQuantity(q => Math.max(1, q-1))} style={{ width: 28, height: 28, borderRadius: '50%', border: 'none', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}><Minus style={{ width: 9 }} /></button>
-                  <span style={{ width: 30, textAlign: 'center', fontWeight: 800, fontSize: '0.8rem' }}>{quantity}</span>
-                  <button onClick={() => setQuantity(q => q+1)} style={{ width: 28, height: 28, borderRadius: '50%', border: 'none', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}><Plus style={{ width: 9 }} /></button>
-               </div>
+              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: C.t900 }}>Qty</span>
+              <div style={{ display: 'flex', alignItems: 'center', background: C.bgMuted, borderRadius: 9999, padding: '0.25rem' }}>
+                <button onClick={() => setQuantity(q => Math.max(1, q - 1))} style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', transition: 'all .15s' }}
+                  onMouseEnter={e => e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)'}
+                  onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)'}>
+                  <Minus style={{ width: 10, height: 10 }} />
+                </button>
+                <span style={{ width: 38, textAlign: 'center', fontWeight: 900, fontSize: '0.9rem', color: C.t900 }}>{quantity}</span>
+                <button onClick={() => setQuantity(q => q + 1)} style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', transition: 'all .15s' }}
+                  onMouseEnter={e => e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)'}
+                  onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)'}>
+                  <Plus style={{ width: 10, height: 10 }} />
+                </button>
+              </div>
+              {product.stock_count > 0 && (
+                <span style={{ fontSize: '0.65rem', color: C.green, fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.green, display: 'inline-block' }} />
+                  In Stock ({product.stock_count})
+                </span>
+              )}
             </div>
 
-            {/* Action Buttons */}
+            {/* CTAs */}
             {!isAdmin && (
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                <button 
+              <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
+                {/* Add to cart */}
+                <button
                   onClick={handleAddToCart}
                   disabled={outOfStock || addingToCart}
-                  style={{ 
-                    flex: 1, height: 36, border: 'none', background: C.t900, color: '#fff', 
-                    borderRadius: '0.65rem', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer',
-                    transition: 'all 0.2s', opacity: outOfStock ? 0.5 : 1, whiteSpace: 'nowrap'
+                  style={{
+                    flex: 1, height: 48, border: 'none',
+                    background: addedToCart ? C.green : C.t900,
+                    color: '#fff', borderRadius: '1.25rem',
+                    fontSize: '0.85rem', fontWeight: 800, cursor: outOfStock ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', opacity: outOfStock ? 0.45 : 1,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                    fontFamily: 'inherit',
+                    boxShadow: addedToCart ? '0 8px 20px rgba(34, 197, 94, 0.3)' : '0 8px 24px rgba(13, 17, 23, 0.15)',
                   }}
-                  onMouseEnter={e => { if(!outOfStock) e.currentTarget.style.background = '#000'; }}
-                  onMouseLeave={e => e.currentTarget.style.background = C.t900}
+                  onMouseEnter={e => { if (!outOfStock && !addingToCart) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 28px rgba(13, 17, 23, 0.25)'; } }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = addedToCart ? '0 8px 20px rgba(34, 197, 94, 0.3)' : '0 8px 24px rgba(13, 17, 23, 0.15)'; }}
                 >
-                  {addingToCart ? '...' : 'Add to Cart'}
+                  {addingToCart
+                    ? <><Loader2 style={{ width: 15, height: 15, animation: 'spin .7s linear infinite' }} /> Adding…</>
+                    : addedToCart
+                    ? <><Check style={{ width: 15, height: 15 }} /> Added!</>
+                    : <><ShoppingBag style={{ width: 15, height: 15 }} /> Add to Cart</>
+                  }
                 </button>
-                
-                <button 
+
+                {/* Buy Now */}
+                <button
                   onClick={handleBuyNow}
                   disabled={outOfStock || buyingNow}
                   className="btn-lime"
-                  style={{ 
-                    flex: 1.2, height: 36, padding: '0 0.75rem', borderRadius: '0.65rem', fontSize: '0.75rem',
-                    display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.4rem',
-                    opacity: outOfStock ? 0.5 : 1, whiteSpace: 'nowrap'
+                  style={{
+                    flex: 1.1, height: 48, padding: '0 1rem', borderRadius: '1.25rem',
+                    fontSize: '0.85rem', opacity: outOfStock ? 0.45 : 1,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
+                    boxShadow: '0 8px 24px rgba(203, 255, 0, 0.35)',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   }}
+                  onMouseEnter={e => { if (!outOfStock) { e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)'; e.currentTarget.style.boxShadow = '0 12px 32px rgba(203, 255, 0, 0.5)'; } }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(203, 255, 0, 0.35)'; }}
                 >
-                  {buyingNow ? '...' : 'Checkout'}
-                  <div className="icon-circle" style={{ width: '1.15rem', height: '1.15rem' }}><ChevronRight style={{ width: 11 }} /></div>
+                  {buyingNow
+                    ? <Loader2 style={{ width: 15, height: 15, animation: 'spin .7s linear infinite' }} />
+                    : <>Buy Now <div className="icon-circle" style={{ width: '1.6rem', height: '1.6rem' }}><ArrowRight style={{ width: 12, height: 12, transform: 'rotate(-45deg)' }} /></div></>
+                  }
                 </button>
 
-                <button 
-                  onClick={() => toggleWishlist(product)}
-                  style={{ 
-                    width: 36, height: 36, border: `1px solid ${C.bSoft}`, background: '#fff',
-                    borderRadius: '0.65rem', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-                    transition: 'all 0.2s', flexShrink: 0
+                {/* Wishlist */}
+                <button
+                  onClick={handleWishlist}
+                  disabled={wishLoading}
+                  style={{
+                    width: 48, height: 48, flexShrink: 0,
+                    border: `1.5px solid ${inWL ? '#fecdd3' : C.bSoft}`,
+                    background: inWL ? '#fff1f2' : '#fff',
+                    borderRadius: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer', transition: 'all 0.2s',
                   }}
-                  onMouseEnter={e => e.currentTarget.style.background = C.bgMuted}
-                  onMouseLeave={e => e.currentTarget.style.background = '#fff'}
+                  onMouseEnter={e => { if (!wishLoading) e.currentTarget.style.transform = 'scale(1.05)'; }}
+                  onMouseLeave={e => e.currentTarget.style.transform = 'none'}
                 >
-                  <Heart style={{ width: 14, height: 14, color: isInWishlist(product.id) ? C.rose : C.t300, fill: isInWishlist(product.id) ? C.rose : 'none' }} />
+                  {wishLoading
+                    ? <Loader2 style={{ width: 16, height: 16, color: C.rose, animation: 'spin .7s linear infinite' }} />
+                    : <Heart style={{ width: 16, height: 16, color: inWL ? C.rose : C.t300, fill: inWL ? C.rose : 'none', transition: 'all .25s' }} />
+                  }
                 </button>
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: '1.25rem', marginTop: '0.15rem' }}>
-               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: C.t500, fontSize: '0.7rem', fontWeight: 700 }}>
-                 <Truck style={{ width: 12, color: C.t900 }} /> Fast Shipping
-               </div>
-               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: C.t500, fontSize: '0.7rem', fontWeight: 700 }}>
-                 <Shield style={{ width: 12, color: C.t900 }} /> 2 Year Warranty
-               </div>
+            {/* Perks */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.6rem', width: '100%', marginTop: '0.5rem' }}>
+              {[
+                { icon: Truck, label: 'Fast Shipping' },
+                { icon: Shield, label: '100% Genuine' },
+                { icon: Check, label: 'SSL Secured' },
+              ].map(({ icon: Icon, label }) => (
+                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.65rem 0.85rem', background: C.bgMuted, borderRadius: '1rem', border: `1px solid ${C.bSoft}`, transition: 'all 0.2s' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = C.t900; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = C.bgMuted; e.currentTarget.style.borderColor = C.bSoft; }}>
+                  <Icon style={{ width: 13, height: 13, color: C.t900, flexShrink: 0 }} />
+                  <span style={{ fontSize: '0.68rem', fontWeight: 800, color: C.t900 }}>{label}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
-      </div>
-      {/* Reviews & Similar Section (Swapped Layout) */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '2.5rem' }}>
-        
-        {/* Reviews (Now on the Left) */}
-        <div style={{ background: '#fff', border: `1px solid ${C.bSoft}`, borderRadius: '2rem', padding: '2.5rem', boxShadow: '0 8px 30px rgba(0,0,0,0.02)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
-            <h2 style={{ fontSize: '1.35rem', fontWeight: 900, margin: 0, letterSpacing: '-0.02em' }}>Customer Reviews</h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.85rem', background: C.bgMuted, borderRadius: '9999px' }}>
-              <Star style={{ width: 14, height: 14, fill: '#fbbf24', color: '#fbbf24' }} />
-              <span style={{ fontSize: '0.85rem', fontWeight: 900 }}>4.8 / 5.0</span>
-            </div>
+      </motion.div>
+
+      {/* ══ REVIEWS + SIMILAR ══ */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: '1.25rem' }}>
+
+        {/* Reviews */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.42, delay: 0.1 }}
+          style={{ background: '#fff', border: `1px solid ${C.bSoft}`, borderRadius: '2rem', padding: '1.75rem', boxShadow: '0 2px 24px -6px rgba(0,0,0,0.06)' }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+            <h2 style={{ fontSize: '1.15rem', fontWeight: 900, margin: 0, letterSpacing: '-0.02em', color: C.t900 }}>Reviews</h2>
+            {displayRating != null && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.35rem 0.85rem', background: C.bgMuted, borderRadius: 9999 }}>
+                <Star style={{ width: 12, height: 12, fill: '#fbbf24', color: '#fbbf24' }} />
+                <span style={{ fontSize: '0.78rem', fontWeight: 900, color: C.t900 }}>{displayRating.toFixed(1)}</span>
+                <span style={{ fontSize: '0.65rem', color: C.t300, fontWeight: 600 }}>/ 5.0</span>
+              </div>
+            )}
           </div>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-            {fetchingReviews ? (
-              <p style={{ fontSize: '0.8rem', color: C.t300 }}>Loading reviews...</p>
-            ) : reviews.length > 0 ? reviews.map(rev => (
-              <div key={rev.id} style={{ paddingBottom: '1.5rem', borderBottom: `1px solid ${C.bSoft}` }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{ width: 34, height: 34, borderRadius: '50%', background: C.bgMuted, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: C.t300, fontSize: '0.65rem' }}>
-                      {rev.user?.full_name?.[0] || 'U'}
-                    </div>
-                    <div>
-                      <p style={{ fontSize: '0.85rem', fontWeight: 900, color: C.t900, margin: 0 }}>{rev.user?.full_name}</p>
-                      <div style={{ display: 'flex', gap: '0.1rem', marginTop: '0.1rem' }}>
-                        {[1,2,3,4,5].map(s => <Star key={s} style={{ width: 8, height: 8, fill: s <= rev.rating ? '#fbbf24' : 'none', color: s <= rev.rating ? '#fbbf24' : C.t300 }} />)}
+
+          {fetchingReviews ? (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem 0' }}>
+              <LoadingSpinner size={32} label="Loading reviews…" />
+            </div>
+          ) : reviews.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {reviews.map((rev, i) => (
+                <div key={rev.id}
+                  style={{
+                    padding: '1.15rem', background: C.bgMuted, borderRadius: '1.25rem',
+                    border: `1px solid ${C.bSoft}`, transition: 'all 0.25s ease-in-out',
+                    boxShadow: '0 1px 4px rgba(0,0,0,0.02)'
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.06)'; e.currentTarget.style.background = '#fff'; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.02)'; e.currentTarget.style.background = C.bgMuted; }}
+                >
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'0.6rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                      <div style={{ width: 34, height: 34, borderRadius: '50%', background: C.t900, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.75rem', fontWeight: 900, flexShrink: 0 }}>
+                        {rev.user?.full_name?.[0]?.toUpperCase() || 'U'}
+                      </div>
+                      <div>
+                        <p style={{ fontSize: '0.82rem', fontWeight: 800, color: C.t900, margin: 0 }}>{rev.user?.full_name || 'Anonymous'}</p>
+                        <Stars rating={rev.rating} size={9} />
                       </div>
                     </div>
+                    <span style={{ fontSize: '0.62rem', color: C.t300, fontWeight: 600 }}>
+                      {new Date(rev.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </span>
                   </div>
-                  <span style={{ fontSize: '0.7rem', color: C.t300, fontWeight: 600 }}>{new Date(rev.created_at).toLocaleDateString()}</span>
+                  <p style={{ fontSize: '0.78rem', color: C.t700, lineHeight: 1.6, margin: 0 }}>{rev.comment}</p>
                 </div>
-                <p style={{ fontSize: '0.8rem', color: C.t700, lineHeight: 1.6, margin: 0 }}>
-                  {rev.comment}
-                </p>
-              </div>
-            )) : (
-              <div style={{ padding: '2rem 0', textAlign: 'center' }}>
-                <p style={{ fontSize: '0.85rem', color: C.t300, margin: 0 }}>No reviews yet for this product.</p>
-              </div>
-            )}
-          </div>
-        </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ padding: '2rem', textAlign: 'center', background: C.bgMuted, borderRadius: '1.25rem' }}>
+              <Star style={{ width: 28, height: 28, color: C.t300, marginBottom: '0.75rem' }} />
+              <p style={{ fontSize: '0.82rem', fontWeight: 700, color: C.t900, margin: '0 0 0.25rem' }}>No reviews yet</p>
+              <p style={{ fontSize: '0.72rem', color: C.t300, margin: 0 }}>Be the first to review this product.</p>
+            </div>
+          )}
+        </motion.div>
 
-        {/* Similar Items (Now on the Right) */}
-        <div style={{ background: '#fff', border: `1px solid ${C.bSoft}`, borderRadius: '2rem', padding: '2.5rem', boxShadow: '0 8px 30px rgba(0,0,0,0.02)' }}>
-          <h2 style={{ fontSize: '1.35rem', fontWeight: 900, marginBottom: '2rem', letterSpacing: '-0.02em' }}>Similar items</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
-            {similarProducts.length > 0 ? similarProducts.map(p => (
-              <ProductCard 
-                key={p.id} 
-                product={p} 
-                onCart={addItem} 
-                onWishlist={toggleWishlist} 
-                inWishlist={isInWishlist(p.id)} 
-              />
-            )) : (
-              <p style={{ fontSize: '0.75rem', color: C.t300 }}>Exploring similar pieces...</p>
-            )}
+        {/* Similar Products */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.42, delay: 0.14 }}
+          style={{ background: '#fff', border: `1px solid ${C.bSoft}`, borderRadius: '2rem', padding: '1.75rem', boxShadow: '0 2px 24px -6px rgba(0,0,0,0.06)' }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+            <h2 style={{ fontSize: '1.15rem', fontWeight: 900, margin: 0, letterSpacing: '-0.02em', color: C.t900 }}>Similar Items</h2>
+            <Link to="/products" style={{ fontSize: '0.68rem', fontWeight: 700, color: C.t300, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.2rem', transition: 'color .2s' }}
+              onMouseEnter={e => e.currentTarget.style.color = C.t900}
+              onMouseLeave={e => e.currentTarget.style.color = C.t300}>
+              See all <ChevronRight style={{ width: 11, height: 11 }} />
+            </Link>
           </div>
-        </div>
+          {similarProducts.length > 0 ? (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.85rem' }}>
+              {similarProducts.slice(0, 4).map(p => (
+                <ProductCard
+                  key={p.id}
+                  product={p}
+                  onCart={() => addItem(p)}
+                  onWishlist={() => toggleWishlist(p)}
+                  inWishlist={isInWishlist(p.id)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div style={{ padding: '2rem', textAlign: 'center', background: C.bgMuted, borderRadius: '1.25rem' }}>
+              <Package style={{ width: 28, height: 28, color: C.t300, marginBottom: '0.75rem' }} />
+              <p style={{ fontSize: '0.78rem', color: C.t300, margin: 0, fontWeight: 600 }}>No similar products found</p>
+            </div>
+          )}
+        </motion.div>
       </div>
+
+      {/* ══ IMAGE ZOOM MODAL ══ */}
+      <AnimatePresence>
+        {zoom && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setZoom(false)}
+              style={{ position: 'fixed', inset: 0, zIndex: 999, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', cursor: 'zoom-out' }}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.92 }}
+              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              onClick={() => setZoom(false)}
+              style={{ position: 'fixed', inset: '3%', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out' }}
+            >
+              <img
+                src={getImageUrl(selectedImage)}
+                alt={product.name}
+                style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '1.25rem', boxShadow: '0 40px 80px rgba(0,0,0,0.5)' }}
+                onClick={e => e.stopPropagation()}
+              />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      <LoginModal open={loginModal} onClose={() => setLoginModal(false)} reason="wishlist" />
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 };

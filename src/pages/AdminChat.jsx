@@ -362,7 +362,7 @@ const AdminChat = () => {
 
           {filteredUsers.length > 0 && (
             <>
-              <div style={{ margin: '1.5rem 0.5rem 0.75rem', fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <div style={{ margin: '1.5rem 0.5rem 0.75rem', fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', letterSpacing: '0.05em' }}>
                 Start New Chat
               </div>
               {filteredUsers.map(user => (
