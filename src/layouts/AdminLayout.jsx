@@ -41,20 +41,44 @@ export default function AdminLayout({ children }) {
   // Premium Notifications State
   const [notifications, setNotifications] = useState(() => {
     try {
-      const saved = localStorage.getItem('admin_notifications');
+      const currentUser = useAuthStore.getState().user;
+      const key = currentUser?.id ? `admin_notifications_${currentUser.id}` : 'admin_notifications';
+      const saved = localStorage.getItem(key);
       return saved ? JSON.parse(saved) : [];
     } catch {
       return [];
     }
   });
 
+  // Load user-specific notifications to prevent race conditions during auth transitions
   useEffect(() => {
+    if (!user?.id) return;
     try {
-      localStorage.setItem('admin_notifications', JSON.stringify(notifications));
+      const saved = localStorage.getItem(`admin_notifications_${user.id}`);
+      if (saved) {
+        setNotifications(JSON.parse(saved));
+      } else {
+        const generic = localStorage.getItem('admin_notifications');
+        if (generic) {
+          setNotifications(JSON.parse(generic));
+          localStorage.setItem(`admin_notifications_${user.id}`, generic);
+        } else {
+          setNotifications([]);
+        }
+      }
+    } catch {
+      setNotifications([]);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    try {
+      localStorage.setItem(`admin_notifications_${user.id}`, JSON.stringify(notifications));
     } catch (err) {
       console.error('Failed to save admin notifications to localStorage', err);
     }
-  }, [notifications]);
+  }, [notifications, user?.id]);
 
   const [notiOpen, setNotiOpen] = useState(false);
   const [signOutModalOpen, setSignOutModalOpen] = useState(false);

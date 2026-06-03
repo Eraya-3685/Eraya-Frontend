@@ -43,7 +43,10 @@ const AdminUsers = () => {
     password: '',
     showPassword: false,
     submitting: false,
-    selectedPermissions: []
+    selectedPermissions: [],
+    otp: '',
+    otpSent: false,
+    sendingOtp: false
   });
 
   const activeRole = searchParams.get('role') || 'all';
@@ -85,8 +88,23 @@ const AdminUsers = () => {
       password: '',
       showPassword: false,
       submitting: false,
-      selectedPermissions: []
+      selectedPermissions: [],
+      otp: '',
+      otpSent: false,
+      sendingOtp: false
     });
+  };
+
+  const sendRoleChangeOTP = async () => {
+    setRoleAuthModal(prev => ({ ...prev, sendingOtp: true }));
+    try {
+      await api.post('/users/otp/request', { purpose: 'admin_role_change' });
+      toast.success('Security verification code sent to your email');
+      setRoleAuthModal(prev => ({ ...prev, otpSent: true, sendingOtp: false }));
+    } catch (err) {
+      toast.error(err.response?.data?.error || err.response?.data || 'Failed to send verification code');
+      setRoleAuthModal(prev => ({ ...prev, sendingOtp: false }));
+    }
   };
 
   const handleRoleChange = async (targetUser, newRole) => {
@@ -101,6 +119,8 @@ const AdminUsers = () => {
       }
     }
 
+    const needsOtp = newRole === 'admin' || targetUser.role === 'admin';
+
     setRoleAuthModal({
       isOpen: true,
       targetUser,
@@ -108,13 +128,28 @@ const AdminUsers = () => {
       password: '',
       showPassword: false,
       submitting: false,
-      selectedPermissions: initialPerms
+      selectedPermissions: initialPerms,
+      otp: '',
+      otpSent: false,
+      sendingOtp: false
     });
+
+    if (needsOtp) {
+      setTimeout(() => {
+        sendRoleChangeOTP();
+      }, 50);
+    }
   };
 
   const submitRoleChange = async () => {
     if (!roleAuthModal.password) {
       toast.error('Please enter your password');
+      return;
+    }
+
+    const needsOtp = roleAuthModal.newRole === 'admin' || roleAuthModal.targetUser?.role === 'admin';
+    if (needsOtp && !roleAuthModal.otp) {
+      toast.error('Please enter the verification code (OTP) sent to your email');
       return;
     }
 
@@ -124,7 +159,8 @@ const AdminUsers = () => {
         ids: [roleAuthModal.targetUser.id],
         role: roleAuthModal.newRole,
         permissions: roleAuthModal.newRole === 'moderator' ? roleAuthModal.selectedPermissions : [],
-        password: roleAuthModal.password
+        password: roleAuthModal.password,
+        otp: needsOtp ? roleAuthModal.otp : ''
       });
 
       const successMessage = roleAuthModal.targetUser?.role === 'moderator' && roleAuthModal.newRole === 'moderator'
@@ -135,7 +171,7 @@ const AdminUsers = () => {
       toast.success(successMessage);
       await fetchUsers(true);
     } catch (err) {
-      toast.error(err.response?.data || 'Verification failed. Please check your credentials.');
+      toast.error(err.response?.data?.error || err.response?.data || 'Verification failed. Please check your credentials.');
     } finally {
       setRoleAuthModal(prev => ({ ...prev, submitting: false }));
     }
@@ -707,6 +743,49 @@ const AdminUsers = () => {
               )}
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginBottom: '2rem' }}>
+                {(roleAuthModal.newRole === 'admin' || roleAuthModal.targetUser?.role === 'admin') && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b' }}>Verification Code (OTP)</label>
+                      <button
+                        type="button"
+                        disabled={roleAuthModal.sendingOtp}
+                        onClick={sendRoleChangeOTP}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#e11d48',
+                          fontSize: '0.65rem',
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                          padding: 0
+                        }}
+                      >
+                        {roleAuthModal.sendingOtp ? 'Sending...' : 'Resend Code'}
+                      </button>
+                    </div>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="text"
+                        maxLength={6}
+                        placeholder="Enter 6-digit OTP"
+                        value={roleAuthModal.otp || ''}
+                        onChange={(e) => setRoleAuthModal(prev => ({ ...prev, otp: e.target.value.replace(/\D/g, '') }))}
+                        style={{
+                          width: '100%', padding: '0.9rem 1.25rem', background: '#f8fafc',
+                          border: '2px solid transparent', borderRadius: '1rem',
+                          fontSize: '0.85rem', fontWeight: 700, color: '#0f172a', outline: 'none',
+                          transition: 'all 0.2s',
+                          letterSpacing: roleAuthModal.otp ? '6px' : 'normal',
+                          textAlign: 'center'
+                        }}
+                        onFocus={e => e.currentTarget.style.borderColor = '#e11d48'}
+                        onBlur={e => e.currentTarget.style.borderColor = 'transparent'}
+                      />
+                    </div>
+                  </div>
+                )}
+
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   <label style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b' }}>Your Admin Password</label>
                   <div style={{ position: 'relative' }}>
@@ -739,13 +818,21 @@ const AdminUsers = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <button
                   onClick={submitRoleChange}
-                  disabled={roleAuthModal.submitting || !roleAuthModal.password}
+                  disabled={
+                    roleAuthModal.submitting || 
+                    !roleAuthModal.password || 
+                    ((roleAuthModal.newRole === 'admin' || roleAuthModal.targetUser?.role === 'admin') && !roleAuthModal.otp)
+                  }
                   style={{
                     width: '100%', padding: '1.1rem', borderRadius: '1.25rem',
                     background: '#0f172a', color: '#fff', border: 'none',
                     fontSize: '0.85rem', fontWeight: 800, cursor: 'pointer',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem',
-                    opacity: (roleAuthModal.submitting || !roleAuthModal.password) ? 0.5 : 1,
+                    opacity: (
+                      roleAuthModal.submitting || 
+                      !roleAuthModal.password || 
+                      ((roleAuthModal.newRole === 'admin' || roleAuthModal.targetUser?.role === 'admin') && !roleAuthModal.otp)
+                    ) ? 0.5 : 1,
                     transition: 'all 0.2s',
                     boxShadow: '0 10px 20px -5px rgba(15,23,42,0.3)'
                   }}
