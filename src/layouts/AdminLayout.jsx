@@ -12,6 +12,8 @@ import {
 import api, { getImageUrl } from '../api/axios';
 import useAuthStore from '../store/useAuthStore';
 import ConfirmModal from '../components/ConfirmModal';
+import useChatStore from '../store/useChatStore';
+import useSettingsStore from '../store/useSettingsStore';
 
 const NAV_ITEMS = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true, roles: ['admin', 'moderator'], perm: 'dashboard' },
@@ -28,6 +30,20 @@ export default function AdminLayout({ children }) {
   const { user, logout, token } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
+  const { totalUnreadCount, fetchTotalUnread } = useChatStore();
+  const { settings, fetchSettings } = useSettingsStore();
+
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
+
+  useEffect(() => {
+    if (token) {
+      fetchTotalUnread();
+      const interval = setInterval(fetchTotalUnread, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [token]);
 
   const [searchOpen, setSearchOpen] = useState(false);
   const searchRef = useRef(null);
@@ -467,9 +483,13 @@ export default function AdminLayout({ children }) {
       {/* Logo */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', padding: '0 0.5rem' }}>
         <Link to="/admin" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
-          <div style={{ width: 38, height: 38, background: '#e11d48', borderRadius: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 16px rgba(225, 29, 72, 0.2)' }}>
-            <span style={{ color: '#fff', fontSize: '1.25rem', fontWeight: 900 }}>E.</span>
-          </div>
+          {settings?.logo_url ? (
+            <img src={getImageUrl(settings.logo_url)} alt="Logo" style={{ width: 38, height: 38, borderRadius: '0.85rem', objectFit: 'contain' }} />
+          ) : (
+            <div style={{ width: 38, height: 38, background: '#e11d48', borderRadius: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 16px rgba(225, 29, 72, 0.2)' }}>
+              <span style={{ color: '#fff', fontSize: '1.25rem', fontWeight: 900 }}>E.</span>
+            </div>
+          )}
           <div>
             <h1 style={{ fontWeight: 800, fontSize: '1rem', color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>Eraya.</h1>
             <p style={{ fontSize: '0.55rem', color: '#94a3b8', margin: 0, fontWeight: 600 }}>Admin Portal</p>
@@ -500,6 +520,23 @@ export default function AdminLayout({ children }) {
             >
               <Icon style={{ width: 16, height: 16, opacity: isActive ? 1 : 0.6 }} />
               {label}
+              {label === 'Messages' && totalUnreadCount > 0 && (
+                <span style={{
+                  marginLeft: 'auto',
+                  marginRight: isActive ? '0.50rem' : '0',
+                  background: '#e11d48',
+                  color: '#fff',
+                  fontSize: '0.65rem',
+                  fontWeight: 900,
+                  borderRadius: '0.50rem',
+                  padding: '0.15rem 0.45rem',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  {totalUnreadCount}
+                </span>
+              )}
               {isActive && <motion.div layoutId="active" style={{ marginLeft: 'auto', width: 4, height: 4, borderRadius: '50%', background: '#e11d48' }} />}
             </NavLink>
           );
@@ -1047,6 +1084,55 @@ export default function AdminLayout({ children }) {
                   )}
                 </AnimatePresence>
               </div>
+
+              {/* 3. Messages Shortcut Button */}
+              <button
+                type="button"
+                onClick={() => navigate('/admin/chat')}
+                style={{
+                  width: 48,
+                  height: 48,
+                  background: '#fff',
+                  borderRadius: '1.25rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#64748b',
+                  border: '1px solid #f1f5f9',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  flex: isMobile && !searchOpen ? 1 : 'none',
+                  transition: 'all 0.2s',
+                  boxSizing: 'border-box'
+                }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = '#e11d48'}
+                onMouseLeave={e => e.currentTarget.style.borderColor = '#f1f5f9'}
+                title="Messages"
+              >
+                <MessageSquare style={{ width: 20, height: 20 }} />
+                {totalUnreadCount > 0 && (
+                  <div style={{
+                    position: 'absolute',
+                    top: -5,
+                    right: -5,
+                    minWidth: 20,
+                    height: 20,
+                    borderRadius: '50%',
+                    background: '#e11d48',
+                    color: '#fff',
+                    fontSize: '0.65rem',
+                    fontWeight: 900,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '2px solid #fff',
+                    boxShadow: '0 4px 10px rgba(225, 29, 72, 0.2)',
+                    padding: '0 4px'
+                  }}>
+                    {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
+                  </div>
+                )}
+              </button>
 
               {/* 2. Interactive Notifications Bell popover */}
               <div

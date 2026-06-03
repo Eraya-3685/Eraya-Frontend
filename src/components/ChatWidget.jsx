@@ -246,13 +246,27 @@ const ChatWidget = () => {
                     placeholder="Search messages..."
                     value={msgSearch}
                     onChange={e => setMsgSearch(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') {
+                        setShowMsgSearch(false);
+                        setMsgSearch('');
+                      }
+                    }}
                     style={{ flex: 1, border: 'none', outline: 'none', fontSize: '0.8rem', fontWeight: 600, background: 'transparent', color: '#374151' }}
                   />
-                  {msgSearch && (
-                    <button onClick={() => setMsgSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 0, display: 'flex' }} title="Clear">
-                      <X size={14} />
-                    </button>
-                  )}
+                  <button 
+                    onClick={() => {
+                      if (msgSearch) {
+                        setMsgSearch('');
+                      } else {
+                        setShowMsgSearch(false);
+                      }
+                    }} 
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 0, display: 'flex' }} 
+                    title={msgSearch ? "Clear search" : "Close search"}
+                  >
+                    <X size={14} />
+                  </button>
                 </div>
               )}
               <div 
@@ -275,7 +289,6 @@ const ChatWidget = () => {
                         <ChatMessage 
                           msg={msg} isMe={isMe} onReply={setReplyingTo} 
                           isAdminView={isStaff} setConfirmModal={setConfirmModal} 
-                          showName={!isMe}
                         />
                       </React.Fragment>
                     );

@@ -6,6 +6,7 @@ import useAuthStore from '../store/useAuthStore';
 import useCartStore from '../store/useCartStore';
 import useWishlistStore from '../store/useWishlistStore';
 import api, { getImageUrl } from '../api/axios';
+import useSettingsStore from '../store/useSettingsStore';
 
 const RECENT_KEY = 'eraya_recent_searches';
 const MAX_RECENT = 5;
@@ -41,6 +42,11 @@ export default function Navbar() {
   const { user, logout } = useAuthStore();
   const { items: cartItems } = useCartStore();
   const { items: wishlistItems } = useWishlistStore();
+  const { settings, fetchSettings } = useSettingsStore();
+
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
 
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
@@ -168,13 +174,17 @@ export default function Navbar() {
 
         {/* ── Logo ── */}
         <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none', flexShrink: 0 }}>
-          <div style={{
-            width: 40, height: 40, background: C.t900,
-            borderRadius: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 4px 15px rgba(0,0,0,0.18)',
-          }}>
-            <Package style={{ width: 19, height: 19, color: '#fff' }} />
-          </div>
+          {settings?.logo_url ? (
+            <img src={getImageUrl(settings.logo_url)} alt="Logo" style={{ width: 40, height: 40, borderRadius: '0.85rem', objectFit: 'contain' }} />
+          ) : (
+            <div style={{
+              width: 40, height: 40, background: C.t900,
+              borderRadius: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 4px 15px rgba(0,0,0,0.18)',
+            }}>
+              <Package style={{ width: 19, height: 19, color: '#fff' }} />
+            </div>
+          )}
           <span style={{
             fontFamily: "'Plus Jakarta Sans', sans-serif",
             fontWeight: 900, fontSize: '1.5rem',

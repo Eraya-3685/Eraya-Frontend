@@ -1,7 +1,10 @@
 import { Link } from 'react-router-dom';
 import { Package, Globe, Share2, Link2 } from 'lucide-react';
+import useSettingsStore from '../store/useSettingsStore';
+import { getImageUrl } from '../api/axios';
 
 export default function Footer() {
+  const { settings } = useSettingsStore();
   return (
     <footer style={{ background: '#fff', borderTop: '1px solid #eaeef2', marginTop: '3rem' }}>
       <div style={{ maxWidth: 1400, margin: '0 auto', padding: '3rem 2rem' }}>
@@ -9,9 +12,13 @@ export default function Footer() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', textDecoration: 'none' }}>
-              <div style={{ width: 36, height: 36, background: '#0d1117', borderRadius: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Package style={{ width: 16, height: 16, color: '#fff' }} />
-              </div>
+              {settings?.logo_url ? (
+                <img src={getImageUrl(settings.logo_url)} alt="Logo" style={{ width: 36, height: 36, borderRadius: '0.75rem', objectFit: 'contain' }} />
+              ) : (
+                <div style={{ width: 36, height: 36, background: '#0d1117', borderRadius: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Package style={{ width: 16, height: 16, color: '#fff' }} />
+                </div>
+              )}
               <span style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 800, fontSize: '1rem', letterSpacing: '-0.04em', color: '#0d1117' }}>eraya.</span>
             </Link>
             <p style={{ fontSize: '0.75rem', color: '#94a3b8', lineHeight: 1.75, maxWidth: 280, margin: 0 }}>

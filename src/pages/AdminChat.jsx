@@ -33,6 +33,7 @@ const AdminChat = () => {
   const menuRef = useRef(null);
   const searchRef = useRef(null);
   const searchBtnRef = useRef(null);
+  const draftsRef = useRef({});
 
   useEffect(() => {
     if (editingMessage) {
@@ -46,9 +47,9 @@ const AdminChat = () => {
         }
       }, 50);
     } else {
-      setInput('');
+      setInput(selectedAdminConv ? (draftsRef.current[selectedAdminConv.buyer_id] || '') : '');
     }
-  }, [editingMessage]);
+  }, [editingMessage, selectedAdminConv?.buyer_id]);
 
   // Auto-resize textarea height based on content
   useEffect(() => {
@@ -157,8 +158,51 @@ const AdminChat = () => {
         const success = sendMessage(input);
         if (success) {
           setInput('');
+          if (selectedAdminConv) {
+            delete draftsRef.current[selectedAdminConv.buyer_id];
+          }
         }
       }
+    }
+  };
+
+  const handleSelectConversation = (conv) => {
+    if (selectedAdminConv) {
+      draftsRef.current[selectedAdminConv.buyer_id] = input;
+    }
+    setSelectedAdminConv(conv);
+    markAsRead(conv.id);
+    setSearch('');
+    setMsgSearch('');
+    setShowMsgSearch(false);
+    setEditingMessage(null);
+    const nextDraft = draftsRef.current[conv.buyer_id] || '';
+    setInput(nextDraft);
+  };
+
+  const handleCloseChat = () => {
+    if (input.trim()) {
+      setConfirmModal({
+        show: true,
+        title: 'Discard draft?',
+        message: 'You have an unsent message draft. Are you sure you want to close this chat and discard your draft?',
+        onConfirm: () => {
+          if (selectedAdminConv) {
+            delete draftsRef.current[selectedAdminConv.buyer_id];
+          }
+          setSelectedAdminConv(null);
+          setShowMsgSearch(false);
+          setMsgSearch('');
+          setInput('');
+          setEditingMessage(null);
+        }
+      });
+    } else {
+      setSelectedAdminConv(null);
+      setShowMsgSearch(false);
+      setMsgSearch('');
+      setInput('');
+      setEditingMessage(null);
     }
   };
 
@@ -166,9 +210,17 @@ const AdminChat = () => {
     if (!selectedAdminConv) return;
     setIsRefreshing(true);
     setShowMenu(false);
+    setMsgSearch('');
+    setShowMsgSearch(false);
     try {
-      const res = await api.get(`/chat/conversation/${selectedAdminConv.buyer_id}`);
-      setMessages(res.data || []);
+      const [msgRes, convRes] = await Promise.all([
+        api.get(`/chat/conversation/${selectedAdminConv.buyer_id}`),
+        api.get('/chat/conversations')
+      ]);
+      setMessages(msgRes.data || []);
+      setConversations(convRes.data || []);
+    } catch (err) {
+      console.error('Failed to refresh chat data', err);
     } finally {
       setTimeout(() => setIsRefreshing(false), 600);
     }
@@ -186,6 +238,9 @@ const AdminChat = () => {
   // Find users matching search who do NOT have an active conversation, excluding ourselves
   const filteredUsers = search.trim() ? allUsers.filter(u => {
     if (u.id === user?.id) return false;
+    const isSupportUserWithAccess = u.role === 'admin' || (u.role === 'moderator' && (u.permissions || []).includes('chat'));
+    if (!isSupportUserWithAccess) return false;
+
     const hasActiveConv = conversations.some(c => String(c.buyer_id) === String(u.id));
     const matchesSearch = (u.full_name || '').toLowerCase().includes(search.toLowerCase()) ||
                           (u.email || '').toLowerCase().includes(search.toLowerCase());
@@ -232,6 +287,11 @@ const AdminChat = () => {
               placeholder="Search conversations..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                  setSearch('');
+                }
+              }}
               style={{
                 width: '100%',
                 background: '#f8f9fc',
@@ -268,7 +328,7 @@ const AdminChat = () => {
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '0 1rem 1.5rem', position: 'relative' }}>
           {filteredConvs.map(conv => (
-            <button key={conv.id} onClick={() => { setSelectedAdminConv(conv); markAsRead(conv.id); setSearch(''); }} className="sidebar-conv-btn" style={{ width: '100%', border: 'none', background: selectedAdminConv?.id === conv.id ? '#2563eb08' : 'transparent', padding: '0.85rem 1.5rem 0.85rem 1rem', borderRadius: '1.5rem', display: 'flex', gap: '0.75rem', alignItems: 'center', cursor: 'pointer', transition: 'all 0.3s ease', marginBottom: '0.5rem', border: selectedAdminConv?.id === conv.id ? '1px solid #2563eb10' : '1px solid transparent' }}>
+            <button key={conv.id} onClick={() => handleSelectConversation(conv)} className="sidebar-conv-btn" style={{ width: '100%', border: 'none', background: selectedAdminConv?.id === conv.id ? '#2563eb08' : 'transparent', padding: '0.85rem 1.5rem 0.85rem 1rem', borderRadius: '1.5rem', display: 'flex', gap: '0.75rem', alignItems: 'center', cursor: 'pointer', transition: 'all 0.3s ease', marginBottom: '0.5rem', border: selectedAdminConv?.id === conv.id ? '1px solid #2563eb10' : '1px solid transparent' }}>
               {conv.buyer_avatar && conv.buyer_avatar !== 'null' && conv.buyer_avatar !== '' ? (
                 <img src={getImageUrl(conv.buyer_avatar)} alt={conv.buyer_name} style={{ width: 40, height: 40, borderRadius: '0.85rem', objectFit: 'cover', flexShrink: 0 }} />
               ) : (
@@ -377,8 +437,7 @@ const AdminChat = () => {
                       last_message: 'Start a new conversation...',
                       unread_count: 0
                     };
-                    setSelectedAdminConv(mockConv);
-                    setSearch('');
+                    handleSelectConversation(mockConv);
                   }}
                   style={{ width: '100%', border: 'none', background: 'transparent', padding: '0.85rem 1rem', borderRadius: '1.5rem', display: 'flex', gap: '0.75rem', alignItems: 'center', cursor: 'pointer', transition: 'all 0.3s ease', marginBottom: '0.5rem', border: '1px solid transparent' }}
                   onMouseEnter={e => e.currentTarget.style.background = '#2563eb08'}
@@ -424,23 +483,28 @@ const AdminChat = () => {
                   </div>
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                <button ref={searchBtnRef} onClick={() => setShowMsgSearch(v => !v)} style={{ width: 36, height: 36, borderRadius: '0.75rem', border: '1px solid #f1f5f9', background: showMsgSearch ? '#eff6ff' : '#fff', color: showMsgSearch ? '#2563eb' : '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} title="Search messages"><Search style={{ width: 16, height: 16 }} /></button>
+              <div style={{ display: 'flex', gap: '0.65rem', alignItems: 'center' }}>
+                <button 
+                  ref={searchBtnRef} 
+                  onClick={() => setShowMsgSearch(v => { if (v) setMsgSearch(''); return !v; })} 
+                  className={`chat-header-btn chat-header-btn-search ${showMsgSearch ? 'active' : ''}`}
+                  title="Search messages"
+                >
+                  <Search style={{ width: 15, height: 15 }} />
+                </button>
                 <button 
                   onClick={refreshCurrentChat} 
-                  style={{ width: 36, height: 36, borderRadius: '0.75rem', border: '1px solid #f1f5f9', background: '#fff', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s' }} 
-                  onMouseEnter={e => e.currentTarget.style.borderColor = '#2563eb'}
-                  onMouseLeave={e => e.currentTarget.style.borderColor = '#f1f5f9'}
+                  className="chat-header-btn chat-header-btn-refresh"
                   title="Refresh chat"
                 >
                   <RefreshCcw style={{ width: 14, height: 14, animation: isRefreshing ? 'spin 0.6s linear infinite' : 'none' }} />
                 </button>
                 <button 
-                  onClick={() => setSelectedAdminConv(null)} 
-                  style={{ width: 36, height: 36, borderRadius: '0.75rem', border: 'none', background: '#fff1f2', color: '#e11d48', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} 
+                  onClick={handleCloseChat} 
+                  className="chat-header-btn chat-header-btn-close"
                   title="Close chat"
                 >
-                  <X style={{ width: 16, height: 16 }} />
+                  <X style={{ width: 15, height: 15 }} />
                 </button>
               </div>
             </div>
@@ -491,16 +555,38 @@ const AdminChat = () => {
                     placeholder="Search messages..."
                     value={msgSearch}
                     onChange={e => setMsgSearch(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') {
+                        setShowMsgSearch(false);
+                        setMsgSearch('');
+                      }
+                    }}
                     autoFocus
                     style={{ flex: 1, border: 'none', outline: 'none', fontSize: '0.8rem', fontWeight: 600, background: 'transparent', color: '#374151' }}
                   />
-                  {msgSearch && <button onClick={() => setMsgSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 0, display: 'flex' }}><X style={{ width: 14, height: 14 }} /></button>}
+                  <button 
+                    onClick={() => {
+                      if (msgSearch) {
+                        setMsgSearch('');
+                      } else {
+                        setShowMsgSearch(false);
+                      }
+                    }}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 0, display: 'flex' }}
+                    title={msgSearch ? "Clear search" : "Close search"}
+                  >
+                    <X style={{ width: 14, height: 14 }} />
+                  </button>
                 </div>
               )}
               <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                 {filteredMessages.map((msg, i) => {
                   const isMe = msg.sender_id === user?.id;
-                  const isSupport = msg.sender_role === 'admin' || msg.sender_role === 'moderator';
+                  const senderUser = allUsers.find(u => u.id === msg.sender_id);
+                  const senderRole = msg.sender_role || senderUser?.role || (isMe ? user?.role : '');
+                  const isSupport = senderRole === 'admin' || senderRole === 'moderator' || isMe;
+                  const senderName = msg.sender_name || senderUser?.full_name || (isMe ? user?.full_name : 'Support');
+                  
                   const prevMsgDate = i > 0 ? new Date(filteredMessages[i - 1].created_at) : null;
                   const showDateSeparator = !prevMsgDate || new Date(msg.created_at).toDateString() !== prevMsgDate.toDateString();
                   return (
@@ -510,7 +596,7 @@ const AdminChat = () => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexDirection: isSupport ? 'row-reverse' : 'row' }}>
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: isSupport ? 'flex-end' : 'flex-start' }}>
                             <div style={{
-                              background: isSupport ? (isMe ? '#2563eb' : '#4f46e5') : '#fff',
+                              background: isSupport ? (isMe ? '#2563eb' : '#7c3aed') : '#fff',
                               color: isSupport ? '#fff' : '#0f172a',
                               padding: '0.85rem 1.25rem',
                               borderRadius: isSupport ? '1.25rem 1.25rem 0.35rem 1.25rem' : '1.25rem 1.25rem 1.25rem 0.35rem',
@@ -522,7 +608,7 @@ const AdminChat = () => {
                               <p style={{ margin: 0, fontSize: '0.78rem', fontWeight: 600, lineHeight: 1.45 }}>{msg.message_text}</p>
                             </div>
                             <p style={{ fontSize: '0.58rem', fontWeight: 700, color: '#94a3b8', margin: '0.35rem 0.25rem 0 0.25rem', textAlign: isSupport ? 'right' : 'left' }}>
-                              {formatMessageTime(msg.created_at)} {isSupport && (isMe ? ' (You)' : ` (by ${msg.sender_name})`)}
+                              {formatMessageTime(msg.created_at)} {isSupport && (isMe ? ' (You)' : ` (by ${senderName})`)}
                             </p>
                           </div>
                           {isMe && (
@@ -845,6 +931,62 @@ const AdminChat = () => {
           color: #0f172a;
           transform: scale(1.05);
         }
+        
+        .chat-header-btn {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          border: none;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+        }
+        
+        .chat-header-btn-search {
+          background: #f1f5f9;
+          color: #475569;
+        }
+        .chat-header-btn-search:hover {
+          background: #e2e8f0;
+          color: #1e293b;
+          transform: scale(1.08) translateY(-1px);
+          box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+        }
+        .chat-header-btn-search.active {
+          background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+          color: #ffffff;
+          box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
+        }
+        .chat-header-btn-search.active:hover {
+          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+          transform: scale(1.08) translateY(-1px);
+        }
+        
+        .chat-header-btn-refresh {
+          background: #f1f5f9;
+          color: #475569;
+        }
+        .chat-header-btn-refresh:hover {
+          background: #e2e8f0;
+          color: #2563eb;
+          transform: scale(1.08) translateY(-1px) rotate(30deg);
+          box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+        }
+        
+        .chat-header-btn-close {
+          background: #fee2e2;
+          color: #ef4444;
+        }
+        .chat-header-btn-close:hover {
+          background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+          color: #ffffff;
+          transform: scale(1.08) translateY(-1px);
+          box-shadow: 0 6px 16px rgba(225, 29, 72, 0.35);
+        }
+        
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(-5px); }
           to { opacity: 1; transform: translateY(0); }

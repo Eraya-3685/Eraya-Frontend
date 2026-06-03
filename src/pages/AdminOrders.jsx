@@ -533,6 +533,8 @@ const AdminOrders = () => {
               placeholder="Search orders..." 
               value={search} 
               onChange={(e) => setSearch(e.target.value)} 
+              autoComplete="off"
+              name="search_orders_input"
               style={{ 
                 width: '100%', 
                 background: '#fff', 
@@ -549,7 +551,7 @@ const AdminOrders = () => {
             />
          </div>
          <button 
-           onClick={fetchOrders} 
+           onClick={() => { fetchOrders(); setSearch(''); }} 
            style={{ 
              width: 38, 
              height: 38, 

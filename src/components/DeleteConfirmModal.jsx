@@ -113,6 +113,8 @@ const DeleteConfirmModal = ({
 
                 {/* Password Input Block */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {/* Hidden input to satisfy browser autofill logic and prevent it from filling the page's search box */}
+                  <input type="text" name="email" value={user?.email || ''} readOnly style={{ display: 'none' }} autoComplete="username" />
                   <label style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748b', letterSpacing: '0.05em' }}>
                     Confirm Admin Password
                   </label>

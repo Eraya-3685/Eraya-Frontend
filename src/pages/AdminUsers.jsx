@@ -14,14 +14,11 @@ import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import useAuthStore from '../store/useAuthStore';
 
 const PERM_LABELS = {
-  dashboard: 'Dashboard',
   chat: 'Messages',
   products: 'Products',
   categories: 'Categories',
-  users: 'Users',
   orders: 'Orders',
   reviews: 'Reviews',
-  settings: 'Settings'
 };
 
 const AdminUsers = () => {
@@ -436,6 +433,8 @@ const AdminUsers = () => {
               placeholder="Search users..." 
               value={search} 
               onChange={(e) => setSearch(e.target.value)} 
+              autoComplete="off"
+              name="search_users_input"
               style={{ 
                 width: '100%', 
                 background: '#fff', 
@@ -452,7 +451,7 @@ const AdminUsers = () => {
             />
          </div>
          <button 
-           onClick={() => fetchUsers()} 
+           onClick={() => { fetchUsers(); setSearch(''); }} 
            style={{ 
              width: 38, 
              height: 38, 
@@ -681,13 +680,11 @@ const AdminUsers = () => {
                   <label style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b' }}>Set Moderator Permissions</label>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                     {[
-                      { id: 'dashboard', title: 'Dashboard', desc: 'Analytics overview' },
                       { id: 'chat', title: 'Messages', desc: 'Buyer support chat' },
                       { id: 'products', title: 'Products', desc: 'Product inventory' },
                       { id: 'categories', title: 'Categories', desc: 'Department taxons' },
                       { id: 'orders', title: 'Orders', desc: 'Buyer checkouts' },
-                      { id: 'reviews', title: 'Reviews', desc: 'Feedback & ratings' },
-                      { id: 'settings', title: 'Settings', desc: 'General configuration' }
+                      { id: 'reviews', title: 'Reviews', desc: 'Feedback & ratings' }
                     ].map(p => {
                       const isChecked = roleAuthModal.selectedPermissions.includes(p.id);
                       return (
@@ -787,6 +784,8 @@ const AdminUsers = () => {
                 )}
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {/* Hidden inputs to satisfy browser autofill logic and prevent it from filling the search box */}
+                  <input type="text" name="email" value={currentUser?.email || ''} readOnly style={{ display: 'none' }} autoComplete="username" />
                   <label style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b' }}>Your Admin Password</label>
                   <div style={{ position: 'relative' }}>
                     <Lock size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />

@@ -72,6 +72,8 @@ const AdminReviews = () => {
               placeholder="Search reviews..." 
               value={search} 
               onChange={(e) => setSearch(e.target.value)} 
+              autoComplete="off"
+              name="search_reviews_input"
               style={{ 
                 width: '100%', 
                 background: '#fff', 
@@ -88,7 +90,7 @@ const AdminReviews = () => {
             />
          </div>
          <button 
-           onClick={fetchReviews} 
+           onClick={() => { fetchReviews(); setSearch(''); }} 
            style={{ 
              width: 38, 
              height: 38, 

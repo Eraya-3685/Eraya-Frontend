@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Settings, Save, Truck, DollarSign, Percent, ChevronRight, Mail, Phone, MapPin, RefreshCcw } from 'lucide-react';
+import { Settings, Save, Truck, DollarSign, Percent, ChevronRight, Mail, Phone, MapPin, RefreshCcw, Camera, Upload } from 'lucide-react';
 import useSettingsStore from '../store/useSettingsStore';
 import toast from 'react-hot-toast';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 import TakaIcon from '../components/TakaIcon';
+import api, { getImageUrl } from '../api/axios';
 
 
 const AdminSettings = () => {
@@ -17,8 +18,10 @@ const AdminSettings = () => {
     store_email: '',
     store_phone: '',
     store_address: '',
+    logo_url: '',
   });
   const [isSaving, setIsSaving] = useState(false);
+  const logoInputRef = useRef(null);
 
   useEffect(() => { fetchSettings(); }, [fetchSettings]);
 
@@ -31,10 +34,48 @@ const AdminSettings = () => {
         store_email: settings.store_email || '',
         store_phone: settings.store_phone || '',
         store_address: settings.store_address || '',
+        logo_url: settings.logo_url || '',
         id: settings.id
       });
     }
   }, [settings]);
+
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('File size must be less than 2MB');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('image', file);
+    if (form.logo_url) formData.append('old_url', form.logo_url);
+
+    const uploadToast = toast.loading('Uploading logo...');
+    try {
+      const res = await api.post('/settings/logo', formData);
+      if (res.data && res.data.url) {
+        const newLogoUrl = res.data.url;
+        // Update local form state
+        setForm(prev => ({ ...prev, logo_url: newLogoUrl }));
+        // Immediately save logo_url to DB using current settings
+        const currentSettings = useSettingsStore.getState().settings;
+        await updateSettings({
+          ...currentSettings,
+          logo_url: newLogoUrl,
+          free_shipping_threshold: Number(currentSettings?.free_shipping_threshold ?? form.free_shipping_threshold),
+          standard_delivery_fee: Number(currentSettings?.standard_delivery_fee ?? form.standard_delivery_fee),
+          tax_percentage: Number(currentSettings?.tax_percentage ?? form.tax_percentage),
+        });
+        toast.success('Logo saved!', { id: uploadToast });
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Upload failed. Try again.', { id: uploadToast });
+    }
+  };
 
   const handleSave = async (e) => {
     if (e) e.preventDefault();
@@ -83,6 +124,76 @@ const AdminSettings = () => {
         </button>
       </div>
 
+      {/* Store Logo Card */}
+      <motion.div 
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        style={{ 
+          background: '#fff', 
+          borderRadius: '2rem', 
+          border: '1px solid #f1f5f9', 
+          padding: '2rem', 
+          boxShadow: '0 4px 30px rgba(0,0,0,0.015)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '2.5rem',
+          background: 'linear-gradient(to right, #ffffff, #fcfdff)'
+        }}
+      >
+        {/* Circular Logo Preview Frame with Edit Hover Overlay */}
+        <div style={{ position: 'relative', width: 90, height: 90, borderRadius: '50%', flexShrink: 0, border: '3px solid #eff6ff', boxShadow: '0 10px 25px rgba(37, 99, 235, 0.08)', overflow: 'hidden', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {form.logo_url ? (
+            <img src={getImageUrl(form.logo_url)} alt="Store Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '0.4rem' }} />
+          ) : (
+            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '2rem', fontWeight: 900, background: '#f1f5f9' }}>E</div>
+          )}
+          <button 
+            onClick={() => logoInputRef.current?.click()} 
+            style={{ 
+              position: 'absolute', 
+              inset: 0, 
+              background: 'rgba(15, 23, 42, 0.65)', 
+              color: '#fff', 
+              border: 'none', 
+              display: 'flex', 
+              flexDirection: 'column',
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              cursor: 'pointer',
+              opacity: 0,
+              transition: 'opacity 0.25s ease',
+              gap: '0.25rem'
+            }}
+            className="logo-hover-btn"
+            title="Change logo"
+          >
+            <Camera style={{ width: 18, height: 18 }} />
+            <span style={{ fontSize: '0.55rem', fontWeight: 800, letterSpacing: '0.05em' }}>UPDATE</span>
+          </button>
+        </div>
+
+        <div style={{ flex: 1 }}>
+          <h3 style={{ fontSize: '1rem', fontWeight: 900, color: '#0f172a', margin: '0 0 0.35rem 0' }}>Store Branding Identity</h3>
+          <p style={{ fontSize: '0.78rem', fontWeight: 600, color: '#64748b', margin: '0 0 1.25rem 0', lineHeight: 1.45 }}>
+            Upload your official store logo to customize the branding across the entire site (admin sidebar, main store navigation, emails, and invoices).
+          </p>
+          <input 
+            type="file" 
+            ref={logoInputRef} 
+            style={{ display: 'none' }} 
+            accept="image/*" 
+            onChange={handleLogoUpload} 
+          />
+          <button 
+            onClick={() => logoInputRef.current?.click()} 
+            className="logo-upload-btn"
+          >
+            <Upload style={{ width: 13, height: 13 }} />
+            Upload New Logo
+          </button>
+        </div>
+      </motion.div>
+
       {/* Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.25rem' }}>
          {[
@@ -119,6 +230,28 @@ const AdminSettings = () => {
 
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .logo-hover-btn:hover {
+          opacity: 1 !important;
+        }
+        .logo-upload-btn {
+          background: #f8fafc; 
+          color: #0f172a; 
+          border: 1px solid #e2e8f0; 
+          padding: 0.5rem 1.25rem; 
+          border-radius: 0.85rem;
+          font-size: 0.72rem; 
+          font-weight: 800; 
+          cursor: pointer; 
+          display: inline-flex; 
+          align-items: center; 
+          gap: 0.4rem; 
+          transition: all 0.2s; 
+        }
+        .logo-upload-btn:hover {
+          background: #eff6ff; 
+          border-color: #3b82f6; 
+          color: #2563eb;
+        }
       `}</style>
     </div>
   );
