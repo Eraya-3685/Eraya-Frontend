@@ -252,6 +252,7 @@ const useChatStore = create((set, get) => {
           message_text: text,
           sender_id: user?.id,
           sender_name: user?.full_name,
+          sender_role: user?.role,
           created_at: new Date().toISOString(),
           status: 'sending',
           reply_to_id: replyTo?.id,

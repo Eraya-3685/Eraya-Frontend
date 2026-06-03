@@ -275,6 +275,7 @@ const ChatWidget = () => {
                         <ChatMessage 
                           msg={msg} isMe={isMe} onReply={setReplyingTo} 
                           isAdminView={isStaff} setConfirmModal={setConfirmModal} 
+                          showName={!isMe}
                         />
                       </React.Fragment>
                     );

@@ -499,20 +499,30 @@ const AdminChat = () => {
               )}
               <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                 {filteredMessages.map((msg, i) => {
-                  const isMe = msg.sender_id === user.id;
+                  const isMe = msg.sender_id === user?.id;
+                  const isSupport = msg.sender_role === 'admin' || msg.sender_role === 'moderator';
                   const prevMsgDate = i > 0 ? new Date(filteredMessages[i - 1].created_at) : null;
                   const showDateSeparator = !prevMsgDate || new Date(msg.created_at).toDateString() !== prevMsgDate.toDateString();
                   return (
                     <React.Fragment key={msg.id || i}>
                       {showDateSeparator && <DateSeparator date={msg.created_at} />}
-                      <div className="admin-msg-group" style={{ alignSelf: isMe ? 'flex-end' : 'flex-start', maxWidth: '70%', display: 'flex', flexDirection: 'column', margin: '0.1rem 0' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexDirection: isMe ? 'row-reverse' : 'row' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
-                            <div style={{ background: isMe ? '#2563eb' : '#fff', color: isMe ? '#fff' : '#0f172a', padding: '0.85rem 1.25rem', borderRadius: isMe ? '1.25rem 1.25rem 0.35rem 1.25rem' : '1.25rem 1.25rem 1.25rem 0.35rem', boxShadow: '0 4px 15px rgba(0,0,0,0.02)', border: isMe ? 'none' : '1px solid #f1f5f9', wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
+                      <div className="admin-msg-group" style={{ alignSelf: isSupport ? 'flex-end' : 'flex-start', maxWidth: '70%', display: 'flex', flexDirection: 'column', margin: '0.1rem 0' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexDirection: isSupport ? 'row-reverse' : 'row' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: isSupport ? 'flex-end' : 'flex-start' }}>
+                            <div style={{
+                              background: isSupport ? (isMe ? '#2563eb' : '#4f46e5') : '#fff',
+                              color: isSupport ? '#fff' : '#0f172a',
+                              padding: '0.85rem 1.25rem',
+                              borderRadius: isSupport ? '1.25rem 1.25rem 0.35rem 1.25rem' : '1.25rem 1.25rem 1.25rem 0.35rem',
+                              boxShadow: '0 4px 15px rgba(0,0,0,0.02)',
+                              border: isSupport ? 'none' : '1px solid #f1f5f9',
+                              wordBreak: 'break-word',
+                              whiteSpace: 'pre-wrap'
+                            }}>
                               <p style={{ margin: 0, fontSize: '0.78rem', fontWeight: 600, lineHeight: 1.45 }}>{msg.message_text}</p>
                             </div>
-                            <p style={{ fontSize: '0.58rem', fontWeight: 700, color: '#94a3b8', margin: '0.35rem 0.25rem 0 0.25rem', textAlign: isMe ? 'right' : 'left' }}>
-                              {formatMessageTime(msg.created_at)}
+                            <p style={{ fontSize: '0.58rem', fontWeight: 700, color: '#94a3b8', margin: '0.35rem 0.25rem 0 0.25rem', textAlign: isSupport ? 'right' : 'left' }}>
+                              {formatMessageTime(msg.created_at)} {isSupport && (isMe ? ' (You)' : ` (by ${msg.sender_name})`)}
                             </p>
                           </div>
                           {isMe && (
