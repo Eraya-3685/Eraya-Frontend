@@ -190,6 +190,49 @@ const Profile = () => {
           </Link>
         </motion.div>
 
+        {/* ── BUYER STATS ── */}
+        <motion.div {...fadeUp(0.05)} style={{
+          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.5rem'
+        }}>
+          {[
+            {
+              label: 'Total Orders',
+              value: orders.length,
+              icon: ShoppingBag,
+              color: '#6366f1',
+              bg: '#eef2ff',
+            },
+            {
+              label: 'Delivered',
+              value: orders.filter(o => o.order_status === 'Delivered').length,
+              icon: CheckCircle2,
+              color: '#10b981',
+              bg: '#ecfdf5',
+            },
+            {
+              label: 'Total Spent',
+              value: `৳${orders.reduce((sum, o) => sum + (o.total_price || 0), 0).toLocaleString()}`,
+              icon: CreditCard,
+              color: C.rose,
+              bg: '#fff1f2',
+            },
+          ].map((stat) => (
+            <div key={stat.label} style={{
+              background: C.bgCard, borderRadius: C.rLg, padding: '1.25rem',
+              border: `1px solid ${C.bSoft}`, display: 'flex', alignItems: 'center', gap: '1rem',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.03)'
+            }}>
+              <div style={{ width: 42, height: 42, borderRadius: '1rem', background: stat.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: stat.color, flexShrink: 0 }}>
+                <stat.icon style={{ width: 18, height: 18 }} />
+              </div>
+              <div>
+                <p style={{ margin: 0, fontSize: '1.2rem', fontWeight: 900, color: C.t900, letterSpacing: '-0.02em' }}>{stat.value}</p>
+                <p style={{ margin: 0, fontSize: '0.62rem', fontWeight: 700, color: C.t300 }}>{stat.label}</p>
+              </div>
+            </div>
+          ))}
+        </motion.div>
+
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 18rem', gap: '1.5rem', alignItems: 'start' }}>
           
           {/* ── LEFT: ORDERS ── */}
@@ -252,9 +295,43 @@ const Profile = () => {
                                       <div style={{ flex: 1 }}>
                                         <p style={{ fontSize: '0.75rem', fontWeight: 700, color: C.t900, margin: 0 }}>{item.product?.name}</p>
                                         <p style={{ fontSize: '0.62rem', fontWeight: 600, color: C.t300, margin: 0 }}>{item.quantity} × ৳{item.price_at_purchase.toLocaleString()}</p>
+                                        {(item.selected_color || item.selected_size) && (
+                                          <p style={{ fontSize: '0.62rem', fontWeight: 600, color: C.t500, margin: '0.1rem 0 0' }}>
+                                            {item.selected_color ? `Color: ${item.selected_color}` : ''}
+                                            {item.selected_color && item.selected_size ? ' | ' : ''}
+                                            {item.selected_size ? `Size: ${item.selected_size}` : ''}
+                                          </p>
+                                        )}
                                       </div>
-                                      <div style={{ textAlign: 'right' }}>
-                                        <p style={{ fontSize: '0.75rem', fontWeight: 800, color: C.t900, margin: 0 }}>৳{(item.quantity * item.price_at_purchase).toLocaleString()}</p>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                        <div style={{ textAlign: 'right' }}>
+                                          <p style={{ fontSize: '0.75rem', fontWeight: 800, color: C.t900, margin: 0 }}>৳{(item.quantity * item.price_at_purchase).toLocaleString()}</p>
+                                        </div>
+                                        {order.order_status === 'Delivered' && item.product && (
+                                          <button
+                                            onClick={() => {
+                                              setSelectedProduct(item.product);
+                                              setIsReviewModalOpen(true);
+                                            }}
+                                            style={{
+                                              padding: '0.35rem 0.75rem',
+                                              background: '#0d1117',
+                                              color: '#fff',
+                                              border: 'none',
+                                              borderRadius: '0.5rem',
+                                              fontSize: '0.62rem',
+                                              fontWeight: 800,
+                                              cursor: 'pointer',
+                                              whiteSpace: 'nowrap',
+                                              transition: 'all 0.2s',
+                                              fontFamily: "'Plus Jakarta Sans', sans-serif"
+                                            }}
+                                            onMouseEnter={e => { e.currentTarget.style.background = '#3b82f6'; }}
+                                            onMouseLeave={e => { e.currentTarget.style.background = '#0d1117'; }}
+                                          >
+                                            Write Review
+                                          </button>
+                                        )}
                                       </div>
                                     </div>
                                   ))}
@@ -350,6 +427,8 @@ const ReviewModal = ({ isOpen, onClose, product, onSubmit }) => {
   const [hover, setHover] = useState(0);
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(false);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
 
   if (!isOpen) return null;
 
@@ -357,8 +436,48 @@ const ReviewModal = ({ isOpen, onClose, product, onSubmit }) => {
     e.preventDefault();
     if (rating === 0) return toast.error('Select rating');
     setLoading(true);
+
+    let imageUrl = null;
+    if (imageFile) {
+      try {
+        // Client-side canvas compression
+        const compressImage = (file) => new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            const img = new Image();
+            img.onload = () => {
+              const MAX = 1200;
+              let { width, height } = img;
+              if (width > MAX || height > MAX) {
+                if (width > height) { height = Math.round(height * MAX / width); width = MAX; }
+                else { width = Math.round(width * MAX / height); height = MAX; }
+              }
+              const canvas = document.createElement('canvas');
+              canvas.width = width; canvas.height = height;
+              canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+              canvas.toBlob((blob) => resolve(new File([blob], file.name, { type: 'image/jpeg' })), 'image/jpeg', 0.82);
+            };
+            img.src = ev.target.result;
+          };
+          reader.readAsDataURL(file);
+        });
+
+        const compressed = await compressImage(imageFile);
+        const formData = new FormData();
+        formData.append('image', compressed);
+        const res = await api.post('/reviews/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        imageUrl = res.data.url;
+      } catch (err) {
+        toast.error('Image upload failed');
+        setLoading(false);
+        return;
+      }
+    }
+
     try {
-      await api.post('/reviews', { product_id: product.id, rating, comment });
+      await api.post('/reviews', { product_id: product.id, rating, comment, image_url: imageUrl });
       toast.success('Review submitted');
       onSubmit(); onClose();
     } catch { toast.error('Failed to submit'); } finally { setLoading(false); }
@@ -374,7 +493,7 @@ const ReviewModal = ({ isOpen, onClose, product, onSubmit }) => {
         <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: C.t900, marginBottom: '0.25rem' }}>Share Experience</h2>
         <p style={{ fontSize: '0.65rem', fontWeight: 700, color: C.t300, marginBottom: '1.5rem' }}>{product?.name}</p>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem' }}>
             {[1, 2, 3, 4, 5].map(s => (
               <Star key={s} 
@@ -388,6 +507,25 @@ const ReviewModal = ({ isOpen, onClose, product, onSubmit }) => {
             width: '100%', height: 100, padding: '1rem', borderRadius: C.rMd, border: `1px solid ${C.bSoft}`,
             background: C.bgMuted, outline: 'none', fontSize: '0.8rem', fontFamily: 'inherit', resize: 'none'
           }} />
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', textAlign: 'left' }}>
+            <label style={{ fontSize: '0.75rem', fontWeight: 800, color: C.t500 }}>Add Photo (Optional)</label>
+            <input 
+              type="file" 
+              accept="image/*" 
+              onChange={e => {
+                const file = e.target.files[0];
+                if (file) {
+                  setImageFile(file);
+                  setImagePreview(URL.createObjectURL(file));
+                }
+              }} 
+              style={{ fontSize: '0.72rem' }}
+            />
+            {imagePreview && (
+              <img src={imagePreview} style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: '0.5rem', border: `1px solid ${C.bSoft}`, marginTop: '0.25rem' }} alt="Preview" />
+            )}
+          </div>
 
           <button type="submit" disabled={loading} style={{
             padding: '1rem', background: C.t900, color: '#fff', border: 'none', borderRadius: C.rMd,

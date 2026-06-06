@@ -201,6 +201,13 @@ const OrderTracking = () => {
                        <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 700, color: '#0d1117', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.product?.name}</p>
                           <p style={{ margin: '0.25rem 0 0', fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8' }}>Qty: {item.quantity}</p>
+                          {(item.selected_color || item.selected_size) && (
+                             <p style={{ margin: '0.15rem 0 0', fontSize: '0.68rem', fontWeight: 600, color: '#64748b' }}>
+                                {item.selected_color ? `Color: ${item.selected_color}` : ''}
+                                {item.selected_color && item.selected_size ? ' | ' : ''}
+                                {item.selected_size ? `Size: ${item.selected_size}` : ''}
+                             </p>
+                          )}
                        </div>
                        <div style={{ textAlign: 'right' }}>
                           <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 900, color: '#0d1117' }}>৳{(item.price_at_purchase * item.quantity).toLocaleString()}</p>

@@ -5,8 +5,9 @@ import {
   Clock, ShoppingCart, RefreshCcw, MapPin, CreditCard, 
   ChevronDown, Zap
 } from 'lucide-react';
-import api from '../api/axios';
+import api, { getImageUrl } from '../api/axios';
 import toast from 'react-hot-toast';
+import useSettingsStore from '../store/useSettingsStore';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 
 const getStatusDisplayName = (status) => {
@@ -34,6 +35,12 @@ const AdminOrders = () => {
   const [isTablet, setIsTablet] = useState(window.innerWidth <= 1200);
   const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'desc' });
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, orderID: null, status: null });
+
+  const { settings, fetchSettings } = useSettingsStore();
+
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -137,10 +144,19 @@ const AdminOrders = () => {
   }, [filtered, sortConfig]);
 
   const handlePrintInvoice = (order) => {
+    const logoHtml = settings?.logo_url ? `
+      <img src="${getImageUrl(settings.logo_url)}" style="width: 36px; height: 36px; border-radius: 8px; object-fit: contain; margin-right: 8px;" alt="Logo" />
+    ` : `
+      <div class="logo-icon">E</div>
+    `;
     const printWindow = window.open('', '_blank');
     const itemsHtml = order.items?.map(item => `
       <tr>
-        <td style="padding: 16px; border-bottom: 1px solid #f1f5f9; text-align: left;"><span class="item-name">${item.product?.name || 'Product'}</span></td>
+        <td style="padding: 16px; border-bottom: 1px solid #f1f5f9; text-align: left;">
+          <span class="item-name">${item.product?.name || 'Product'}</span>
+          ${item.selected_color ? `<div style="font-size: 11px; color: #64748b; margin-top: 4px;">Color: ${item.selected_color}</div>` : ''}
+          ${item.selected_size ? `<div style="font-size: 11px; color: #64748b;">Size: ${item.selected_size}</div>` : ''}
+        </td>
         <td style="padding: 16px; border-bottom: 1px solid #f1f5f9; text-align: center;">${item.quantity}</td>
         <td style="padding: 16px; border-bottom: 1px solid #f1f5f9; text-align: right;">৳${item.price_at_purchase.toLocaleString()}</td>
         <td style="padding: 16px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 700; color: #0f172a;">৳${(item.price_at_purchase * item.quantity).toLocaleString()}</td>
@@ -154,7 +170,7 @@ const AdminOrders = () => {
     const recipientAddr = parts[2]?.replace('Address:', '')?.trim() || shippingInfo;
 
     const subtotal = order.items?.reduce((sum, item) => sum + (item.price_at_purchase * item.quantity), 0) || 0;
-    const tax = Math.round(subtotal * 0.05);
+    const tax = Math.round(subtotal * ((settings.tax_percentage || 0) / 100));
     const shipping = Math.max(0, Math.round(order.total_price - subtotal - tax));
 
     const statusText = getStatusDisplayName(order.order_status);
@@ -190,72 +206,76 @@ const AdminOrders = () => {
             .invoice-container {
               max-width: 800px;
               margin: 0 auto;
-              padding: 20px;
+              padding: 40px 30px;
+              background: #fff;
+              border-top: 8px solid #0d1117;
             }
             .header {
               display: flex;
               justify-content: space-between;
-              align-items: flex-start;
-              border-bottom: 2px solid #f1f5f9;
-              padding-bottom: 30px;
-              margin-bottom: 30px;
+              align-items: center;
+              border-bottom: 2px solid #0d1117;
+              padding-bottom: 24px;
+              margin-bottom: 35px;
             }
             .logo-container {
               display: flex;
               align-items: center;
-              gap: 8px;
+              gap: 10px;
             }
             .logo-icon {
-              width: 32px;
-              height: 32px;
-              background: #e11d48;
+              width: 36px;
+              height: 36px;
+              background: #0d1117;
               border-radius: 8px;
               display: flex;
               align-items: center;
               justify-content: center;
               color: #fff;
               font-weight: 800;
-              font-size: 18px;
+              font-size: 20px;
             }
             .logo-text {
-              font-size: 24px;
-              font-weight: 800;
-              color: #0f172a;
-              letter-spacing: -0.03em;
+              font-size: 26px;
+              font-weight: 900;
+              color: #0d1117;
+              letter-spacing: 0.08em;
+              text-transform: uppercase;
             }
             .invoice-title {
-              font-size: 32px;
-              font-weight: 800;
-              color: #0f172a;
+              font-size: 28px;
+              font-weight: 900;
+              color: #0d1117;
               margin: 0;
-              letter-spacing: -0.03em;
+              letter-spacing: 0.05em;
               text-align: right;
             }
             .invoice-number {
-              font-size: 14px;
+              font-size: 13px;
               color: #64748b;
-              font-weight: 600;
+              font-weight: 700;
               text-align: right;
               margin-top: 4px;
+              letter-spacing: 0.02em;
             }
             .meta-grid {
               display: grid;
               grid-template-columns: 1fr 1fr;
-              gap: 40px;
+              gap: 30px;
               margin-bottom: 40px;
             }
             .meta-card {
               background: #f8fafc;
               border-radius: 12px;
-              padding: 20px;
-              border: 1px solid #f1f5f9;
+              padding: 24px;
+              border: 1px solid #e2e8f0;
             }
             .meta-title {
-              font-size: 11px;
+              font-size: 10px;
               font-weight: 800;
-              color: #94a3b8;
+              color: #64748b;
               text-transform: uppercase;
-              letter-spacing: 0.05em;
+              letter-spacing: 0.08em;
               margin-bottom: 12px;
             }
             .meta-value {
@@ -265,32 +285,38 @@ const AdminOrders = () => {
               line-height: 1.6;
             }
             .meta-value strong {
-              color: #0f172a;
+              color: #0d1117;
               font-size: 15px;
+              font-weight: 800;
             }
             table {
               width: 100%;
               border-collapse: collapse;
-              margin-bottom: 30px;
+              margin-bottom: 35px;
             }
             th {
               background: #f8fafc;
-              border-bottom: 2px solid #e2e8f0;
-              padding: 12px 16px;
-              font-size: 11px;
+              border-bottom: 2px solid #0d1117;
+              padding: 14px 16px;
+              font-size: 10px;
               font-weight: 800;
-              color: #64748b;
+              color: #0d1117;
               text-transform: uppercase;
-              letter-spacing: 0.05em;
+              letter-spacing: 0.08em;
+            }
+            td {
+              padding: 16px;
+              border-bottom: 1px solid #f1f5f9;
             }
             .item-name {
-              font-weight: 700;
-              color: #0f172a;
+              font-weight: 800;
+              color: #0d1117;
+              font-size: 14.5px;
             }
             .totals-section {
               display: flex;
               justify-content: flex-end;
-              margin-top: 20px;
+              margin-top: 25px;
             }
             .totals-table {
               width: 320px;
@@ -299,41 +325,42 @@ const AdminOrders = () => {
             .totals-table td {
               padding: 8px 16px;
               border: none;
-              font-size: 14px;
+              font-size: 13.5px;
               font-weight: 600;
               color: #64748b;
             }
             .totals-table tr.grand-total td {
-              border-top: 2px solid #f1f5f9;
+              border-top: 2px solid #0d1117;
               padding-top: 14px;
-              font-size: 18px;
-              font-weight: 800;
-              color: #0f172a;
+              font-size: 20px;
+              font-weight: 900;
+              color: #0d1117;
             }
             .footer {
               text-align: center;
-              margin-top: 60px;
+              margin-top: 70px;
               padding-top: 30px;
               border-top: 1px dashed #e2e8f0;
-              font-size: 12px;
+              font-size: 11px;
               color: #94a3b8;
-              font-weight: 600;
+              font-weight: 700;
+              letter-spacing: 0.02em;
             }
             .badge {
               display: inline-block;
-              padding: 2px 8px;
+              padding: 3px 8px;
               border-radius: 6px;
-              font-size: 10px;
+              font-size: 9px;
               font-weight: 800;
               text-transform: uppercase;
-              letter-spacing: 0.03em;
+              letter-spacing: 0.05em;
             }
-            .badge-pending { background: #fffbeb; color: #d97706; }
-            .badge-confirmed { background: #ecfdf5; color: #059669; }
-            .badge-processing { background: #eff6ff; color: #2563eb; }
-            .badge-shipped { background: #faf5ff; color: #7c3aed; }
-            .badge-delivered { background: #f0fdf4; color: #16a34a; }
-            .badge-cancelled { background: #fef2f2; color: #dc2626; }
+            .badge-pending { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
+            .badge-confirmed { background: #ecfdf5; color: #059669; border: 1px solid #d1fae5; }
+            .badge-processing { background: #eff6ff; color: #2563eb; border: 1px solid #dbeafe; }
+            .badge-shipped { background: #faf5ff; color: #7c3aed; border: 1px solid #f3e8ff; }
+            .badge-delivered { background: #f0fdf4; color: #16a34a; border: 1px solid #d1fae5; }
+            .badge-cancelled { background: #fef2f2; color: #dc2626; border: 1px solid #fee2e2; }
           </style>
         </head>
         <body>
@@ -341,8 +368,8 @@ const AdminOrders = () => {
             <div class="header">
               <div>
                 <div class="logo-container">
-                  <div class="logo-icon">E</div>
-                  <div class="logo-text">Eraya</div>
+                  ${logoHtml}
+                  <div class="logo-text">${settings.store_name || 'Eraya'}</div>
                 </div>
                 <div style="font-size: 11px; color: #94a3b8; font-weight: 700; margin-top: 6px; text-transform: uppercase; letter-spacing: 0.05em;">Exclusive E-commerce Hub</div>
               </div>
@@ -396,7 +423,7 @@ const AdminOrders = () => {
                   <td style="text-align: right;">৳${shipping.toLocaleString()}</td>
                 </tr>
                 <tr>
-                  <td style="text-align: left;">VAT / Tax (5%)</td>
+                  <td style="text-align: left;">VAT / Tax (${settings.tax_percentage || 0}%)</td>
                   <td style="text-align: right;">৳${tax.toLocaleString()}</td>
                 </tr>
                 <tr class="grand-total">
@@ -756,7 +783,16 @@ const AdminOrders = () => {
                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                           {order.items?.map((item, i) => (
                                             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.65rem 0.85rem', background: '#f8f9fc', borderRadius: '0.75rem' }}>
-                                               <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0f172a', margin: 0, textAlign: 'left' }}>{item.quantity}× {item.product?.name}</p>
+                                               <div style={{ textAlign: 'left' }}>
+                                                  <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>{item.quantity}× {item.product?.name}</p>
+                                                  {(item.selected_color || item.selected_size) && (
+                                                     <p style={{ fontSize: '0.65rem', fontWeight: 600, color: '#64748b', margin: '0.15rem 0 0' }}>
+                                                        {item.selected_color ? `Color: ${item.selected_color}` : ''}
+                                                        {item.selected_color && item.selected_size ? ' | ' : ''}
+                                                        {item.selected_size ? `Size: ${item.selected_size}` : ''}
+                                                     </p>
+                                                  )}
+                                               </div>
                                                <p style={{ fontSize: '0.75rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>৳{(item.price_at_purchase * item.quantity).toLocaleString()}</p>
                                             </div>
                                           ))}

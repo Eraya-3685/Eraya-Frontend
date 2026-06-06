@@ -52,6 +52,8 @@ const ProductDetails = () => {
   const [loginModal, setLoginModal] = useState(false);
   const [zoom, setZoom] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [selectedColor, setSelectedColor] = useState('');
+  const [selectedSize, setSelectedSize] = useState('');
 
   const addItem = useCartStore(s => s.addItem);
   const { toggleWishlist, isInWishlist } = useWishlistStore();
@@ -59,6 +61,56 @@ const ProductDetails = () => {
   const isAdmin = ['admin', 'moderator'].includes(user?.role?.toLowerCase());
 
   useEffect(() => { fetchProduct(); }, [slug]);
+
+  useEffect(() => {
+    if (product) {
+      document.title = `${product.name} | Eraya`;
+      let descMeta = document.querySelector('meta[name="description"]');
+      if (!descMeta) {
+        descMeta = document.createElement('meta');
+        descMeta.setAttribute('name', 'description');
+        document.head.appendChild(descMeta);
+      }
+      descMeta.setAttribute('content', product.description || `Buy ${product.name} on Eraya.`);
+
+      const setOGMeta = (property, content) => {
+        let ogMeta = document.querySelector(`meta[property="${property}"]`);
+        if (!ogMeta) {
+          ogMeta = document.createElement('meta');
+          ogMeta.setAttribute('property', property);
+          document.head.appendChild(ogMeta);
+        }
+        ogMeta.setAttribute('content', content);
+      };
+
+      setOGMeta('og:title', product.name);
+      setOGMeta('og:description', product.description || `Buy ${product.name} on Eraya.`);
+      if (product.image_url || product.imageUrl) {
+        setOGMeta('og:image', product.image_url || product.imageUrl);
+      }
+
+      const colors = product.colors || [];
+      const sizes = product.sizes || [];
+      if (colors.length === 0) {
+        setSelectedColor('one colour');
+      } else if (colors.length === 1) {
+        setSelectedColor(colors[0]);
+      } else {
+        setSelectedColor('');
+      }
+
+      if (sizes.length === 0) {
+        setSelectedSize('one size');
+      } else if (sizes.length === 1) {
+        setSelectedSize(sizes[0]);
+      } else {
+        setSelectedSize('');
+      }
+    } else {
+      setSelectedColor('');
+      setSelectedSize('');
+    }
+  }, [product]);
 
   const fetchProduct = async () => {
     setLoading(true);
@@ -82,10 +134,22 @@ const ProductDetails = () => {
   };
 
   const handleAddToCart = async () => {
-    if (product.stock_count <= 0 || addingToCart) return;
+    const hasColors = product.colors && product.colors.length > 0;
+    const hasSizes = product.sizes && product.sizes.length > 0;
+
+    if (hasColors && !selectedColor) {
+      toast.error('Please select a colour');
+      return;
+    }
+    if (hasSizes && !selectedSize) {
+      toast.error('Please select a size');
+      return;
+    }
+
+    if (outOfStock || addingToCart) return;
     setAddingToCart(true);
     await new Promise(r => setTimeout(r, 500));
-    addItem({ ...product, image_url: getImageUrl(selectedImage || product.images?.[0]?.image_url) }, quantity);
+    addItem({ ...product, image_url: getImageUrl(selectedImage || product.images?.[0]?.image_url) }, quantity, selectedColor || 'one colour', selectedSize || 'one size');
     setAddingToCart(false);
     setAddedToCart(true);
     toast.success('Added to cart!');
@@ -93,10 +157,22 @@ const ProductDetails = () => {
   };
 
   const handleBuyNow = async () => {
-    if (product.stock_count <= 0 || buyingNow) return;
+    const hasColors = product.colors && product.colors.length > 0;
+    const hasSizes = product.sizes && product.sizes.length > 0;
+
+    if (hasColors && !selectedColor) {
+      toast.error('Please select a colour');
+      return;
+    }
+    if (hasSizes && !selectedSize) {
+      toast.error('Please select a size');
+      return;
+    }
+
+    if (outOfStock || buyingNow) return;
     setBuyingNow(true);
     await new Promise(r => setTimeout(r, 400));
-    addItem({ ...product, image_url: getImageUrl(selectedImage || product.images?.[0]?.image_url) }, quantity);
+    addItem({ ...product, image_url: getImageUrl(selectedImage || product.images?.[0]?.image_url) }, quantity, selectedColor || 'one colour', selectedSize || 'one size');
     navigate('/checkout');
   };
 
@@ -142,8 +218,65 @@ const ProductDetails = () => {
     </div>
   );
 
-  const outOfStock = product.stock_count <= 0;
-  const avgRating = product.average_rating ?? null; // null if no real rating
+  const getSelectedVariationStock = () => {
+    if (!product) return 0;
+    if (!product.variation_stock || product.variation_stock.length === 0) {
+      return product.stock_count;
+    }
+    const hasColors = product.colors && product.colors.length > 0;
+    const hasSizes = product.sizes && product.sizes.length > 0;
+
+    if ((hasColors && !selectedColor) || (hasSizes && !selectedSize)) {
+      return product.stock_count;
+    }
+
+    const colorKey = selectedColor || 'one colour';
+    const sizeKey = selectedSize || 'one size';
+
+    const match = product.variation_stock.find(
+      v => v.color.toLowerCase() === colorKey.toLowerCase() && 
+           v.size.toLowerCase() === sizeKey.toLowerCase()
+    );
+
+    return match ? match.stock : 0;
+  };
+
+  const isColorDisabled = (color) => {
+    if (!product || !product.variation_stock || product.variation_stock.length === 0) return false;
+    if (!selectedSize || selectedSize === 'one size') {
+      const colorStock = product.variation_stock.filter(v => v.color.toLowerCase() === color.toLowerCase());
+      if (colorStock.length > 0) {
+        return colorStock.every(v => v.stock <= 0);
+      }
+      return false;
+    }
+    const match = product.variation_stock.find(
+      v => v.color.toLowerCase() === color.toLowerCase() &&
+           v.size.toLowerCase() === selectedSize.toLowerCase()
+    );
+    return match ? match.stock <= 0 : true;
+  };
+
+  const isSizeDisabled = (size) => {
+    if (!product || !product.variation_stock || product.variation_stock.length === 0) return false;
+    if (!selectedColor || selectedColor === 'one colour') {
+      const sizeStock = product.variation_stock.filter(v => v.size.toLowerCase() === size.toLowerCase());
+      if (sizeStock.length > 0) {
+        return sizeStock.every(v => v.stock <= 0);
+      }
+      return false;
+    }
+    const match = product.variation_stock.find(
+      v => v.color.toLowerCase() === selectedColor.toLowerCase() &&
+           v.size.toLowerCase() === size.toLowerCase()
+    );
+    return match ? match.stock <= 0 : true;
+  };
+
+  const activeStock = getSelectedVariationStock();
+  const isSelectionComplete = product ? (!((product.colors && product.colors.length > 0 && !selectedColor) || (product.sizes && product.sizes.length > 0 && !selectedSize))) : false;
+  const outOfStock = product ? (isSelectionComplete ? activeStock <= 0 : product.stock_count <= 0) : true;
+  const avgRating = (product.total_reviews && product.total_reviews > 0) ? product.average_rating : null;
   const inWL = isInWishlist(product.id);
   // Compute actual avg from loaded reviews
   const computedAvg = reviews.length > 0
@@ -335,9 +468,9 @@ const ProductDetails = () => {
                   </span>
                 )}
                 <span style={{ fontSize: '0.75rem', fontWeight: 600, color: C.t300 }}>BDT</span>
-                {product.stock_count > 0 && product.stock_count <= 10 && (
+                {activeStock > 0 && activeStock <= 10 && (
                   <span style={{ fontSize: '0.65rem', fontWeight: 800, color: C.rose, background: '#fff1f2', padding: '0.2rem 0.6rem', borderRadius: '0.5rem' }}>
-                    Only {product.stock_count} left!
+                    {isSelectionComplete ? `Only ${activeStock} left for this option!` : `Only ${activeStock} left!`}
                   </span>
                 )}
               </div>
@@ -349,6 +482,90 @@ const ProductDetails = () => {
             <p style={{ fontSize: '0.82rem', color: C.t500, lineHeight: 1.65, margin: 0, fontWeight: 500 }}>
               {product.description || 'Premium craftsmanship with refined materials for the modern lifestyle.'}
             </p>
+
+            {/* Color Selector */}
+            {product.colors && product.colors.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: C.t900 }}>
+                  Colour <span style={{ color: C.rose }}>*</span>
+                </span>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  {product.colors.map(color => {
+                    const disabled = isColorDisabled(color);
+                    return (
+                      <button
+                        key={color}
+                        onClick={() => setSelectedColor(color)}
+                        disabled={disabled}
+                        style={{
+                          padding: '0.45rem 0.9rem',
+                          borderRadius: '0.75rem',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          border: `1.5px solid ${selectedColor === color ? C.t900 : C.bSoft}`,
+                          background: selectedColor === color ? C.t900 : '#fff',
+                          color: selectedColor === color ? '#fff' : C.t700,
+                          cursor: disabled ? 'not-allowed' : 'pointer',
+                          transition: 'all 0.2s',
+                          opacity: disabled ? 0.4 : 1,
+                          textDecoration: disabled ? 'line-through' : 'none'
+                        }}
+                      >
+                        {color}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: C.t900 }}>Colour</span>
+                <span style={{ fontSize: '0.78rem', color: C.t500, fontWeight: 600 }}>one colour</span>
+              </div>
+            )}
+
+            {/* Size Selector */}
+            {product.sizes && product.sizes.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: C.t900 }}>
+                  Size <span style={{ color: C.rose }}>*</span>
+                </span>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  {product.sizes.map(size => {
+                    const disabled = isSizeDisabled(size);
+                    return (
+                      <button
+                        key={size}
+                        onClick={() => setSelectedSize(size)}
+                        disabled={disabled}
+                        style={{
+                          padding: '0.45rem 0.9rem',
+                          borderRadius: '0.75rem',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          border: `1.5px solid ${selectedSize === size ? C.t900 : C.bSoft}`,
+                          background: selectedSize === size ? C.t900 : '#fff',
+                          color: selectedSize === size ? '#fff' : C.t700,
+                          cursor: disabled ? 'not-allowed' : 'pointer',
+                          transition: 'all 0.2s',
+                          opacity: disabled ? 0.4 : 1,
+                          textDecoration: disabled ? 'line-through' : 'none'
+                        }}
+                      >
+                        {size}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: C.t900 }}>Size</span>
+                <span style={{ fontSize: '0.78rem', color: C.t500, fontWeight: 600 }}>one size</span>
+              </div>
+            )}
+
+            <div style={{ height: 1, background: C.bSoft }} />
 
             {/* Quantity */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -366,10 +583,15 @@ const ProductDetails = () => {
                   <Plus style={{ width: 10, height: 10 }} />
                 </button>
               </div>
-              {product.stock_count > 0 && (
+              {activeStock > 0 ? (
                 <span style={{ fontSize: '0.65rem', color: C.green, fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                   <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.green, display: 'inline-block' }} />
-                  In Stock ({product.stock_count})
+                  In Stock ({activeStock})
+                </span>
+              ) : (
+                <span style={{ fontSize: '0.65rem', color: C.rose, fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.rose, display: 'inline-block' }} />
+                  Out of Stock
                 </span>
               )}
             </div>
@@ -515,7 +737,15 @@ const ProductDetails = () => {
                       {new Date(rev.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </span>
                   </div>
-                  <p style={{ fontSize: '0.78rem', color: C.t700, lineHeight: 1.6, margin: 0 }}>{rev.comment}</p>
+                  <p style={{ fontSize: '0.78rem', color: C.t700, lineHeight: 1.6, margin: rev.image_url ? '0 0 0.5rem 0' : 0 }}>{rev.comment}</p>
+                  {rev.image_url && rev.image_url !== 'null' && rev.image_url !== '' && (
+                    <img 
+                      src={getImageUrl(rev.image_url)} 
+                      style={{ width: 100, height: 100, objectFit: 'cover', borderRadius: '0.75rem', border: `1px solid ${C.bSoft}`, cursor: 'pointer' }} 
+                      alt="Review" 
+                      onClick={() => window.open(getImageUrl(rev.image_url), '_blank')}
+                    />
+                  )}
                 </div>
               ))}
             </div>

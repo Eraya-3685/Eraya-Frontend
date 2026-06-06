@@ -41,8 +41,22 @@ const Cart = () => {
     setIsRefreshing(true);
     try {
       const updated = await Promise.all(items.map(async item => {
-        try { const r = await api.get(`/products/${item.slug}`); return { ...item, stock_count: r.data.stock_count }; }
-        catch { return item; }
+        try {
+          const r = await api.get(`/products/${item.slug}`);
+          const product = r.data;
+          let stockCount = product.stock_count;
+
+          // Check variant-specific stock if color/size is selected
+          if ((item.selected_color || item.selected_size) && product.variation_stock) {
+            const variantKey = [item.selected_color, item.selected_size].filter(Boolean).join('-');
+            const variantStock = product.variation_stock[variantKey];
+            if (variantStock !== undefined) {
+              stockCount = variantStock;
+            }
+          }
+
+          return { ...item, stock_count: stockCount };
+        } catch { return item; }
       }));
       syncItems(updated);
     } finally { setIsRefreshing(false); }
@@ -63,7 +77,7 @@ const Cart = () => {
     if (!itemToRemove) return;
     setIsRemoving(true);
     await new Promise(r => setTimeout(r, 500));
-    removeItem(itemToRemove.id);
+    removeItem(itemToRemove.id, itemToRemove.selected_color, itemToRemove.selected_size);
     setIsRemoving(false);
     setItemToRemove(null);
   };
@@ -71,7 +85,7 @@ const Cart = () => {
   const handleQty = (item, newQty) => {
     if (newQty > (item.stock_count ?? 99)) { toast.error(`Only ${item.stock_count} in stock`); return; }
     if (newQty <= 0) { setItemToRemove(item); return; }
-    updateQuantity(item.id, newQty);
+    updateQuantity(item.id, newQty, item.selected_color, item.selected_size);
   };
 
   /* Delivery day estimate */
@@ -197,7 +211,7 @@ const Cart = () => {
             const img = item.image_url || item.images?.[0]?.image_url;
             const outOfStock = item.stock_count <= 0;
             return (
-              <motion.div key={item.id}
+              <motion.div key={`${item.id}-${item.selected_color || ''}-${item.selected_size || ''}`}
                 initial={{ opacity:0, y:-8 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, height:0 }}
                 transition={{ duration:0.25, delay: idx*0.04 }}
                 style={{
@@ -231,8 +245,8 @@ const Cart = () => {
                     <Link to={`/products/${item.slug}`} style={{ textDecoration:'none' }}>
                       <p style={{ fontSize:'0.85rem', fontWeight:800, color:C.t900, margin:'0 0 0.25rem', letterSpacing:'-0.01em', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.name}</p>
                     </Link>
-                    {item.color && <p style={{ fontSize:'0.62rem', fontWeight:600, color:C.t500, margin:'0 0 0.1rem' }}>Color: <strong>{item.color}</strong></p>}
-                    {item.size  && <p style={{ fontSize:'0.62rem', fontWeight:600, color:C.t500, margin:0 }}>Size: <strong>{item.size}</strong></p>}
+                    {item.selected_color && <p style={{ fontSize:'0.62rem', fontWeight:600, color:C.t500, margin:'0 0 0.1rem' }}>Color: <strong>{item.selected_color}</strong></p>}
+                    {item.selected_size  && <p style={{ fontSize:'0.62rem', fontWeight:600, color:C.t500, margin:0 }}>Size: <strong>{item.selected_size}</strong></p>}
                   </div>
                 </div>
 

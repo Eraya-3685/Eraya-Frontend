@@ -24,6 +24,7 @@ const NAV_ITEMS = [
   { to: '/admin/orders', label: 'Orders', icon: ShoppingCart, roles: ['admin', 'moderator'], perm: 'orders' },
   { to: '/admin/reviews', label: 'Reviews', icon: Star, roles: ['admin', 'moderator'], perm: 'reviews' },
   { to: '/admin/settings', label: 'Settings', icon: Settings, roles: ['admin', 'moderator'], perm: 'settings' },
+  { to: '/admin/coupons', label: 'Coupons', icon: Tag, roles: ['admin', 'moderator'], perm: 'coupons' },
 ];
 
 export default function AdminLayout({ children }) {

@@ -56,7 +56,7 @@ const Checkout = () => {
     if (!itemToRemove) return;
     setIsRemoving(true);
     await new Promise(r => setTimeout(r, 400));
-    removeItem(itemToRemove.id);
+    removeItem(itemToRemove.id, itemToRemove.selected_color, itemToRemove.selected_size);
     setIsRemoving(false);
     setItemToRemove(null);
   };
@@ -64,7 +64,7 @@ const Checkout = () => {
   const handleQty = (item, newQty) => {
     if (newQty > (item.stock_count ?? 99)) { toast.error(`Only ${item.stock_count} in stock`); return; }
     if (newQty <= 0) { setItemToRemove(item); return; }
-    updateQuantity(item.id, newQty);
+    updateQuantity(item.id, newQty, item.selected_color, item.selected_size);
   };
   
   const [form, setForm] = useState({
@@ -93,13 +93,48 @@ const Checkout = () => {
     }
   }, [isBkashSuccess]);
 
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [discount, setDiscount] = useState(0);
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) {
+      toast.error('Please enter a coupon code');
+      return;
+    }
+    setApplyingCoupon(true);
+    try {
+      const res = await api.post('/coupons/apply', {
+        code: couponCode.trim().toUpperCase(),
+        cart_total: subtotal
+      });
+      setAppliedCoupon(res.data.coupon);
+      setDiscount(res.data.discount_amount);
+      toast.success(`Coupon applied! Saved ৳${res.data.discount_amount}`);
+    } catch (err) {
+      toast.error(err.response?.data || 'Failed to apply coupon');
+      setAppliedCoupon(null);
+      setDiscount(0);
+    } finally {
+      setApplyingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setDiscount(0);
+    setCouponCode('');
+    toast.success('Coupon removed');
+  };
+
   const subtotal = items.reduce((sum, item) => {
     const price = item.discount_price && item.discount_price > 0 ? item.discount_price : item.base_price;
     return sum + price * item.quantity;
   }, 0);
   const shipping = subtotal >= (settings.free_shipping_threshold || 1000) ? 0 : (settings.standard_delivery_fee || 60);
   const tax = subtotal * ((settings.tax_percentage || 0) / 100);
-  const total = subtotal + shipping + tax;
+  const total = Math.max(0, subtotal + shipping + tax - discount);
 
   const handlePlaceOrder = async () => {
     const firstName = form.first_name.trim();
@@ -134,9 +169,15 @@ const Checkout = () => {
       }
 
       const orderData = {
-        items: items.map(i => ({ product_id: i.id, quantity: i.quantity })),
+        items: items.map(i => ({
+          product_id: i.id,
+          quantity: i.quantity,
+          selected_color: i.selected_color || '',
+          selected_size: i.selected_size || ''
+        })),
         shipping_address: combinedAddress,
         payment_method: form.payment_method,
+        coupon_code: appliedCoupon ? appliedCoupon.code : null,
       };
 
       if (isBkashSuccess) {
@@ -172,10 +213,19 @@ const Checkout = () => {
     const recipientAddr = parts[2]?.replace('Address:', '')?.trim() || shippingInfo;
 
     const handlePrint = () => {
+      const logoHtml = settings?.logo_url ? `
+        <img src="${getImageUrl(settings.logo_url)}" style="width: 36px; height: 36px; border-radius: 8px; object-fit: contain; margin-right: 8px;" alt="Logo" />
+      ` : `
+        <div class="logo-icon">E</div>
+      `;
       const printWindow = window.open('', '_blank');
       const itemsHtml = receiptItems.map(item => `
         <tr>
-          <td style="padding: 16px; border-bottom: 1px solid #f1f5f9; text-align: left;"><span class="item-name">${item.name}</span></td>
+          <td style="padding: 16px; border-bottom: 1px solid #f1f5f9; text-align: left;">
+            <span class="item-name">${item.name}</span>
+            ${item.selected_color ? `<div style="font-size: 11px; color: #64748b; margin-top: 4px;">Color: ${item.selected_color}</div>` : ''}
+            ${item.selected_size ? `<div style="font-size: 11px; color: #64748b;">Size: ${item.selected_size}</div>` : ''}
+          </td>
           <td style="padding: 16px; border-bottom: 1px solid #f1f5f9; text-align: center;">${item.quantity}</td>
           <td style="padding: 16px; border-bottom: 1px solid #f1f5f9; text-align: right;">৳${(item.discount_price && item.discount_price > 0 ? item.discount_price : item.base_price).toLocaleString()}</td>
           <td style="padding: 16px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 700; color: #0f172a;">৳${((item.discount_price && item.discount_price > 0 ? item.discount_price : item.base_price) * item.quantity).toLocaleString()}</td>
@@ -211,72 +261,76 @@ const Checkout = () => {
               .invoice-container {
                 max-width: 800px;
                 margin: 0 auto;
-                padding: 20px;
+                padding: 40px 30px;
+                background: #fff;
+                border-top: 8px solid #0d1117;
               }
               .header {
                 display: flex;
                 justify-content: space-between;
-                align-items: flex-start;
-                border-bottom: 2px solid #f1f5f9;
-                padding-bottom: 30px;
-                margin-bottom: 30px;
+                align-items: center;
+                border-bottom: 2px solid #0d1117;
+                padding-bottom: 24px;
+                margin-bottom: 35px;
               }
               .logo-container {
                 display: flex;
                 align-items: center;
-                gap: 8px;
+                gap: 10px;
               }
               .logo-icon {
-                width: 32px;
-                height: 32px;
-                background: #e11d48;
+                width: 36px;
+                height: 36px;
+                background: #0d1117;
                 border-radius: 8px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 color: #fff;
                 font-weight: 800;
-                font-size: 18px;
+                font-size: 20px;
               }
               .logo-text {
-                font-size: 24px;
-                font-weight: 800;
-                color: #0f172a;
-                letter-spacing: -0.03em;
+                font-size: 26px;
+                font-weight: 900;
+                color: #0d1117;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
               }
               .invoice-title {
-                font-size: 32px;
-                font-weight: 800;
-                color: #0f172a;
+                font-size: 28px;
+                font-weight: 900;
+                color: #0d1117;
                 margin: 0;
-                letter-spacing: -0.03em;
+                letter-spacing: 0.05em;
                 text-align: right;
               }
               .invoice-number {
-                font-size: 14px;
+                font-size: 13px;
                 color: #64748b;
-                font-weight: 600;
+                font-weight: 700;
                 text-align: right;
                 margin-top: 4px;
+                letter-spacing: 0.02em;
               }
               .meta-grid {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
-                gap: 40px;
+                gap: 30px;
                 margin-bottom: 40px;
               }
               .meta-card {
                 background: #f8fafc;
                 border-radius: 12px;
-                padding: 20px;
-                border: 1px solid #f1f5f9;
+                padding: 24px;
+                border: 1px solid #e2e8f0;
               }
               .meta-title {
-                font-size: 11px;
+                font-size: 10px;
                 font-weight: 800;
-                color: #94a3b8;
+                color: #64748b;
                 text-transform: uppercase;
-                letter-spacing: 0.05em;
+                letter-spacing: 0.08em;
                 margin-bottom: 12px;
               }
               .meta-value {
@@ -286,32 +340,38 @@ const Checkout = () => {
                 line-height: 1.6;
               }
               .meta-value strong {
-                color: #0f172a;
+                color: #0d1117;
                 font-size: 15px;
+                font-weight: 800;
               }
               table {
                 width: 100%;
                 border-collapse: collapse;
-                margin-bottom: 30px;
+                margin-bottom: 35px;
               }
               th {
                 background: #f8fafc;
-                border-bottom: 2px solid #e2e8f0;
-                padding: 12px 16px;
-                font-size: 11px;
+                border-bottom: 2px solid #0d1117;
+                padding: 14px 16px;
+                font-size: 10px;
                 font-weight: 800;
-                color: #64748b;
+                color: #0d1117;
                 text-transform: uppercase;
-                letter-spacing: 0.05em;
+                letter-spacing: 0.08em;
+              }
+              td {
+                padding: 16px;
+                border-bottom: 1px solid #f1f5f9;
               }
               .item-name {
-                font-weight: 700;
-                color: #0f172a;
+                font-weight: 800;
+                color: #0d1117;
+                font-size: 14.5px;
               }
               .totals-section {
                 display: flex;
                 justify-content: flex-end;
-                margin-top: 20px;
+                margin-top: 25px;
               }
               .totals-table {
                 width: 320px;
@@ -320,34 +380,35 @@ const Checkout = () => {
               .totals-table td {
                 padding: 8px 16px;
                 border: none;
-                font-size: 14px;
+                font-size: 13.5px;
                 font-weight: 600;
                 color: #64748b;
               }
               .totals-table tr.grand-total td {
-                border-top: 2px solid #f1f5f9;
+                border-top: 2px solid #0d1117;
                 padding-top: 14px;
-                font-size: 18px;
-                font-weight: 800;
-                color: #0f172a;
+                font-size: 20px;
+                font-weight: 900;
+                color: #0d1117;
               }
               .footer {
                 text-align: center;
-                margin-top: 60px;
+                margin-top: 70px;
                 padding-top: 30px;
                 border-top: 1px dashed #e2e8f0;
-                font-size: 12px;
+                font-size: 11px;
                 color: #94a3b8;
-                font-weight: 600;
+                font-weight: 700;
+                letter-spacing: 0.02em;
               }
               .badge {
                 display: inline-block;
-                padding: 2px 8px;
+                padding: 3px 8px;
                 border-radius: 6px;
-                font-size: 10px;
+                font-size: 9px;
                 font-weight: 800;
                 text-transform: uppercase;
-                letter-spacing: 0.03em;
+                letter-spacing: 0.05em;
                 background: #fffbeb;
                 color: #d97706;
               }
@@ -358,7 +419,7 @@ const Checkout = () => {
               <div class="header">
                 <div>
                   <div class="logo-container">
-                    <div class="logo-icon">E</div>
+                    ${logoHtml}
                     <div class="logo-text">Eraya</div>
                   </div>
                   <div style="font-size: 11px; color: #94a3b8; font-weight: 700; margin-top: 6px; text-transform: uppercase; letter-spacing: 0.05em;">Exclusive E-commerce Hub</div>
@@ -652,24 +713,40 @@ const Checkout = () => {
                        { id: 'bKash', label: 'bKash Payment', sub: 'Instant payment via bKash personal wallet', icon: 'https://www.logo.wine/a/logo/BKash/BKash-bKash-Logo.wine.svg', color: '#e2127d' },
                      ].map((m) => {
                        const active = form.payment_method === m.id;
+                       const isDisabled = m.id === 'bKash';
                        return (
                          <button 
                            key={m.id}
-                           onClick={() => setForm({...form, payment_method: m.id})}
+                           onClick={() => {
+                             if (isDisabled) {
+                               toast.error('bKash payment is temporarily offline. Please choose Cash on Delivery.');
+                               return;
+                             }
+                             setForm({...form, payment_method: m.id});
+                           }}
                            className={`payment-btn ${active ? 'active' : ''}`}
                            style={{
                              borderColor: active ? C.t900 : C.bLine,
                              boxShadow: active ? '0 6px 16px rgba(0,0,0,0.03)' : 'none',
+                             cursor: isDisabled ? 'not-allowed' : 'pointer',
+                             opacity: isDisabled ? 0.6 : 1,
                            }}
                          >
                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', textAlign: 'left' }}>
                               <div style={{ width: 44, height: 44, borderRadius: '0.75rem', background: C.bgMuted, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
                                  {typeof m.icon === 'string' ? (
-                                   <img src={m.icon} style={{ width: '80%', height: '80%', objectFit: 'contain' }} alt="" />
+                                   <img src={m.icon} style={{ width: '80%', height: '80%', objectFit: 'contain', filter: isDisabled ? 'grayscale(80%)' : 'none' }} alt="" />
                                  ) : <m.icon style={{ width: 18, height: 18, color: active ? C.t900 : C.t500 }} />}
                               </div>
                               <div>
-                                 <span style={{ fontSize: '0.85rem', fontWeight: 800, color: C.t900, display: 'block' }}>{m.label}</span>
+                                 <span style={{ fontSize: '0.85rem', fontWeight: 800, color: C.t900, display: 'flex', alignItems: 'center' }}>
+                                   {m.label}
+                                   {isDisabled && (
+                                     <span style={{ fontSize: '0.6rem', color: '#ef4444', background: '#fee2e2', padding: '0.1rem 0.35rem', borderRadius: '0.35rem', marginLeft: '0.4rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                                       Offline
+                                     </span>
+                                   )}
+                                 </span>
                                  <span style={{ fontSize: '0.7rem', fontWeight: 500, color: C.t500 }}>{m.sub}</span>
                               </div>
                            </div>
@@ -698,13 +775,15 @@ const Checkout = () => {
            {/* Items List */}
            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '320px', overflowY: 'auto', paddingRight: '0.5rem', marginBottom: '1.5rem' }} className="custom-scrollbar">
               {items.map((item) => (
-                <div key={item.id} style={{ display: 'flex', gap: '0.75rem', paddingBottom: '1rem', borderBottom: `1px solid ${C.bgMuted}`, alignItems: 'center' }}>
+                <div key={`${item.id}-${item.selected_color || ''}-${item.selected_size || ''}`} style={{ display: 'flex', gap: '0.75rem', paddingBottom: '1rem', borderBottom: `1px solid ${C.bgMuted}`, alignItems: 'center' }}>
                    <div style={{ width: 56, height: 56, background: C.bgMuted, borderRadius: '0.75rem', overflow: 'hidden', border: `1px solid ${C.bLine}`, flexShrink: 0 }}>
                       <img src={getImageUrl(item.image_url || item.images?.[0]?.image_url)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
                    </div>
                    <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ fontSize: '0.78rem', fontWeight: 800, color: C.t900, margin: '0 0 0.15rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</p>
                       <p style={{ fontSize: '0.68rem', fontWeight: 600, color: C.t500, margin: 0 }}>Qty: {item.quantity}</p>
+                      {item.selected_color && <p style={{ fontSize: '0.62rem', fontWeight: 600, color: C.t500, margin: '0.15rem 0 0' }}>Color: {item.selected_color}</p>}
+                      {item.selected_size && <p style={{ fontSize: '0.62rem', fontWeight: 600, color: C.t500, margin: '0.1rem 0 0' }}>Size: {item.selected_size}</p>}
                       {/* Interactive Qty stepper in check-out */}
                       <div style={{ display: 'flex', alignItems: 'center', background: C.bgMuted, borderRadius: '0.35rem', padding: '0.1rem', width: 'fit-content', marginTop: '0.3rem' }}>
                          <button onClick={() => handleQty(item, item.quantity - 1)} style={{ background: 'none', border: 'none', padding: '0.15rem', cursor: 'pointer', display: 'flex', color: C.t700 }}><Minus style={{ width: 10, height: 10 }} /></button>
@@ -729,6 +808,37 @@ const Checkout = () => {
               ))}
            </div>
 
+           {/* Coupon Code Section */}
+           <div style={{ background: '#f8f9fc', border: `1px solid ${C.bSoft}`, borderRadius: '1.25rem', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.65rem', marginBottom: '1.5rem' }}>
+             <span style={{ fontSize: '0.75rem', fontWeight: 800, color: C.t900 }}>Promo Coupon</span>
+             {appliedCoupon ? (
+               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#ecfdf5', border: '1px solid #a7f3d0', padding: '0.5rem 0.85rem', borderRadius: '0.75rem' }}>
+                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
+                   <span style={{ fontSize: '0.72rem', fontWeight: 900, color: '#065f46' }}>{appliedCoupon.code} Applied</span>
+                   <span style={{ fontSize: '0.62rem', color: '#047857', fontWeight: 600 }}>Discount of ৳{discount.toLocaleString()}</span>
+                 </div>
+                 <button onClick={handleRemoveCoupon} style={{ background: 'transparent', border: 'none', color: '#b91c1c', fontSize: '0.65rem', fontWeight: 800, cursor: 'pointer' }}>Remove</button>
+               </div>
+             ) : (
+               <div style={{ display: 'flex', gap: '0.5rem' }}>
+                 <input 
+                   type="text" 
+                   placeholder="Enter Coupon Code" 
+                   value={couponCode} 
+                   onChange={e => setCouponCode(e.target.value)} 
+                   style={{ flex: 1, padding: '0 0.85rem', height: 38, border: `1px solid ${C.bSoft}`, borderRadius: '0.75rem', fontSize: '0.78rem', fontWeight: 600, outline: 'none' }}
+                 />
+                 <button 
+                   onClick={handleApplyCoupon} 
+                   disabled={applyingCoupon}
+                   style={{ padding: '0 1.25rem', background: C.t900, color: '#fff', border: 'none', borderRadius: '0.75rem', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer', opacity: applyingCoupon ? 0.7 : 1 }}
+                 >
+                   Apply
+                 </button>
+               </div>
+             )}
+           </div>
+
            {/* Pricing Details */}
            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: C.t500, fontWeight: 600 }}>
@@ -748,6 +858,13 @@ const Checkout = () => {
                  <span style={{ color: C.t900, fontWeight: 700 }}>৳0.00</span>
               </div>
               
+              {discount > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#15803d', fontWeight: 700 }}>
+                   <span>Coupon Discount</span>
+                   <span>- ৳{discount.toLocaleString()}</span>
+                </div>
+              )}
+
               {isBkashSuccess && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', padding: '0.6rem 0.8rem', background: '#f0fdf4', borderRadius: '0.75rem', marginTop: '0.25rem', border: '1px solid #dcfce7' }}>
                    <span style={{ fontWeight: 700, color: '#166534' }}>Paid via bKash</span>

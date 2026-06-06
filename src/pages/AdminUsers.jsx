@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import OTPInput from '../components/OTPInput';
 import {
   Users, Search, UserCheck, UserPlus, Trash2,
   Shield, Phone, MoreVertical, X, Check,
@@ -41,9 +42,10 @@ const AdminUsers = () => {
     showPassword: false,
     submitting: false,
     selectedPermissions: [],
-    otp: '',
+    otpDigits: ['', '', '', '', '', ''],
     otpSent: false,
-    sendingOtp: false
+    sendingOtp: false,
+    resendCount: 0
   });
 
   const activeRole = searchParams.get('role') || 'all';
@@ -86,9 +88,10 @@ const AdminUsers = () => {
       showPassword: false,
       submitting: false,
       selectedPermissions: [],
-      otp: '',
+      otpDigits: ['', '', '', '', '', ''],
       otpSent: false,
-      sendingOtp: false
+      sendingOtp: false,
+      resendCount: 0
     });
   };
 
@@ -97,7 +100,13 @@ const AdminUsers = () => {
     try {
       await api.post('/users/otp/request', { purpose: 'admin_role_change' });
       toast.success('Security verification code sent to your email');
-      setRoleAuthModal(prev => ({ ...prev, otpSent: true, sendingOtp: false }));
+      setRoleAuthModal(prev => ({
+        ...prev,
+        otpSent: true,
+        sendingOtp: false,
+        otpDigits: ['', '', '', '', '', ''],
+        resendCount: prev.resendCount + 1
+      }));
     } catch (err) {
       toast.error(err.response?.data?.error || err.response?.data || 'Failed to send verification code');
       setRoleAuthModal(prev => ({ ...prev, sendingOtp: false }));
@@ -126,9 +135,10 @@ const AdminUsers = () => {
       showPassword: false,
       submitting: false,
       selectedPermissions: initialPerms,
-      otp: '',
+      otpDigits: ['', '', '', '', '', ''],
       otpSent: false,
-      sendingOtp: false
+      sendingOtp: false,
+      resendCount: 0
     });
 
     if (needsOtp) {
@@ -145,7 +155,8 @@ const AdminUsers = () => {
     }
 
     const needsOtp = roleAuthModal.newRole === 'admin' || roleAuthModal.targetUser?.role === 'admin';
-    if (needsOtp && !roleAuthModal.otp) {
+    const otpVal = (roleAuthModal.otpDigits || ['', '', '', '', '', '']).join('');
+    if (needsOtp && otpVal.length < 6) {
       toast.error('Please enter the verification code (OTP) sent to your email');
       return;
     }
@@ -157,7 +168,7 @@ const AdminUsers = () => {
         role: roleAuthModal.newRole,
         permissions: roleAuthModal.newRole === 'moderator' ? roleAuthModal.selectedPermissions : [],
         password: roleAuthModal.password,
-        otp: needsOtp ? roleAuthModal.otp : ''
+        otp: needsOtp ? otpVal : ''
       });
 
       const successMessage = roleAuthModal.targetUser?.role === 'moderator' && roleAuthModal.newRole === 'moderator'
@@ -761,25 +772,13 @@ const AdminUsers = () => {
                         {roleAuthModal.sendingOtp ? 'Sending...' : 'Resend Code'}
                       </button>
                     </div>
-                    <div style={{ position: 'relative' }}>
-                      <input
-                        type="text"
-                        maxLength={6}
-                        placeholder="Enter 6-digit OTP"
-                        value={roleAuthModal.otp || ''}
-                        onChange={(e) => setRoleAuthModal(prev => ({ ...prev, otp: e.target.value.replace(/\D/g, '') }))}
-                        style={{
-                          width: '100%', padding: '0.9rem 1.25rem', background: '#f8fafc',
-                          border: '2px solid transparent', borderRadius: '1rem',
-                          fontSize: '0.85rem', fontWeight: 700, color: '#0f172a', outline: 'none',
-                          transition: 'all 0.2s',
-                          letterSpacing: roleAuthModal.otp ? '6px' : 'normal',
-                          textAlign: 'center'
-                        }}
-                        onFocus={e => e.currentTarget.style.borderColor = '#e11d48'}
-                        onBlur={e => e.currentTarget.style.borderColor = 'transparent'}
-                      />
-                    </div>
+                    <OTPInput
+                      key={roleAuthModal.resendCount}
+                      value={roleAuthModal.otpDigits}
+                      onChange={val => setRoleAuthModal(prev => ({ ...prev, otpDigits: val }))}
+                      focusColor="#e11d48"
+                      autoFocus={roleAuthModal.otpSent}
+                    />
                   </div>
                 )}
 
@@ -820,17 +819,24 @@ const AdminUsers = () => {
                   disabled={
                     roleAuthModal.submitting || 
                     !roleAuthModal.password || 
-                    ((roleAuthModal.newRole === 'admin' || roleAuthModal.targetUser?.role === 'admin') && !roleAuthModal.otp)
+                    ((roleAuthModal.newRole === 'admin' || roleAuthModal.targetUser?.role === 'admin') && 
+                      (roleAuthModal.otpDigits || ['', '', '', '', '', '']).join('').length < 6)
                   }
                   style={{
                     width: '100%', padding: '1.1rem', borderRadius: '1.25rem',
                     background: '#0f172a', color: '#fff', border: 'none',
-                    fontSize: '0.85rem', fontWeight: 800, cursor: 'pointer',
+                    fontSize: '0.85rem', fontWeight: 800, cursor: (
+                      roleAuthModal.submitting || 
+                      !roleAuthModal.password || 
+                      ((roleAuthModal.newRole === 'admin' || roleAuthModal.targetUser?.role === 'admin') && 
+                        (roleAuthModal.otpDigits || ['', '', '', '', '', '']).join('').length < 6)
+                    ) ? 'not-allowed' : 'pointer',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem',
                     opacity: (
                       roleAuthModal.submitting || 
                       !roleAuthModal.password || 
-                      ((roleAuthModal.newRole === 'admin' || roleAuthModal.targetUser?.role === 'admin') && !roleAuthModal.otp)
+                      ((roleAuthModal.newRole === 'admin' || roleAuthModal.targetUser?.role === 'admin') && 
+                        (roleAuthModal.otpDigits || ['', '', '', '', '', '']).join('').length < 6)
                     ) ? 0.5 : 1,
                     transition: 'all 0.2s',
                     boxShadow: '0 10px 20px -5px rgba(15,23,42,0.3)'

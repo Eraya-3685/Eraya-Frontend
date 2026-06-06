@@ -6,32 +6,52 @@ const useCartStore = create(
     (set, get) => ({
       items: [],
 
-      addItem: (product, qty = 1) => {
+      addItem: (product, qty = 1, color = '', size = '') => {
         const { items } = get();
-        const existing = items.find((item) => item.id === product.id);
+        const existing = items.find(
+          (item) =>
+            item.id === product.id &&
+            (item.selected_color || '') === (color || '') &&
+            (item.selected_size || '') === (size || '')
+        );
         if (existing) {
           set({
             items: items.map((item) =>
-              item.id === product.id
+              item.id === product.id &&
+              (item.selected_color || '') === (color || '') &&
+              (item.selected_size || '') === (size || '')
                 ? { ...item, quantity: Math.max(1, item.quantity + qty) }
                 : item
             ),
           });
         } else {
-          set({ items: [...items, { ...product, quantity: qty }] });
+          set({ items: [...items, { ...product, quantity: qty, selected_color: color, selected_size: size }] });
         }
       },
 
-      removeItem: (productId) => {
-        set({ items: get().items.filter((item) => item.id !== productId) });
+      removeItem: (productId, color = '', size = '') => {
+        set({
+          items: get().items.filter(
+            (item) =>
+              !(
+                item.id === productId &&
+                (item.selected_color || '') === (color || '') &&
+                (item.selected_size || '') === (size || '')
+              )
+          ),
+        });
       },
 
       clearCart: () => set({ items: [] }),
 
-      updateQuantity: (productId, quantity) => {
+      updateQuantity: (productId, quantity, color = '', size = '') => {
         set({
           items: get().items.map((item) =>
-            item.id === productId ? { ...item, quantity: Math.max(0, quantity) } : item
+            item.id === productId &&
+            (item.selected_color || '') === (color || '') &&
+            (item.selected_size || '') === (size || '')
+              ? { ...item, quantity: Math.max(0, quantity) }
+              : item
           ),
         });
       },

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ShoppingBag, Heart, Star, Loader2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { getImageUrl } from '../api/axios';
 import useAuthStore from '../store/useAuthStore';
 import LoginModal from './LoginModal';
+import toast from 'react-hot-toast';
 
 const C = {
   t900: '#0d1117',
@@ -25,6 +26,7 @@ const ProductCard = ({
   loading = false,
   variant = 'default'
 }) => {
+  const navigate = useNavigate();
   const { user } = useAuthStore();
   const isAdmin = ['admin', 'moderator'].includes(user?.role?.toLowerCase());
   const img = product?.images?.find(i => i.is_primary)?.image_url ?? product?.images?.[0]?.image_url;
@@ -40,6 +42,16 @@ const ProductCard = ({
   const handleCartClick = async (e) => {
     e?.preventDefault?.(); e?.stopPropagation?.();
     if (cartLoading) return;
+
+    const hasColors = product.colors && product.colors.length > 0;
+    const hasSizes = product.sizes && product.sizes.length > 0;
+
+    if (hasColors || hasSizes) {
+      toast.error('Please select variation options first');
+      navigate(`/products/${product.slug}`);
+      return;
+    }
+
     setCartLoading(true);
     await onCart?.(product);
     setCartLoading(false);

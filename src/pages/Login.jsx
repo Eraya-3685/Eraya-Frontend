@@ -6,6 +6,9 @@ import useAuthStore from '../store/useAuthStore';
 import toast from 'react-hot-toast';
 import { supabase } from '../supabase';
 import useDocumentTitle from '../hooks/useDocumentTitle';
+import OTPInput from '../components/OTPInput';
+import useSettingsStore from '../store/useSettingsStore';
+import { getImageUrl } from '../api/axios';
 
 const Login = () => {
   useDocumentTitle('Login | Eraya');
@@ -17,11 +20,25 @@ const Login = () => {
   // Forgot password views & states
   const [view, setView] = useState('login'); // 'login' | 'forgot' | 'reset'
   const [forgotEmail, setForgotEmail] = useState('');
-  const [resetOtp, setResetOtp] = useState('');
+  const [resetOtpDigits, setResetOtpDigits] = useState(['', '', '', '', '', '']);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
+  const [resendCount, setResendCount] = useState(0);
+
+  const { settings, fetchSettings } = useSettingsStore();
+
+  React.useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
+
+  React.useEffect(() => {
+    if (view === 'reset') {
+      setResetOtpDigits(['', '', '', '', '', '']);
+      setResendCount(c => c + 1);
+    }
+  }, [view]);
 
   const { login, forgotPassword, resetPassword } = useAuthStore();
   const navigate   = useNavigate();
@@ -61,7 +78,8 @@ const Login = () => {
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
-    if (!resetOtp || !newPassword || !confirmPassword) return;
+    const otpVal = resetOtpDigits.join('');
+    if (otpVal.length < 6 || !newPassword || !confirmPassword) return;
     if (newPassword.length < 6) {
       toast.error('Password must be at least 6 characters long');
       return;
@@ -75,7 +93,7 @@ const Login = () => {
     try {
       const role = await resetPassword({
         email: forgotEmail,
-        otp: resetOtp,
+        otp: otpVal,
         password: newPassword
       });
       toast.success('Password reset successful! Welcome back.');
@@ -94,6 +112,8 @@ const Login = () => {
     try {
       await forgotPassword(forgotEmail);
       toast.success('Verification code resent to your email');
+      setResetOtpDigits(['', '', '', '', '', '']);
+      setResendCount(c => c + 1);
     } catch (error) {
       toast.error(error.response?.data?.error || error.response?.data || 'Failed to resend code');
     } finally {
@@ -136,9 +156,13 @@ const Login = () => {
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.6rem', textDecoration: 'none', marginBottom: '0.75rem' }}>
-            <div style={{ width: 42, height: 42, background: '#0d1117', borderRadius: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 20px rgba(0,0,0,0.15)' }}>
-              <Package style={{ width: 20, height: 20, color: '#fff' }} />
-            </div>
+            {settings?.logo_url ? (
+              <img src={getImageUrl(settings.logo_url)} alt="Logo" style={{ width: 42, height: 42, borderRadius: '1rem', objectFit: 'contain', boxShadow: '0 8px 20px rgba(0,0,0,0.15)' }} />
+            ) : (
+              <div style={{ width: 42, height: 42, background: '#0d1117', borderRadius: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 20px rgba(0,0,0,0.15)' }}>
+                <Package style={{ width: 20, height: 20, color: '#fff' }} />
+              </div>
+            )}
             <span style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '0.15em', color: '#0d1117' }}>Eraya</span>
           </Link>
           <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', margin: 0 }}>Premium Lifestyle</p>
@@ -272,11 +296,12 @@ const Login = () => {
                 {/* Code */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: '#64748b', marginBottom: '0.5rem' }}>Verification Code (OTP)</label>
-                  <input
-                    type="text" maxLength={6} value={resetOtp} onChange={e => setResetOtp(e.target.value.replace(/\D/g, ''))}
-                    placeholder="Enter 6-digit code" required style={{ ...inputStyle, paddingLeft: '1rem', letterSpacing: resetOtp ? '6px' : 'normal', textAlign: 'center' }}
-                    onFocus={e => { e.target.style.borderColor = '#0d1117'; e.target.style.boxShadow = '0 0 0 3px rgba(13,17,23,0.06)'; }}
-                    onBlur={e => { e.target.style.borderColor = '#e8ecf0'; e.target.style.boxShadow = 'none'; }}
+                  <OTPInput
+                    key={resendCount}
+                    value={resetOtpDigits}
+                    onChange={setResetOtpDigits}
+                    focusColor="#0d1117"
+                    autoFocus={view === 'reset'}
                   />
                 </div>
 
@@ -314,8 +339,8 @@ const Login = () => {
                   </div>
                 </div>
 
-                <button type="submit" disabled={resetLoading}
-                  style={{ width: '100%', background: '#0d1117', color: '#fff', border: 'none', borderRadius: '1rem', padding: '1rem', fontSize: '0.85rem', fontWeight: 800, cursor: resetLoading ? 'not-allowed' : 'pointer', opacity: resetLoading ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'all .2s', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                <button type="submit" disabled={resetLoading || resetOtpDigits.join('').length < 6}
+                  style={{ width: '100%', background: '#0d1117', color: '#fff', border: 'none', borderRadius: '1rem', padding: '1rem', fontSize: '0.85rem', fontWeight: 800, cursor: (resetLoading || resetOtpDigits.join('').length < 6) ? 'not-allowed' : 'pointer', opacity: (resetLoading || resetOtpDigits.join('').length < 6) ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'all .2s', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                 >
                   {resetLoading ? <Loader2 style={{ width: 16, height: 16, animation: 'spin 0.8s linear infinite' }} /> : <>Reset & Sign In <ArrowRight style={{ width: 16, height: 16 }} /></>}
                 </button>

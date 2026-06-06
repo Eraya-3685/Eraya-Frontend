@@ -59,6 +59,9 @@ const AdminProducts = () => {
   const [existingImages, setExistingImages] = useState([]);
   const [primaryImageIndex, setPrimaryImageIndex] = useState(0); // index across (existingImages + imagePreviews)
   const [saving, setSaving] = useState(false);
+  const [colors, setColors] = useState('');
+  const [sizes, setSizes] = useState('');
+  const [variationStock, setVariationStock] = useState([]);
 
   // Delete confirm modal state
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, id: null });
@@ -258,7 +261,31 @@ const AdminProducts = () => {
     } finally {
       setCreatingCat(false);
     }
+	};
+
+  const getCombinations = () => {
+    const colorList = colors.split(',').map(c => c.trim()).filter(Boolean);
+    const sizeList = sizes.split(',').map(s => s.trim()).filter(Boolean);
+    
+    if (colorList.length === 0 && sizeList.length === 0) return [];
+    
+    if (colorList.length > 0 && sizeList.length === 0) {
+      return colorList.map(c => ({ color: c, size: 'one size' }));
+    }
+    if (colorList.length === 0 && sizeList.length > 0) {
+      return sizeList.map(s => ({ color: 'one colour', size: s }));
+    }
+    
+    const comb = [];
+    colorList.forEach(c => {
+      sizeList.forEach(s => {
+        comb.push({ color: c, size: s });
+      });
+    });
+    return comb;
   };
+
+  const combinations = getCombinations();
 
   const handleOpenAddModal = () => {
     setEditingProduct(null);
@@ -277,6 +304,9 @@ const AdminProducts = () => {
     setImagePreviews([]);
     setExistingImages([]);
     setPrimaryImageIndex(0);
+    setColors('');
+    setSizes('');
+    setVariationStock([]);
     setIsModalOpen(true);
   };
 
@@ -296,6 +326,9 @@ const AdminProducts = () => {
     setProductImages([]);
     setImagePreviews([]);
     setExistingImages(product.images || []);
+    setColors(product.colors ? product.colors.join(', ') : '');
+    setSizes(product.sizes ? product.sizes.join(', ') : '');
+    setVariationStock(product.variation_stock || []);
     // set primary index to the first image marked as primary (fallback: 0)
     const primIdx = (product.images || []).findIndex(img => img.is_primary);
     setPrimaryImageIndex(primIdx >= 0 ? primIdx : 0);
@@ -334,7 +367,12 @@ const AdminProducts = () => {
           stock_count: parseInt(stockCount),
           category_ids: selectedCategoryIds.map(id => parseInt(id)),
           images: finalImages,
-          is_active: isActive
+          is_active: isActive,
+          colors: colors.split(',').map(c => c.trim()).filter(Boolean),
+          sizes: sizes.split(',').map(s => s.trim()).filter(Boolean),
+          variation_stock: variationStock
+            .filter(v => combinations.some(c => c.color === v.color && c.size === v.size))
+            .map(v => ({ color: v.color, size: v.size, stock: parseInt(v.stock) || 0 }))
         };
 
         await api.put(`/products/${editingProduct.id}`, data);
@@ -352,6 +390,13 @@ const AdminProducts = () => {
         }
         formData.append('stock_count', stockCount);
         formData.append('is_active', isActive ? 'true' : 'false');
+        formData.append('colors', colors.split(',').map(c => c.trim()).filter(Boolean).join(','));
+        formData.append('sizes', sizes.split(',').map(s => s.trim()).filter(Boolean).join(','));
+        formData.append('variation_stock', JSON.stringify(
+          variationStock
+            .filter(v => combinations.some(c => c.color === v.color && c.size === v.size))
+            .map(v => ({ color: v.color, size: v.size, stock: parseInt(v.stock) || 0 }))
+        ));
 
         selectedCategoryIds.forEach(id => {
           formData.append('category_id', String(id));
@@ -816,8 +861,8 @@ const AdminProducts = () => {
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
             <tr style={{ background: '#f8f9fc', borderBottom: '1px solid #f1f5f9' }}>
-              <th style={{ width: '10%', padding: '1rem 1rem 1rem 2rem', fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8' }}>ID</th>
-              <th style={{ width: '32%', padding: '1rem 1rem', fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8' }}>
+              <th style={{ width: '8%', padding: '1rem 1rem 1rem 2rem', fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8' }}>ID</th>
+              <th style={{ width: '22%', padding: '1rem 1rem', fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8' }}>
                 <div
                   onClick={() => handleSortRequest('name')}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer', userSelect: 'none' }}
@@ -831,7 +876,7 @@ const AdminProducts = () => {
                   </div>
                 </div>
               </th>
-              <th style={{ width: '12%', padding: '1rem 1rem', fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8' }}>
+              <th style={{ width: '10%', padding: '1rem 1rem', fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8' }}>
                 <div
                   onClick={() => handleSortRequest('base_price')}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer', userSelect: 'none' }}
@@ -845,7 +890,7 @@ const AdminProducts = () => {
                   </div>
                 </div>
               </th>
-              <th style={{ width: '12%', padding: '1rem 1rem', fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8' }}>
+              <th style={{ width: '10%', padding: '1rem 1rem', fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8' }}>
                 <div
                   onClick={() => handleSortRequest('discount_price')}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer', userSelect: 'none' }}
@@ -859,7 +904,7 @@ const AdminProducts = () => {
                   </div>
                 </div>
               </th>
-              <th style={{ width: '8%', padding: '1rem 1rem', fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8' }}>
+              <th style={{ width: '6%', padding: '1rem 1rem', fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8' }}>
                 <div
                   onClick={() => handleSortRequest('stock_count')}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer', userSelect: 'none' }}
@@ -873,8 +918,10 @@ const AdminProducts = () => {
                   </div>
                 </div>
               </th>
-              <th style={{ width: '10%', padding: '1rem 1rem', fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8' }}>Status</th>
-              <th style={{ width: '10%', padding: '1rem 1rem', fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8' }}>
+              <th style={{ width: '12%', padding: '1rem 1rem', fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8' }}>Colours</th>
+              <th style={{ width: '12%', padding: '1rem 1rem', fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8' }}>Sizes</th>
+              <th style={{ width: '8%', padding: '1rem 1rem', fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8' }}>Status</th>
+              <th style={{ width: '8%', padding: '1rem 1rem', fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8' }}>
                 <div
                   onClick={() => handleSortRequest('created_at')}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer', userSelect: 'none' }}
@@ -888,13 +935,13 @@ const AdminProducts = () => {
                   </div>
                 </div>
               </th>
-              <th style={{ width: '6%', padding: '1rem 2rem 1rem 1rem', fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', textAlign: 'right' }}>Actions</th>
+              <th style={{ width: '4%', padding: '1rem 2rem 1rem 1rem', fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', textAlign: 'right' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={8} style={{ padding: '5rem 0', textAlign: 'center' }}>
+                <td colSpan={10} style={{ padding: '5rem 0', textAlign: 'center' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
                     <div style={{
                       width: 48,
@@ -921,20 +968,20 @@ const AdminProducts = () => {
                 onMouseEnter={(e) => e.currentTarget.style.background = '#fcfdfe'}
                 onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
               >
-                <td style={{ padding: '0.75rem 1rem 0.75rem 2rem' }}>
+                <td style={{ padding: '0.75rem 1rem 0.75rem 2rem' }} title={`Product ID: #KMI${p.id}`}>
                   <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0f172a' }}>#KMI{p.id}</span>
                 </td>
-                <td style={{ padding: '0.75rem 1rem' }}>
+                <td style={{ padding: '0.75rem 1rem' }} title={p.name}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
                     <div style={{ width: 40, height: 40, borderRadius: '0.75rem', background: '#f8f9fc', overflow: 'hidden', border: '1px solid #f1f5f9', flexShrink: 0 }}>
                       {p.images && p.images.length > 0 ? <img src={getImageUrl(p.images.find(img => img.is_primary)?.image_url || p.images[0].image_url)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : <Package style={{ width: '100%', height: '100%', padding: '0.6rem', color: '#cbd5e1' }} />}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                      <p style={{ fontSize: '0.8rem', fontWeight: 800, color: '#0f172a', margin: 0, transition: 'color 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.color = '#e11d48'} onMouseLeave={(e) => e.currentTarget.style.color = '#0f172a'}>{p.name}</p>
+                      <p title={p.name} style={{ fontSize: '0.8rem', fontWeight: 800, color: '#0f172a', margin: 0, transition: 'color 0.2s', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px' }} onMouseEnter={(e) => e.currentTarget.style.color = '#e11d48'} onMouseLeave={(e) => e.currentTarget.style.color = '#0f172a'}>{p.name}</p>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.2rem' }}>
                         {p.categories && p.categories.length > 0 ? (
                           p.categories.map(c => (
-                            <span key={c.id} style={{ fontSize: '0.55rem', fontWeight: 900, color: '#64748b', background: '#f1f5f9', padding: '0.1rem 0.35rem', borderRadius: '0.35rem', display: 'inline-block' }}>
+                            <span key={c.id} title={c.name} style={{ fontSize: '0.55rem', fontWeight: 900, color: '#64748b', background: '#f1f5f9', padding: '0.1rem 0.35rem', borderRadius: '0.35rem', display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '80px' }}>
                               {c.name}
                             </span>
                           ))
@@ -947,21 +994,31 @@ const AdminProducts = () => {
                     </div>
                   </div>
                 </td>
-                <td style={{ padding: '0.75rem 1rem' }}>
+                <td style={{ padding: '0.75rem 1rem' }} title={`Base Price: ৳${p.base_price.toLocaleString()}`}>
                   <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0f172a' }}>৳{p.base_price.toLocaleString()}</span>
                 </td>
-                <td style={{ padding: '0.75rem 1rem' }}>
+                <td style={{ padding: '0.75rem 1rem' }} title={p.discount_price ? `Offer Price: ৳${p.discount_price.toLocaleString()}` : 'No offer price'}>
                   <span style={{ fontSize: '0.75rem', fontWeight: 700, color: p.discount_price ? '#e11d48' : '#94a3b8' }}>
                     {p.discount_price ? `৳${p.discount_price.toLocaleString()}` : '-'}
                   </span>
                 </td>
-                <td style={{ padding: '0.75rem 1rem' }}>
+                <td style={{ padding: '0.75rem 1rem' }} title={`Stock Count: ${p.stock_count.toLocaleString()}`}>
                   <p style={{ fontSize: '0.75rem', fontWeight: 800, color: p.stock_count < 10 ? '#f59e0b' : '#0f172a', margin: 0 }}>{p.stock_count.toLocaleString()}</p>
                 </td>
-                <td style={{ padding: '0.75rem 1rem' }}>
+                <td style={{ padding: '0.75rem 1rem', maxWidth: '140px' }} title={p.colors && p.colors.length > 0 ? p.colors.join(', ') : 'one colour'}>
+                  <span title={p.colors && p.colors.length > 0 ? p.colors.join(', ') : 'one colour'} style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {p.colors && p.colors.length > 0 ? p.colors.join(', ') : 'one colour'}
+                  </span>
+                </td>
+                <td style={{ padding: '0.75rem 1rem', maxWidth: '140px' }} title={p.sizes && p.sizes.length > 0 ? p.sizes.join(', ') : 'one size'}>
+                  <span title={p.sizes && p.sizes.length > 0 ? p.sizes.join(', ') : 'one size'} style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {p.sizes && p.sizes.length > 0 ? p.sizes.join(', ') : 'one size'}
+                  </span>
+                </td>
+                <td style={{ padding: '0.75rem 1rem' }} title={`Status: ${p.stock_count === 0 ? 'Out of Stock' : !p.is_active ? 'Inactive' : 'Published'}`}>
                   <StatusBadge product={p} />
                 </td>
-                <td style={{ padding: '0.75rem 1rem' }}>
+                <td style={{ padding: '0.75rem 1rem' }} title={`Created At: ${new Date(p.created_at).toLocaleString()}`}>
                   <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>{new Date(p.created_at).toLocaleDateString()}</span>
                 </td>
                 <td style={{ padding: '0.75rem 2rem 0.75rem 1rem', textAlign: 'right' }}>
@@ -1118,7 +1175,26 @@ const AdminProducts = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1rem' }}>
                   <div>
                     <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', marginBottom: '0.5rem', display: 'block' }}>Stock Count</label>
-                    <input type="number" required placeholder="Enter stock count" value={stockCount} onChange={(e) => setStockCount(e.target.value)} style={{ width: '100%', background: '#f8f9fc', border: '1px solid #f1f5f9', borderRadius: '1rem', padding: '0.85rem 1rem', fontSize: '0.85rem', fontWeight: 700, outline: 'none', boxSizing: 'border-box' }} />
+                    <input 
+                      type="number" 
+                      required 
+                      readOnly={combinations.length > 0}
+                      placeholder={combinations.length > 0 ? "Calculated from variations" : "Enter stock count"} 
+                      value={stockCount} 
+                      onChange={(e) => setStockCount(e.target.value)} 
+                      style={{ 
+                        width: '100%', 
+                        background: combinations.length > 0 ? '#e2e8f0' : '#f8f9fc', 
+                        border: '1px solid #f1f5f9', 
+                        borderRadius: '1rem', 
+                        padding: '0.85rem 1rem', 
+                        fontSize: '0.85rem', 
+                        fontWeight: 700, 
+                        outline: 'none', 
+                        boxSizing: 'border-box',
+                        color: combinations.length > 0 ? '#64748b' : '#0f172a'
+                      }} 
+                    />
                   </div>
                   <div>
                     <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', marginBottom: '0.5rem', display: 'block' }}>Base Price (BDT)</label>
@@ -1130,6 +1206,61 @@ const AdminProducts = () => {
                   <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', marginBottom: '0.5rem', display: 'block' }}>Offer Price (BDT - Optional)</label>
                   <input type="number" placeholder="Enter offer price (optional)" value={discountPrice} onChange={(e) => setDiscountPrice(e.target.value)} style={{ width: '100%', background: '#f8f9fc', border: '1px solid #f1f5f9', borderRadius: '1rem', padding: '0.85rem 1rem', fontSize: '0.85rem', fontWeight: 700, outline: 'none', boxSizing: 'border-box' }} />
                 </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1rem' }}>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', marginBottom: '0.5rem', display: 'block' }}>Colours (Comma-separated)</label>
+                    <input type="text" placeholder="e.g. Red, Blue, Green" value={colors} onChange={(e) => setColors(e.target.value)} style={{ width: '100%', background: '#f8f9fc', border: '1px solid #f1f5f9', borderRadius: '1rem', padding: '0.85rem 1rem', fontSize: '0.85rem', fontWeight: 700, outline: 'none', boxSizing: 'border-box' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', marginBottom: '0.5rem', display: 'block' }}>Sizes (Comma-separated)</label>
+                    <input type="text" placeholder="e.g. S, M, L, XL" value={sizes} onChange={(e) => setSizes(e.target.value)} style={{ width: '100%', background: '#f8f9fc', border: '1px solid #f1f5f9', borderRadius: '1rem', padding: '0.85rem 1rem', fontSize: '0.85rem', fontWeight: 700, outline: 'none', boxSizing: 'border-box' }} />
+                  </div>
+                </div>
+
+                {combinations.length > 0 && (
+                  <div style={{ background: '#f8f9fc', border: '1px solid #f1f5f9', borderRadius: '1rem', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b' }}>Variation Stock Levels</label>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      {combinations.map((comb, idx) => {
+                        const existing = variationStock.find(v => v.color === comb.color && v.size === comb.size);
+                        const currentStock = existing ? existing.stock : '';
+                        
+                        return (
+                          <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
+                            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#0f172a' }}>{comb.color} / {comb.size}</span>
+                            <input 
+                              type="number" 
+                              min="0"
+                              placeholder="Stock"
+                              value={currentStock} 
+                              onChange={(e) => {
+                                const val = e.target.value === '' ? '' : parseInt(e.target.value);
+                                if (val !== '' && isNaN(val)) return;
+                                const newStocks = [...variationStock];
+                                const matchIdx = newStocks.findIndex(v => v.color === comb.color && v.size === comb.size);
+                                if (matchIdx >= 0) {
+                                  newStocks[matchIdx].stock = val;
+                                } else {
+                                  newStocks.push({ color: comb.color, size: comb.size, stock: val });
+                                }
+                                setVariationStock(newStocks);
+                                
+                                const total = newStocks.reduce((sum, v) => {
+                                  const isCurrent = combinations.some(c => c.color === v.color && c.size === v.size);
+                                  const num = parseInt(v.stock) || 0;
+                                  return sum + (isCurrent ? num : 0);
+                                }, 0);
+                                setStockCount(total);
+                              }} 
+                              style={{ width: 100, background: '#fff', border: '1px solid #e2e8f0', borderRadius: '0.75rem', padding: '0.4rem 0.75rem', fontSize: '0.78rem', fontWeight: 700, outline: 'none' }}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
@@ -1366,6 +1497,18 @@ const AdminProducts = () => {
                     <div style={{ marginTop: '0.1rem' }}>
                       <StatusBadge product={selectedProductDetails} />
                     </div>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '0.55rem', fontWeight: 800, color: '#94a3b8', margin: '0 0 0.15rem', letterSpacing: '0.05em' }}>Colours</p>
+                    <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                      {selectedProductDetails.colors && selectedProductDetails.colors.length > 0 ? selectedProductDetails.colors.join(', ') : 'one colour'}
+                    </p>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '0.55rem', fontWeight: 800, color: '#94a3b8', margin: '0 0 0.15rem', letterSpacing: '0.05em' }}>Sizes</p>
+                    <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                      {selectedProductDetails.sizes && selectedProductDetails.sizes.length > 0 ? selectedProductDetails.sizes.join(', ') : 'one size'}
+                    </p>
                   </div>
                 </div>
 

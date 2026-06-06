@@ -6,6 +6,8 @@ import useAuthStore from '../store/useAuthStore';
 import toast from 'react-hot-toast';
 import { supabase } from '../supabase';
 import useDocumentTitle from '../hooks/useDocumentTitle';
+import useSettingsStore from '../store/useSettingsStore';
+import { getImageUrl } from '../api/axios';
 
 const Signup = () => {
   useDocumentTitle('Create Account | Eraya');
@@ -15,6 +17,12 @@ const Signup = () => {
     password: '',
     confirm_password: ''
   });
+
+  const { settings, fetchSettings } = useSettingsStore();
+
+  React.useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { register } = useAuthStore();
@@ -80,9 +88,13 @@ const Signup = () => {
         {/* Logo Section */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.6rem', textDecoration: 'none', marginBottom: '0.75rem' }}>
-            <div style={{ width: 42, height: 42, background: '#0d1117', borderRadius: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 20px rgba(0,0,0,0.15)' }}>
-              <Package style={{ width: 20, height: 20, color: '#fff' }} />
-            </div>
+            {settings?.logo_url ? (
+              <img src={getImageUrl(settings.logo_url)} alt="Logo" style={{ width: 42, height: 42, borderRadius: '1rem', objectFit: 'contain', boxShadow: '0 8px 20px rgba(0,0,0,0.15)' }} />
+            ) : (
+              <div style={{ width: 42, height: 42, background: '#0d1117', borderRadius: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 20px rgba(0,0,0,0.15)' }}>
+                <Package style={{ width: 20, height: 20, color: '#fff' }} />
+              </div>
+            )}
             <span style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '0.15em', color: '#0d1117' }}>Eraya</span>
           </Link>
           <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', margin: 0 }}>Join the premium club</p>

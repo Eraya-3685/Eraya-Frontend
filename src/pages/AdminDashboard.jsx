@@ -9,7 +9,8 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, 
-  Tooltip, ResponsiveContainer, LineChart, Line 
+  Tooltip, ResponsiveContainer, LineChart, Line,
+  PieChart, Pie, Cell, Legend
 } from 'recharts';
 import api, { getImageUrl } from '../api/axios';
 import useAuthStore from '../store/useAuthStore';
@@ -132,6 +133,29 @@ const AdminDashboard = () => {
           </motion.div>
         ))}
       </div>
+
+      {/* Low Stock Alerts */}
+      {data.low_stock_alerts && data.low_stock_alerts.length > 0 && (
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{ background: '#fff1f2', border: '1px solid #ffe4e6', borderRadius: '2rem', padding: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'center' }}
+        >
+          <AlertCircle style={{ width: 28, height: 28, color: '#e11d48', flexShrink: 0 }} />
+          <div style={{ flex: 1, textAlign: 'left' }}>
+            <h4 style={{ fontSize: '0.85rem', fontWeight: 800, color: '#9f1239', margin: '0 0 0.25rem' }}>Low Stock Alert</h4>
+            <p style={{ fontSize: '0.72rem', color: '#be123c', margin: 0, fontWeight: 600 }}>
+              The following products are running out of stock (less than 5 units left):{' '}
+              {data.low_stock_alerts.map((p, idx) => (
+                <span key={p.id}>
+                  <Link to="/admin/products" style={{ color: '#be123c', fontWeight: 800, textDecoration: 'underline' }}>{p.name}</Link> ({p.stock_count} left)
+                  {idx < data.low_stock_alerts.length - 1 ? ', ' : ''}
+                </span>
+              ))}
+            </p>
+          </div>
+        </motion.div>
+      )}
 
       {/* ── Middle Row: Small Analytics ── */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : (isTablet ? '1fr 1fr' : '300px 1fr'), gap: isMobile ? '1rem' : '1.5rem', alignItems: 'stretch' }}>
@@ -277,6 +301,64 @@ const AdminDashboard = () => {
 
         {/* Side Widgets: Messages & Contacts */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+           
+           {/* Category Sales Pie Chart */}
+           <div style={{ background: '#fff', borderRadius: '2.5rem', padding: '2rem', boxShadow: '0 10px 30px rgba(0,0,0,0.02)', border: '1px solid #f1f5f9' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                 <h4 style={{ fontSize: '0.9rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>Category Sales</h4>
+                 <TrendingUp style={{ width: 16, height: 16, color: '#10b981' }} />
+              </div>
+              {data.category_sales && data.category_sales.length > 0 ? (
+                <>
+                  <div style={{ position: 'relative', width: '100%', height: 180 }}>
+                    <div style={{ position: 'absolute', inset: 0 }}>
+                      {isMounted && (
+                        <ResponsiveContainer width="99%" height="100%" debounce={50}>
+                          <PieChart>
+                            <Pie
+                              data={data.category_sales}
+                              dataKey="total_sales"
+                              nameKey="category_name"
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={48}
+                              outerRadius={72}
+                              paddingAngle={3}
+                            >
+                              {data.category_sales.map((_, i) => (
+                                <Cell
+                                  key={`cell-${i}`}
+                                  fill={['#e11d48', '#6366f1', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6'][i % 6]}
+                                />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              contentStyle={{ background: '#0f172a', border: 'none', borderRadius: '0.75rem', padding: '0.6rem 1rem' }}
+                              itemStyle={{ color: '#fff', fontSize: '0.78rem', fontWeight: 800 }}
+                              formatter={(value) => [`৳${value.toLocaleString()}`, 'Sales']}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      )}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+                    {data.category_sales.slice(0, 4).map((cat, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <div style={{ width: 8, height: 8, borderRadius: '50%', background: ['#e11d48', '#6366f1', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6'][i % 6], flexShrink: 0 }} />
+                          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#475569' }}>{cat.category_name}</span>
+                        </div>
+                        <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#0f172a' }}>৳{cat.total_sales.toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p style={{ fontSize: '0.7rem', color: '#94a3b8', textAlign: 'center', padding: '2rem 0' }}>No category sales data yet</p>
+              )}
+           </div>
+
            {/* Messages Widget */}
            <div style={{ background: '#fff', borderRadius: '2.5rem', padding: '2rem', boxShadow: '0 10px 30px rgba(0,0,0,0.02)', border: '1px solid #f1f5f9' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>

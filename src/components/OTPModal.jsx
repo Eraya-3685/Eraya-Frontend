@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldCheck, RefreshCcw, X, Mail } from 'lucide-react';
+import OTPInput from './OTPInput';
 
 const C = {
   t900: '#0d1117', t700: '#1f2937', t500: '#6b7280', t300: '#adb5bd',
@@ -27,12 +28,14 @@ const OTPModal = ({
   title = "Verify Identity",
   description = "A 6-digit verification code has been sent to your email."
 }) => {
-  const [otp, setOtp] = useState('');
+  const [digits, setDigits] = useState(['', '', '', '', '', '']);
   const [resendLoading, setResendLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
 
   useEffect(() => {
-    if (!isOpen) { setOtp(''); }
+    if (!isOpen) {
+      setDigits(['', '', '', '', '', '']);
+    }
   }, [isOpen]);
 
   useEffect(() => {
@@ -55,6 +58,8 @@ const OTPModal = ({
       setResendLoading(false);
     }
   };
+
+  const otpValue = digits.join('');
 
   if (!isOpen) return null;
 
@@ -107,36 +112,25 @@ const OTPModal = ({
             )}
           </div>
 
-          <div style={{ marginBottom: '2rem' }}>
-            <input
-              type="text"
-              maxLength={6}
-              placeholder="000000"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, ''))}
-              style={{
-                width: '100%', padding: '1.25rem', background: C.bgMuted,
-                border: `2px solid transparent`, borderRadius: C.rMd,
-                textAlign: 'center', fontSize: '2.5rem', fontWeight: 900,
-                letterSpacing: '0.5em', color: C.t900, outline: 'none',
-                transition: 'all 0.2s'
-              }}
-              onFocus={e => e.currentTarget.style.borderColor = C.t900}
-              onBlur={e => e.currentTarget.style.borderColor = 'transparent'}
-              autoFocus
+          <div style={{ marginBottom: '2.5rem' }}>
+            <OTPInput
+              value={digits}
+              onChange={setDigits}
+              focusColor={C.t900}
+              autoFocus={isOpen}
             />
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <button 
-              onClick={() => onConfirm(otp)}
-              disabled={loading || otp.length < 6}
+              onClick={() => onConfirm(otpValue)}
+              disabled={loading || otpValue.length < 6}
               style={{
                 width: '100%', padding: '1.1rem', borderRadius: C.rMd,
                 background: C.t900, color: '#fff', border: 'none',
                 fontSize: '0.85rem', fontWeight: 800, cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem',
-                opacity: (loading || otp.length < 6) ? 0.5 : 1,
+                opacity: (loading || otpValue.length < 6) ? 0.5 : 1,
                 transition: 'all 0.2s'
               }}
             >

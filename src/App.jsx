@@ -37,6 +37,7 @@ import AdminProfile from './pages/AdminProfile';
 import AdminUsers from './pages/AdminUsers';
 import AdminReviews from './pages/AdminReviews';
 import AdminChat from './pages/AdminChat';
+import AdminCoupons from './pages/AdminCoupons';
 import useAuthStore from './store/useAuthStore';
 import useWishlistStore from './store/useWishlistStore';
 import { useNavigate } from 'react-router-dom';
@@ -188,6 +189,7 @@ function App() {
                   <Route path="/settings" element={<AdminGuard allowedRoles={['admin', 'moderator']}><AdminSettings /></AdminGuard>} />
                   <Route path="/reviews" element={<AdminGuard allowedRoles={['admin', 'moderator']}><AdminReviews /></AdminGuard>} />
                   <Route path="/profile" element={<AdminGuard allowedRoles={['admin', 'moderator']}><AdminProfile /></AdminGuard>} />
+                  <Route path="/coupons" element={<AdminGuard allowedRoles={['admin', 'moderator']}><AdminCoupons /></AdminGuard>} />
                 </Routes>
               </AdminLayout>
             }
