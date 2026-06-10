@@ -8,6 +8,7 @@ import api, { getImageUrl } from '../api/axios';
 import toast from 'react-hot-toast';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
+import Pagination from '../components/Pagination';
 
 const AdminCategories = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -22,6 +23,9 @@ const AdminCategories = () => {
   const [saving, setSaving] = useState(false);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: null, data: null });
   const [deleting, setDeleting] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
   
   // Category Products Drawer States
   const [selectedCategoryProducts, setSelectedCategoryProducts] = useState(null);
@@ -35,7 +39,7 @@ const AdminCategories = () => {
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
-  useEffect(() => { fetchCategories(); }, []);
+
 
   // Fetch products inside clicked category when selectedCategoryProducts changes
   useEffect(() => {
@@ -50,8 +54,15 @@ const AdminCategories = () => {
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/categories');
-      const data = res.data || [];
+      const res = await api.get(`/categories?page=${page}&limit=${limit}&search=${searchTerm}`);
+      let data = [];
+      if (res.data?.pagination) {
+        data = res.data.data || [];
+        setTotalPages(res.data.pagination.total_pages || 1);
+      } else {
+        data = res.data || [];
+        setTotalPages(1);
+      }
       setCategories(data);
 
       // Auto-open specific category products list drawer if ID parameter is present
@@ -70,6 +81,10 @@ const AdminCategories = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchCategories();
+  }, [page, limit, searchTerm]);
 
   const fetchCategoryProducts = async (catId) => {
     setLoadingProducts(true);
@@ -131,7 +146,11 @@ const AdminCategories = () => {
     }
   };
 
-  const filteredCategories = categories.filter(c => (c.name || '').toLowerCase().includes(searchTerm.toLowerCase()));
+  const paginatedCategories = categories;
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', paddingBottom: '5rem' }}>
@@ -204,7 +223,7 @@ const AdminCategories = () => {
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-           {filteredCategories.map((cat) => (
+           {paginatedCategories.map((cat) => (
               <motion.div 
                 key={cat.id}
                 initial={{ opacity: 0, y: 10 }}
@@ -267,6 +286,19 @@ const AdminCategories = () => {
               </motion.div>
            ))}
         </div>
+      )}
+
+      {!loading && (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          onPageChange={(p) => setPage(p)}
+          limit={limit}
+          onLimitChange={(l) => {
+            setLimit(l);
+            setPage(1);
+          }}
+        />
       )}
 
       {/* Category Products Right Side Drawer */}

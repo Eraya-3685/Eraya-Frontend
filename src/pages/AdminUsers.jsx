@@ -12,6 +12,7 @@ import api, { getImageUrl } from '../api/axios';
 import toast from 'react-hot-toast';
 import AdminDropdown from '../components/AdminDropdown';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
+import Pagination from '../components/Pagination';
 import useAuthStore from '../store/useAuthStore';
 
 const PERM_LABELS = {
@@ -32,6 +33,10 @@ const AdminUsers = () => {
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, user: null });
   const [expandedPermissions, setExpandedPermissions] = useState({});
   const [sortConfig, setSortConfig] = useState({ key: 'full_name', direction: 'asc' });
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const { user: currentUser } = useAuthStore();
 
   const [roleAuthModal, setRoleAuthModal] = useState({
@@ -50,26 +55,29 @@ const AdminUsers = () => {
 
   const activeRole = searchParams.get('role') || 'all';
 
-  useEffect(() => { fetchUsers(); }, []);
-
   const fetchUsers = async (showSilently = false) => {
     if (!showSilently) setLoading(true);
     try {
-      const res = await api.get('/users');
-      setUsers(res.data || []);
+      const res = await api.get(`/users?page=${page}&limit=${limit}&search=${search}&role=${activeRole}`);
+      if (res.data?.pagination) {
+        setUsers(res.data.data || []);
+        setTotalPages(res.data.pagination.total_pages || 1);
+        setTotalItems(res.data.pagination.total_items || 0);
+      } else {
+        setUsers(res.data || []);
+        setTotalPages(1);
+        setTotalItems(res.data?.length || 0);
+      }
     } catch {
       toast.error('Failed to fetch users');
-    }
-
-    try {
-      const ordersRes = await api.get('/admin/orders');
-      setOrders(ordersRes.data || []);
-    } catch (err) {
-      console.warn('Failed to fetch orders:', err);
     } finally {
       if (!showSilently) setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchUsers();
+  }, [page, limit, search, activeRole]);
 
   const handleSortRequest = (key) => {
     let direction = 'asc';
@@ -198,40 +206,8 @@ const AdminUsers = () => {
     }
   };
 
-  const confirmedStatuses = ['confirmed', 'processing', 'shipped', 'delivered'];
-  const confirmedOrders = orders.filter(o => confirmedStatuses.includes(o.order_status?.toLowerCase()));
-
-  // Sort by order's created_at descending (newest order first)
-  const sortedConfirmedOrders = [...confirmedOrders].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-  const recentConfirmedUserIds = [];
-  const seenUserIds = new Set();
-  for (const order of sortedConfirmedOrders) {
-    if (!seenUserIds.has(order.user_id)) {
-      seenUserIds.add(order.user_id);
-      recentConfirmedUserIds.push(order.user_id);
-    }
-  }
-
   const visibleUsers = users.filter(u => u.id !== currentUser?.id);
-
-  const activeRecentBuyers = recentConfirmedUserIds
-    .map(id => visibleUsers.find(u => u.id === id))
-    .filter(Boolean);
-
-  const filteredUsers = visibleUsers.filter(u => {
-    const matchesSearch = (u.full_name || '').toLowerCase().includes(search.toLowerCase()) ||
-      (u.email || '').toLowerCase().includes(search.toLowerCase()) ||
-      (u.phone || '').toLowerCase().includes(search.toLowerCase());
-
-    if (activeRole === 'recent') {
-      const isRecent = activeRecentBuyers.some(rb => rb.id === u.id);
-      return matchesSearch && isRecent;
-    }
-
-    const matchesRole = activeRole === 'all' || u.role?.toLowerCase() === activeRole.toLowerCase();
-    return matchesSearch && matchesRole;
-  });
+  const filteredUsers = visibleUsers;
 
   const sortedUsers = React.useMemo(() => {
     let sortableItems = [...filteredUsers];
@@ -260,16 +236,14 @@ const AdminUsers = () => {
         return 0;
       });
     }
-
-    if (activeRole === 'recent') {
-      sortableItems.sort((a, b) => {
-        const indexA = recentConfirmedUserIds.indexOf(a.id);
-        const indexB = recentConfirmedUserIds.indexOf(b.id);
-        return indexA - indexB;
-      });
-    }
     return sortableItems;
-  }, [filteredUsers, sortConfig, activeRole, recentConfirmedUserIds]);
+  }, [filteredUsers, sortConfig]);
+
+  const paginatedUsers = sortedUsers;
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, activeRole]);
 
   const RoleBadge = ({ role = 'buyer', onClick, style: customStyle }) => {
     const styles = {
@@ -333,11 +307,11 @@ const AdminUsers = () => {
   };
 
   const tabs = [
-    { id: 'all', label: 'All Members', count: visibleUsers.length },
-    { id: 'recent', label: 'Recent Buyers', count: activeRecentBuyers.length },
-    { id: 'admin', label: 'Admins', count: visibleUsers.filter(u => u.role?.toLowerCase() === 'admin').length },
-    { id: 'moderator', label: 'Moderators', count: visibleUsers.filter(u => u.role?.toLowerCase() === 'moderator').length },
-    { id: 'buyer', label: 'Buyers', count: visibleUsers.filter(u => u.role?.toLowerCase() === 'buyer').length },
+    { id: 'all', label: 'All Members', count: activeRole.toLowerCase() === 'all' ? totalItems : null },
+    { id: 'recent', label: 'Recent Buyers', count: activeRole.toLowerCase() === 'recent' ? totalItems : null },
+    { id: 'admin', label: 'Admins', count: activeRole.toLowerCase() === 'admin' ? totalItems : null },
+    { id: 'moderator', label: 'Moderators', count: activeRole.toLowerCase() === 'moderator' ? totalItems : null },
+    { id: 'buyer', label: 'Buyers', count: activeRole.toLowerCase() === 'buyer' ? totalItems : null },
   ];
 
   const handleTabClick = (tabId) => {
@@ -419,17 +393,19 @@ const AdminUsers = () => {
               }}
             >
               <span>{tab.label}</span>
-              <span style={{
-                fontSize: '0.65rem',
-                fontWeight: 900,
-                padding: '0.15rem 0.45rem',
-                borderRadius: '0.5rem',
-                background: isActive ? '#e11d48' : '#f1f5f9',
-                color: isActive ? '#fff' : '#64748b',
-                transition: 'all 0.2s'
-              }}>
-                {tab.count}
-              </span>
+              {tab.count !== null && (
+                <span style={{
+                  fontSize: '0.65rem',
+                  fontWeight: 900,
+                  padding: '0.15rem 0.45rem',
+                  borderRadius: '0.5rem',
+                  background: isActive ? '#e11d48' : '#f1f5f9',
+                  color: isActive ? '#fff' : '#64748b',
+                  transition: 'all 0.2s'
+                }}>
+                  {tab.count}
+                </span>
+              )}
             </button>
           );
         })}
@@ -537,7 +513,7 @@ const AdminUsers = () => {
           <tbody>
             {loading ? (
               <tr><td colSpan={4} style={{ padding: '4rem', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: '#cbd5e1' }}>Syncing Database...</td></tr>
-            ) : sortedUsers.map((u) => (
+            ) : paginatedUsers.map((u) => (
               <tr key={u.id} style={{ borderBottom: '1px solid #f8f9fc' }} onMouseEnter={(e) => e.currentTarget.style.background = '#fcfdfe'} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
                 <td style={{ padding: '0.75rem 1.5rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
@@ -624,6 +600,17 @@ const AdminUsers = () => {
           </tbody>
         </table>
       </div>
+
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        onPageChange={(p) => setPage(p)}
+        limit={limit}
+        onLimitChange={(l) => {
+          setLimit(l);
+          setPage(1);
+        }}
+      />
 
       <AnimatePresence>
         <DeleteConfirmModal

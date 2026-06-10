@@ -7,6 +7,7 @@ import {
 import api from '../api/axios';
 import toast from 'react-hot-toast';
 import ConfirmModal from '../components/ConfirmModal';
+import Pagination from '../components/Pagination';
 
 const AdminReviews = () => {
   const [reviews, setReviews] = useState([]);
@@ -16,20 +17,32 @@ const AdminReviews = () => {
   const [approvingId, setApprovingId] = useState(null);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, data: null });
   const [deleting, setDeleting] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [limit, setLimit] = useState(10);
 
-  useEffect(() => { fetchReviews(); }, []);
 
   const fetchReviews = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/admin/reviews');
-      setReviews(res.data || []);
+      const res = await api.get(`/admin/reviews?page=${page}&limit=${limit}&search=${search}&filter=${filter}`);
+      if (res.data?.pagination) {
+        setReviews(res.data.data || []);
+        setTotalPages(res.data.pagination.total_pages || 1);
+      } else {
+        setReviews(res.data || []);
+        setTotalPages(1);
+      }
     } catch {
       toast.error('Failed to load reviews');
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchReviews();
+  }, [page, limit, search, filter]);
 
   const handleApprove = async (id) => {
     setApprovingId(id);
@@ -44,11 +57,11 @@ const AdminReviews = () => {
     }
   };
 
-  const filtered = reviews.filter(r => {
-    const matchesFilter = filter === 'All' || (filter === 'Pending' && !r.is_approved) || (filter === 'Approved' && r.is_approved);
-    const matchesSearch = (r.user?.full_name || '').toLowerCase().includes(search.toLowerCase()) || (r.comment || '').toLowerCase().includes(search.toLowerCase());
-    return matchesFilter && matchesSearch;
-  });
+  const paginatedReviews = reviews;
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, filter]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', paddingBottom: '5rem' }}>
@@ -117,7 +130,7 @@ const AdminReviews = () => {
         <div style={{ height: '30vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ width: 30, height: 30, border: '3px solid #f1f5f9', borderTopColor: '#e11d48', borderRadius: '50%', animation: 'spin 1s linear infinite' }} /></div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
-           {filtered.map((rev) => (
+           {paginatedReviews.map((rev) => (
               <motion.div 
                 key={rev.id}
                 style={{ background: '#fff', borderRadius: '2.5rem', border: '1px solid #f1f5f9', padding: '1.5rem', boxShadow: '0 10px 30px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}
@@ -151,6 +164,19 @@ const AdminReviews = () => {
               </motion.div>
            ))}
         </div>
+      )}
+
+      {!loading && (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          onPageChange={(p) => setPage(p)}
+          limit={limit}
+          onLimitChange={(l) => {
+            setLimit(l);
+            setPage(1);
+          }}
+        />
       )}
 
       <ConfirmModal isOpen={confirmModal.isOpen} onClose={() => setConfirmModal({ isOpen: false, data: null })} onConfirm={async () => { setDeleting(true); try { await api.delete(`/reviews/${confirmModal.data}`); toast.success('Deleted'); fetchReviews(); } catch { toast.error('Failed'); } setConfirmModal({ isOpen: false }); setDeleting(false); }} loading={deleting} />

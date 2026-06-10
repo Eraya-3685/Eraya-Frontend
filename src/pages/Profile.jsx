@@ -12,6 +12,7 @@ import api, { getImageUrl } from '../api/axios';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import useDocumentTitle from '../hooks/useDocumentTitle';
+import Pagination from '../components/Pagination';
 
 /* ── design tokens (consistent with Home) ── */
 const C = {
@@ -96,6 +97,8 @@ const Profile = () => {
   const { user, token, logout, uploadAvatar, fetchProfile } = useAuthStore();
   const [orders, setOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
+  const [page, setPage] = useState(1);
+  const limit = 5;
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
@@ -103,6 +106,11 @@ const Profile = () => {
   const fileInputRef = useRef();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const totalPages = Math.ceil(orders.length / limit);
+  const paginatedOrders = React.useMemo(() => {
+    return orders.slice((page - 1) * limit, page * limit);
+  }, [orders, page]);
 
   const isStaff = ['admin', 'moderator'].includes(user?.role?.toLowerCase());
 
@@ -252,7 +260,7 @@ const Profile = () => {
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  {orders.map((order) => {
+                  {paginatedOrders.map((order) => {
                     const cfg = statusMap[order.order_status] || statusMap.Pending;
                     const isExp = expandedOrderId === order.id;
                     return (
@@ -353,6 +361,11 @@ const Profile = () => {
                       </div>
                     );
                   })}
+                  <Pagination
+                    page={page}
+                    totalPages={totalPages}
+                    onPageChange={(p) => setPage(p)}
+                  />
                 </div>
               )}
             </motion.div>

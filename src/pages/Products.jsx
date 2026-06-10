@@ -14,6 +14,7 @@ import toast from 'react-hot-toast';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 import ProductCard from '../components/ProductCard';
 import { ProductCardSkeleton } from '../components/Skeleton';
+import Pagination from '../components/Pagination';
 
 const C = {
   t900: '#0d1117', t700: '#1f2937', t500: '#6b7280', t300: '#adb5bd',
@@ -104,7 +105,7 @@ export default function Products() {
   const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'list'
   const [showMobileFilter, setShowMobileFilter] = useState(false);
 
-  const limit = 16;
+  const [limit, setLimit] = useState(16);
   const { search } = useLocation();
   const navigate = useNavigate();
   const addItem = useCartStore(s => s.addItem);
@@ -129,7 +130,7 @@ export default function Products() {
       .then(r => { setProducts(r.data.data || []); setTotal(r.data.total || r.data.pagination?.total_items || 0); })
       .catch(() => toast.error('Could not load products'))
       .finally(() => setLoading(false));
-  }, [page, query, search, sortBy, minPrice, maxPrice]);
+  }, [page, query, search, sortBy, minPrice, maxPrice, limit]);
 
   const toggleCategory = id => {
     const p = new URLSearchParams(search);
@@ -475,57 +476,21 @@ export default function Products() {
           )}
 
           {/* ── PAGINATION ── */}
-          {totalPages > 1 && !loading && (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.4rem', marginTop: '2.5rem' }}>
-              <button
-                onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                disabled={page === 1}
-                style={{
-                  width: 38, height: 38, borderRadius: '50%',
-                  border: `1px solid ${C.bSoft}`, background: '#fff',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  cursor: page === 1 ? 'not-allowed' : 'pointer',
-                  opacity: page === 1 ? 0.3 : 1, transition: 'all .2s',
-                }}
-              >
-                <ArrowRight style={{ width: 14, height: 14, transform: 'rotate(180deg)' }} />
-              </button>
-
-              <div style={{ display: 'flex', gap: '0.3rem' }}>
-                {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-                  const p = i + 1;
-                  return (
-                    <button key={p} onClick={() => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                      style={{
-                        width: 38, height: 38, borderRadius: '50%', border: 'none',
-                        background: page === p ? C.t900 : 'transparent',
-                        color: page === p ? '#fff' : C.t500,
-                        fontSize: '0.82rem', fontWeight: 800, cursor: 'pointer',
-                        transition: 'all .15s', fontFamily: 'inherit',
-                      }}
-                      onMouseEnter={e => { if (page !== p) e.currentTarget.style.background = C.bgMuted; }}
-                      onMouseLeave={e => { if (page !== p) e.currentTarget.style.background = 'transparent'; }}
-                    >
-                      {p}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <button
-                onClick={() => { setPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                disabled={page === totalPages}
-                style={{
-                  width: 38, height: 38, borderRadius: '50%',
-                  border: `1px solid ${C.bSoft}`, background: '#fff',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  cursor: page === totalPages ? 'not-allowed' : 'pointer',
-                  opacity: page === totalPages ? 0.3 : 1, transition: 'all .2s',
-                }}
-              >
-                <ArrowRight style={{ width: 14, height: 14 }} />
-              </button>
-            </div>
+          {!loading && (
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              onPageChange={(p) => {
+                setPage(p);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              limit={limit}
+              limitOptions={[12, 16, 24, 32, 48]}
+              onLimitChange={(l) => {
+                setLimit(l);
+                setPage(1);
+              }}
+            />
           )}
         </motion.div>
       </div>

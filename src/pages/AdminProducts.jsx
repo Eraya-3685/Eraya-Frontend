@@ -10,6 +10,7 @@ import api, { getImageUrl } from '../api/axios';
 import toast from 'react-hot-toast';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import TakaIcon from '../components/TakaIcon';
+import Pagination from '../components/Pagination';
 
 
 const AdminProducts = () => {
@@ -22,6 +23,10 @@ const AdminProducts = () => {
   const [selectedIds, setSelectedIds] = useState([]);
   const [filterStatus, setFilterStatus] = useState('All');
   const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'desc' });
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [limit, setLimit] = useState(10);
   const [filterCategoryIds, setFilterCategoryIds] = useState(() => {
     const categoryParam = searchParams.get('category');
     if (categoryParam) {
@@ -105,8 +110,12 @@ const AdminProducts = () => {
   }, [searchParams, setSearchParams]);
 
   useEffect(() => {
-    fetchProducts();
+    setPage(1);
   }, [search, filterStatus, filterCategoryIds]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [search, filterStatus, filterCategoryIds, page, limit]);
 
   const sortedProducts = React.useMemo(() => {
     let sortableItems = [...products];
@@ -170,7 +179,7 @@ const AdminProducts = () => {
     const currentFetchId = ++fetchIdRef.current;
     setLoading(true);
     try {
-      let url = `/products?search=${search}&admin=true`;
+      let url = `/products?search=${search}&admin=true&page=${page}&limit=${limit}`;
       if (filterCategoryIds.length > 0) {
         filterCategoryIds.forEach(id => {
           url += `&category_id=${id}`;
@@ -180,6 +189,15 @@ const AdminProducts = () => {
       if (currentFetchId !== fetchIdRef.current) return;
 
       let data = res.data?.data || [];
+      const pagination = res.data?.pagination;
+      if (pagination) {
+        setTotalPages(pagination.total_pages || 1);
+        setTotalItems(pagination.total_items || 0);
+      } else {
+        setTotalPages(1);
+        setTotalItems(data.length);
+      }
+
       // Client-side status filter
       if (filterStatus === 'Active') data = data.filter(p => p.is_active && p.stock_count > 0);
       else if (filterStatus === 'Drafts') data = data.filter(p => !p.is_active);
@@ -1032,6 +1050,17 @@ const AdminProducts = () => {
           </tbody>
         </table>
       </div>
+
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        onPageChange={(p) => setPage(p)}
+        limit={limit}
+        onLimitChange={(l) => {
+          setLimit(l);
+          setPage(1);
+        }}
+      />
 
 
 

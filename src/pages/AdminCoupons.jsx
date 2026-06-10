@@ -7,6 +7,7 @@ import {
 import api from '../api/axios';
 import toast from 'react-hot-toast';
 import useDocumentTitle from '../hooks/useDocumentTitle';
+import Pagination from '../components/Pagination';
 
 const STATUS_COLOR = {
   active: { bg: '#ecfdf5', color: '#059669' },
@@ -23,6 +24,9 @@ const AdminCoupons = () => {
   const [deleting, setDeleting] = useState(null);
   const [copiedId, setCopiedId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
 
   const [form, setForm] = useState({
     code: '',
@@ -32,19 +36,29 @@ const AdminCoupons = () => {
     expires_at: '',
   });
 
-  useEffect(() => { fetchCoupons(); }, []);
+
 
   const fetchCoupons = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/admin/coupons');
-      setCoupons(res.data || []);
+      const res = await api.get(`/admin/coupons?page=${page}&limit=${limit}&search=${searchTerm}`);
+      if (res.data?.pagination) {
+        setCoupons(res.data.data || []);
+        setTotalPages(res.data.pagination.total_pages || 1);
+      } else {
+        setCoupons(res.data || []);
+        setTotalPages(1);
+      }
     } catch {
       toast.error('Failed to load coupons');
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchCoupons();
+  }, [page, limit, searchTerm]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -98,9 +112,11 @@ const AdminCoupons = () => {
     return 'active';
   };
 
-  const filtered = coupons.filter(c =>
-    c.code.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const paginatedCoupons = coupons;
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm]);
 
   const inputStyle = {
     width: '100%', padding: '0.75rem 1rem', border: '1.5px solid #e2e8f0',
@@ -362,7 +378,7 @@ const AdminCoupons = () => {
             </div>
 
             <AnimatePresence>
-              {filtered.map((coupon, idx) => {
+              {paginatedCoupons.map((coupon, idx) => {
                 const status = getCouponStatus(coupon);
                 const statusCfg = STATUS_COLOR[status];
                 const isExpired = status === 'expired';
@@ -477,6 +493,19 @@ const AdminCoupons = () => {
           </div>
         )}
       </div>
+
+      {!loading && (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          onPageChange={(p) => setPage(p)}
+          limit={limit}
+          onLimitChange={(l) => {
+            setLimit(l);
+            setPage(1);
+          }}
+        />
+      )}
 
       {/* Info Box */}
       <motion.div

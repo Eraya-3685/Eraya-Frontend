@@ -9,6 +9,7 @@ import api, { getImageUrl } from '../api/axios';
 import toast from 'react-hot-toast';
 import useSettingsStore from '../store/useSettingsStore';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
+import Pagination from '../components/Pagination';
 
 const getStatusDisplayName = (status) => {
   if (status === 'Confirmed') return 'Accepted';
@@ -34,6 +35,10 @@ const AdminOrders = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [isTablet, setIsTablet] = useState(window.innerWidth <= 1200);
   const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'desc' });
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, orderID: null, status: null });
 
   const { settings, fetchSettings } = useSettingsStore();
@@ -54,8 +59,16 @@ const AdminOrders = () => {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/admin/orders');
-      setOrders(res.data || []);
+      const res = await api.get(`/admin/orders?page=${page}&limit=${limit}&search=${search}&status=${statusFilter}`);
+      if (res.data?.pagination) {
+        setOrders(res.data.data || []);
+        setTotalPages(res.data.pagination.total_pages || 1);
+        setTotalItems(res.data.pagination.total_items || 0);
+      } else {
+        setOrders(res.data || []);
+        setTotalPages(1);
+        setTotalItems(res.data?.length || 0);
+      }
     } catch {
       toast.error('Failed to load orders');
     } finally {
@@ -71,11 +84,11 @@ const AdminOrders = () => {
     return () => {
       window.removeEventListener('admin-order-update', handler);
     };
-  }, []);
+  }, [page, limit, search, statusFilter]);
 
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [page, limit, search, statusFilter]);
 
   const triggerStatusUpdateConfirm = (orderID, status) => {
     setConfirmModal({ isOpen: true, orderID, status });
@@ -101,14 +114,8 @@ const AdminOrders = () => {
     setSortConfig({ key, direction });
   };
 
-  const filtered = orders.filter(o => {
-    const matchesSearch = String(o.id).includes(search) || (o.user?.full_name || '').toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === 'All' || o.order_status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
   const sortedOrders = React.useMemo(() => {
-    let sortableItems = [...filtered];
+    let sortableItems = [...orders];
     if (sortConfig !== null) {
       sortableItems.sort((a, b) => {
         let aVal = a[sortConfig.key];
@@ -141,7 +148,13 @@ const AdminOrders = () => {
       });
     }
     return sortableItems;
-  }, [filtered, sortConfig]);
+  }, [orders, sortConfig]);
+
+  const paginatedOrders = sortedOrders;
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, statusFilter]);
 
   const handlePrintInvoice = (order) => {
     const logoHtml = settings?.logo_url ? `
@@ -451,13 +464,13 @@ const AdminOrders = () => {
   };
 
   const tabs = [
-    { id: 'All', label: 'All', count: orders.length },
-    { id: 'Pending', label: 'Pending', count: orders.filter(o => o.order_status === 'Pending').length },
-    { id: 'Confirmed', label: 'Accepted', count: orders.filter(o => o.order_status === 'Confirmed').length },
-    { id: 'Processing', label: 'Processing', count: orders.filter(o => o.order_status === 'Processing').length },
-    { id: 'Shipped', label: 'Shipped', count: orders.filter(o => o.order_status === 'Shipped').length },
-    { id: 'Delivered', label: 'Completed', count: orders.filter(o => o.order_status === 'Delivered').length },
-    { id: 'Cancelled', label: 'Cancelled', count: orders.filter(o => o.order_status === 'Cancelled').length },
+    { id: 'All', label: 'All', count: statusFilter === 'All' ? totalItems : null },
+    { id: 'Pending', label: 'Pending', count: statusFilter === 'Pending' ? totalItems : null },
+    { id: 'Confirmed', label: 'Accepted', count: statusFilter === 'Confirmed' ? totalItems : null },
+    { id: 'Processing', label: 'Processing', count: statusFilter === 'Processing' ? totalItems : null },
+    { id: 'Shipped', label: 'Shipped', count: statusFilter === 'Shipped' ? totalItems : null },
+    { id: 'Delivered', label: 'Completed', count: statusFilter === 'Delivered' ? totalItems : null },
+    { id: 'Cancelled', label: 'Cancelled', count: statusFilter === 'Cancelled' ? totalItems : null },
   ];
 
   return (
@@ -466,25 +479,7 @@ const AdminOrders = () => {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
          <h1 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>Orders</h1>
-      </div>
-
-      {/* Stats Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : (isTablet ? '1fr 1fr' : 'repeat(4, 1fr)'), gap: '1rem' }}>
-         {[
-            { label: 'Pending', count: orders.filter(o => o.order_status === 'Pending').length, color: '#d97706', icon: Clock },
-            { label: 'Accepted', count: orders.filter(o => o.order_status === 'Confirmed').length, color: '#e11d48', icon: Package },
-            { label: 'Shipped', count: orders.filter(o => o.order_status === 'Shipped').length, color: '#6366f1', icon: Truck },
-            { label: 'Completed', count: orders.filter(o => o.order_status === 'Delivered').length, color: '#059669', icon: CheckCircle2 },
-         ].map((stat, i) => (
-            <div key={i} style={{ background: '#fff', borderRadius: '1.25rem', padding: '1rem 1.25rem', boxShadow: '0 4px 20px rgba(0,0,0,0.01)', border: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'transform 0.2s ease' }}>
-               <div>
-                  <p style={{ fontSize: '0.65rem', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.05em', margin: '0 0 0.25rem' }}>{stat.label}</p>
-                  <h2 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>{stat.count}</h2>
-               </div>
-               <div style={{ width: 36, height: 36, background: `${stat.color}10`, borderRadius: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', color: stat.color, flexShrink: 0 }}><stat.icon size={16} /></div>
-            </div>
-         ))}
-      </div>
+        </div>
 
       {/* Status Category Tabs (User Page Pill Design) */}
       <div style={{
@@ -535,17 +530,19 @@ const AdminOrders = () => {
               }}
             >
               <span>{tab.label}</span>
-              <span style={{
-                fontSize: '0.65rem',
-                fontWeight: 900,
-                padding: '0.15rem 0.45rem',
-                borderRadius: '0.5rem',
-                background: isActive ? '#e11d48' : '#f1f5f9',
-                color: isActive ? '#fff' : '#64748b',
-                transition: 'all 0.2s'
-              }}>
-                {tab.count}
-              </span>
+              {tab.count !== null && (
+                <span style={{
+                  fontSize: '0.65rem',
+                  fontWeight: 900,
+                  padding: '0.15rem 0.45rem',
+                  borderRadius: '0.5rem',
+                  background: isActive ? '#e11d48' : '#f1f5f9',
+                  color: isActive ? '#fff' : '#64748b',
+                  transition: 'all 0.2s'
+                }}>
+                  {tab.count}
+                </span>
+              )}
             </button>
           );
         })}
@@ -670,7 +667,7 @@ const AdminOrders = () => {
                          No orders found
                       </td>
                     </tr>
-                  ) : sortedOrders.map((order) => {
+                  ) : paginatedOrders.map((order) => {
                      const status = order.order_status || 'Pending';
                      const cfg = statusColors[status] || statusColors.Pending;
                      const StatusIcon = cfg.icon;
@@ -909,6 +906,17 @@ const AdminOrders = () => {
             </table>
          </div>
       </div>
+
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        onPageChange={(p) => setPage(p)}
+        limit={limit}
+        onLimitChange={(l) => {
+          setLimit(l);
+          setPage(1);
+        }}
+      />
 
       <DeleteConfirmModal
         isOpen={confirmModal.isOpen}
