@@ -361,7 +361,7 @@ const AdminCoupons = () => {
           <div style={{ padding: '4rem', display: 'flex', justifyContent: 'center' }}>
             <div style={{ width: 36, height: 36, border: '3px solid #f1f5f9', borderTopColor: '#0f172a', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
           </div>
-        ) : filtered.length === 0 ? (
+        ) : paginatedCoupons.length === 0 ? (
           <div style={{ padding: '4rem', textAlign: 'center' }}>
             <Tag style={{ width: 40, height: 40, color: '#e2e8f0', marginBottom: '1rem' }} />
             <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#94a3b8', margin: 0 }}>
@@ -394,7 +394,7 @@ const AdminCoupons = () => {
                       gridTemplateColumns: '1.5fr 1fr 1fr 1fr 1fr 1fr auto',
                       gap: 0,
                       padding: '1rem 1.5rem',
-                      borderBottom: idx < filtered.length - 1 ? '1px solid #f8fafc' : 'none',
+                      borderBottom: idx < paginatedCoupons.length - 1 ? '1px solid #f8fafc' : 'none',
                       alignItems: 'center',
                       opacity: isExpired ? 0.6 : 1,
                       transition: 'background 0.2s',

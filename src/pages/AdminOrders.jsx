@@ -661,7 +661,7 @@ const AdminOrders = () => {
                          <div style={{ display: 'inline-block', width: 24, height: 24, border: '2.5px solid #f1f5f9', borderTopColor: '#e11d48', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
                       </td>
                     </tr>
-                  ) : filtered.length === 0 ? (
+                  ) : paginatedOrders.length === 0 ? (
                     <tr>
                       <td colSpan={5} style={{ padding: '3rem', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: '#94a3b8' }}>
                          No orders found
