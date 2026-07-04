@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, X, Send, Bot, User, RotateCcw, ShoppingBag, HelpCircle, TrendingUp } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import useAuthStore from '../store/useAuthStore';
 
@@ -13,6 +14,7 @@ const AIChatBot = () => {
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
   const { user } = useAuthStore();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -63,6 +65,15 @@ const AIChatBot = () => {
     sendMessage(text);
   };
 
+  const handleLinkClick = (e) => {
+    const link = e.target.closest('a[data-navigate="true"]');
+    if (link) {
+      e.preventDefault();
+      setIsOpen(false); // Close chat when navigating
+      navigate(link.getAttribute('href'));
+    }
+  };
+
   const clearChat = () => {
     setMessages([]);
     setError('');
@@ -74,6 +85,16 @@ const AIChatBot = () => {
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/`(.*?)`/g, '<code style="background:#f1f5f9;padding:1px 4px;border-radius:3px;font-size:0.8em">$1</code>')
+      .replace(/\[PRODUCT:(.*?)\|(.*?)\|(.*?)\]/gi, (match, slug, name, price) => {
+        return `<a href="/products/${slug}" data-navigate="true" class="ai-product-link">
+          <div class="ai-product-icon">🛍️</div>
+          <div class="ai-product-details">
+            <span class="ai-product-name">${name}</span>
+            <span class="ai-product-price">৳${price}</span>
+          </div>
+          <div class="ai-product-arrow">→</div>
+        </a>`;
+      })
       .replace(/^(\d+)\.\s/gm, '<span style="color:#e11d48;font-weight:800">$1.</span> ')
       .replace(/^[-•]\s/gm, '<span style="color:#e11d48">•</span> ')
       .replace(/৳(\d[\d,]*)/g, '<span style="color:#e11d48;font-weight:800">৳$1</span>')
@@ -228,6 +249,7 @@ const AIChatBot = () => {
             {/* Messages Area */}
             <div
               ref={scrollRef}
+              onClick={handleLinkClick}
               style={{
                 flex: 1,
                 overflowY: 'auto',
@@ -449,7 +471,7 @@ const AIChatBot = () => {
         )}
       </AnimatePresence>
 
-      {/* Animations */}
+      {/* Animations & Styles */}
       <style>{`
         @keyframes aichat-bounce {
           0%, 60%, 100% { transform: translateY(0); }
@@ -458,6 +480,67 @@ const AIChatBot = () => {
         @keyframes aichat-pulse {
           0%, 100% { opacity: 1; transform: scale(1); }
           50% { opacity: 0.6; transform: scale(1.1); }
+        }
+        .ai-product-link {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          background: #ffffff;
+          border: 1px solid #f1f5f9;
+          padding: 0.6rem 0.85rem;
+          border-radius: 0.85rem;
+          text-decoration: none;
+          margin: 0.35rem 0;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .ai-product-link:hover {
+          background: #fff1f2;
+          border-color: #fecdd3;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(225,29,72,0.1);
+        }
+        .ai-product-icon {
+          font-size: 1.15rem;
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justifyContent: center;
+          background: #f8fafc;
+          border-radius: 0.6rem;
+          flex-shrink: 0;
+          transition: background 0.2s;
+        }
+        .ai-product-link:hover .ai-product-icon {
+          background: #ffe4e6;
+        }
+        .ai-product-details {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 0.15rem;
+        }
+        .ai-product-name {
+          font-weight: 700;
+          color: #0f172a;
+          font-size: 0.8rem;
+          line-height: 1.2;
+        }
+        .ai-product-price {
+          color: #e11d48;
+          font-weight: 800;
+          font-size: 0.75rem;
+        }
+        .ai-product-arrow {
+          color: #cbd5e1;
+          font-weight: 800;
+          font-size: 1.1rem;
+          transition: all 0.2s;
+        }
+        .ai-product-link:hover .ai-product-arrow {
+          color: #e11d48;
+          transform: translateX(3px);
         }
       `}</style>
     </>
