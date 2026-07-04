@@ -23,6 +23,24 @@ const AIChatBot = () => {
   }, [messages, loading]);
 
   useEffect(() => {
+    const fetchHistory = async () => {
+      if (!user) {
+        setMessages([]);
+        return;
+      }
+      try {
+        const res = await api.get('/ai/chat');
+        if (Array.isArray(res.data) && res.data.length > 0) {
+          setMessages(res.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch AI chat history', err);
+      }
+    };
+    fetchHistory();
+  }, [user]);
+
+  useEffect(() => {
     if (isOpen && inputRef.current) {
       setTimeout(() => inputRef.current?.focus(), 300);
     }
