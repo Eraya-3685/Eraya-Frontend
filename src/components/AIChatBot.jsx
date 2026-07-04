@@ -195,7 +195,7 @@ const AIChatBot = () => {
               display: 'flex',
               flexDirection: 'column',
               overflow: 'hidden',
-              zIndex: 999,
+              zIndex: 10000,
             }}
           >
             {/* Header */}
