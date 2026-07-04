@@ -2,6 +2,7 @@ import React from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ChatWidget from '../components/ChatWidget';
+import AIChatBot from '../components/AIChatBot';
 import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -31,6 +32,7 @@ const MainLayout = ({ children }) => {
         </motion.main>
       </AnimatePresence>
       <Footer />
+      <AIChatBot />
       <ChatWidget />
     </div>
   );
