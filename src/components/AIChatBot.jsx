@@ -86,7 +86,8 @@ const AIChatBot = () => {
     { icon: HelpCircle, label: 'Help', text: 'How do I place an order and what are the payment options?' },
   ];
 
-  if (!user) return null;
+  const hasMainChat = user && user.role !== 'admin' && user.role !== 'moderator';
+  const buttonBottom = hasMainChat ? 96 : 24;
 
   return (
     <>
@@ -102,7 +103,7 @@ const AIChatBot = () => {
             onClick={() => setIsOpen(true)}
             style={{
               position: 'fixed',
-              bottom: 90,
+              bottom: buttonBottom,
               right: 24,
               width: 52,
               height: 52,
@@ -145,7 +146,7 @@ const AIChatBot = () => {
             transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
             style={{
               position: 'fixed',
-              bottom: 24,
+              bottom: buttonBottom + (isOpen && !hasMainChat ? 0 : (isOpen ? -72 : 0)),
               right: 24,
               width: Math.min(400, window.innerWidth - 48),
               height: Math.min(600, window.innerHeight - 48),
