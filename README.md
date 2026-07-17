@@ -372,14 +372,3 @@ The Vite config includes intelligent code splitting:
 | Production  | https://eraya-phi.vercel.app      | https://eraya-backend.onrender.com/api/v1   |
 | Local       | http://localhost:5173             | http://localhost:8080/api/v1                |
 
----
-
-## 📜 License
-
-This project is licensed under the [Apache 2.0 License](http://www.apache.org/licenses/LICENSE-2.0.html).
-
----
-
-<p align="center">
-  Built with ❤️ using React + Vite
-</p>
