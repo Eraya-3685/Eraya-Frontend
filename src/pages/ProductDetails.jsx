@@ -14,6 +14,7 @@ import toast from 'react-hot-toast';
 import ProductCard from '../components/ProductCard';
 import LoginModal from '../components/LoginModal';
 import { ProductDetailsSkeleton, LoadingSpinner } from '../components/Skeleton';
+import useMediaQuery from '../hooks/useMediaQuery';
 
 const C = {
   t900: '#0d1117', t700: '#1f2937', t500: '#6b7280', t300: '#adb5bd',
@@ -38,6 +39,7 @@ const Stars = ({ rating, size = 12 }) => (
 const ProductDetails = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const { isMobile } = useMediaQuery();
   const [product, setProduct] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -313,16 +315,16 @@ const ProductDetails = () => {
         transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
         style={{
           background: '#fff', border: `1px solid ${C.bSoft}`, borderRadius: '2rem',
-          padding: '2rem', boxShadow: '0 2px 24px -6px rgba(0,0,0,0.08)', marginBottom: '1.25rem',
+          padding: isMobile ? '1.25rem' : '2rem', boxShadow: '0 2px 24px -6px rgba(0,0,0,0.08)', marginBottom: '1.25rem',
         }}
       >
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? '1.5rem' : '2.5rem' }}>
 
           {/* ── LEFT: Gallery ── */}
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', flexDirection: isMobile ? 'column-reverse' : 'row', gap: '0.75rem' }}>
             {/* Thumbnails */}
             {product.images?.length > 1 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: 56, flexShrink: 0 }}>
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'row' : 'column', gap: '0.5rem', width: isMobile ? '100%' : 56, flexShrink: 0, overflowX: isMobile ? 'auto' : 'visible' }}>
                 {product.images.map(img => (
                   <button
                     key={img.id}
@@ -687,7 +689,7 @@ const ProductDetails = () => {
       </motion.div>
 
       {/* ══ REVIEWS + SIMILAR ══ */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: '1.25rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.1fr 1fr', gap: '1.25rem' }}>
 
         {/* Reviews */}
         <motion.div
@@ -774,7 +776,7 @@ const ProductDetails = () => {
             </Link>
           </div>
           {similarProducts.length > 0 ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.85rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(2, 1fr)', gap: '0.85rem' }}>
               {similarProducts.slice(0, 4).map(p => (
                 <ProductCard
                   key={p.id}

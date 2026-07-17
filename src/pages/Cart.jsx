@@ -9,6 +9,7 @@ import useDocumentTitle from '../hooks/useDocumentTitle';
 import useSettingsStore from '../store/useSettingsStore';
 import ConfirmModal from '../components/ConfirmModal';
 import toast from 'react-hot-toast';
+import useMediaQuery from '../hooks/useMediaQuery';
 
 const C = {
   t900:'#0d1117', t700:'#1f2937', t500:'#6b7280', t300:'#c4c9d4',
@@ -18,6 +19,7 @@ const C = {
 };
 
 const Cart = () => {
+  const { isMobile } = useMediaQuery();
   useDocumentTitle('Shopping Cart | Eraya');
   const { items, removeItem, updateQuantity, clearCart, syncItems } = useCartStore();
   const { user }                    = useAuthStore();
@@ -191,7 +193,7 @@ const Cart = () => {
       {/* ── Table ── */}
       <div style={{ background:C.bgCard, border:`1px solid ${C.bLine}`, borderRadius:'1.5rem', overflow:'hidden', marginBottom:'1.5rem' }}>
         {/* Table head */}
-        <div style={{ display:'grid', gridTemplateColumns:'3fr 0.85fr 1fr 1.1fr 0.9fr', gap:0, padding:'0.85rem 1.75rem', borderBottom:`1.5px solid ${C.bLine}`, background:C.bgMuted }}>
+        {!isMobile && <div style={{ display:'grid', gridTemplateColumns:'3fr 0.85fr 1fr 1.1fr 0.9fr', gap:0, padding:'0.85rem 1.75rem', borderBottom:`1.5px solid ${C.bLine}`, background:C.bgMuted }}>
           {[
             { label:'Product',  align:'left'   },
             { label:'Status',   align:'left'   },
@@ -203,7 +205,7 @@ const Cart = () => {
               {label}
             </span>
           ))}
-        </div>
+        </div>}
 
         {/* Rows */}
         <AnimatePresence>
@@ -216,9 +218,9 @@ const Cart = () => {
                 transition={{ duration:0.25, delay: idx*0.04 }}
                 style={{
                   display:'grid',
-                  gridTemplateColumns:'3fr 0.85fr 1fr 1.1fr 0.9fr',
+                  gridTemplateColumns: isMobile ? '1fr' : '3fr 0.85fr 1fr 1.1fr 0.9fr',
                   gap:0,
-                  padding:'1.25rem 1.75rem',
+                  padding: isMobile ? '1rem' : '1.25rem 1.75rem',
                   borderBottom: idx < items.length-1 ? `1px solid ${C.bLine}` : 'none',
                   alignItems:'center',
                   transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -312,7 +314,7 @@ const Cart = () => {
       {/* ── Bottom actions ── */}
       <div style={{
         background: C.bgCard, border: `1px solid ${C.bLine}`, borderRadius: '1.5rem',
-        padding: '1.5rem 2rem', display: 'flex', justifyContent: 'space-between',
+        padding: isMobile ? '1.25rem' : '1.5rem 2rem', display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between',
         alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem'
       }}>
         {/* Left — info badges */}
@@ -330,7 +332,7 @@ const Cart = () => {
         </div>
 
         {/* Right — Beautiful pricing breakdown */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '240px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: isMobile ? '100%' : '240px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: C.t500, fontWeight: 600 }}>
             <span>Subtotal</span>
             <span style={{ color: C.t900 }}>৳{subtotal.toLocaleString()}</span>
@@ -352,7 +354,7 @@ const Cart = () => {
       </div>
 
       {/* Buttons row */}
-      <div style={{ display:'flex', justifyContent:'flex-end', gap:'0.75rem', marginTop:'1rem' }}>
+      <div style={{ display:'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent:'flex-end', gap:'0.75rem', marginTop:'1rem' }}>
         <Link to="/products"
           style={{ padding:'0.75rem 1.75rem', background:'transparent', border:`1.5px solid ${C.bLine}`, borderRadius:'1.25rem', fontSize:'0.8rem', fontWeight:800, color:C.t700, textDecoration:'none', transition:'all .2s', display:'flex', alignItems:'center' }}
           onMouseEnter={e=>{ e.currentTarget.style.borderColor=C.t900; e.currentTarget.style.color=C.t900; e.currentTarget.style.transform = 'translateY(-1px)'; }}

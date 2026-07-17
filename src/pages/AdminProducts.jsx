@@ -876,8 +876,9 @@ const AdminProducts = () => {
       </div>
 
       <div style={{ background: '#fff', borderRadius: '2.5rem', border: '1px solid #f1f5f9', overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-          <thead>
+        <div className="table-scroll-wrapper">
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <thead>
             <tr style={{ background: '#f8f9fc', borderBottom: '1px solid #f1f5f9' }}>
               <th style={{ width: '8%', padding: '1rem 1rem 1rem 2rem', fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8' }}>ID</th>
               <th style={{ width: '22%', padding: '1rem 1rem', fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8' }}>
@@ -1050,6 +1051,7 @@ const AdminProducts = () => {
           </tbody>
         </table>
       </div>
+    </div>
 
       <Pagination
         page={page}

@@ -266,3 +266,111 @@ body {
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite linear;
 }
+
+/* ══════════════════════════════════════════════
+   RESPONSIVE UTILITIES
+══════════════════════════════════════════════ */
+
+/* ── Mobile font‑size adjustment ── */
+@media (max-width: 768px) {
+  html {
+    font-size: 13px;
+  }
+}
+
+/* ── Visibility helpers ── */
+.hide-mobile {
+  display: initial;
+}
+.show-mobile {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .hide-mobile {
+    display: none !important;
+  }
+  .show-mobile {
+    display: initial !important;
+  }
+  .show-mobile-flex {
+    display: flex !important;
+  }
+  .show-mobile-block {
+    display: block !important;
+  }
+}
+
+.hide-tablet {
+  display: initial;
+}
+.show-tablet {
+  display: none !important;
+}
+
+@media (max-width: 1024px) {
+  .hide-tablet {
+    display: none !important;
+  }
+  .show-tablet {
+    display: initial !important;
+  }
+}
+
+/* ── Mobile overlay (for search, menus, chat) ── */
+.mobile-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 999;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* ── Mobile slide-in drawer ── */
+.mobile-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 85%;
+  max-width: 360px;
+  background: #fff;
+  z-index: 1000;
+  overflow-y: auto;
+  box-shadow: -10px 0 40px rgba(0, 0, 0, 0.12);
+}
+
+/* ── Admin table scroll wrapper ── */
+@media (max-width: 768px) {
+  .table-scroll-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -1rem;
+    padding: 0 1rem;
+  }
+  .table-scroll-wrapper table {
+    min-width: 600px;
+  }
+}
+
+/* ── Touch-friendly minimum sizes ── */
+@media (max-width: 768px) {
+  button, a, [role="button"] {
+    min-height: 36px;
+  }
+}
+
+/* ── Full-screen chat on mobile ── */
+@media (max-width: 768px) {
+  .chat-widget-panel {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    border-radius: 0 !important;
+    bottom: 0 !important;
+    right: 0 !important;
+  }
+}

@@ -6,10 +6,12 @@ import toast from 'react-hot-toast';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 import TakaIcon from '../components/TakaIcon';
 import api, { getImageUrl } from '../api/axios';
+import useMediaQuery from '../hooks/useMediaQuery';
 
 
 const AdminSettings = () => {
   useDocumentTitle('Store Settings | Admin');
+  const { isMobile } = useMediaQuery();
   const { settings, fetchSettings, updateSettings, loading } = useSettingsStore();
   const [form, setForm] = useState({
     free_shipping_threshold: 1999,
@@ -110,7 +112,7 @@ const AdminSettings = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', paddingBottom: '5rem' }}>
       
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'flex-end', gap: '1rem' }}>
         <div>
            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.4rem' }}>
               <div style={{ width: 28, height: 28, background: '#e11d4810', borderRadius: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e11d48' }}><Settings style={{ width: 14, height: 14 }} /></div>
@@ -118,7 +120,7 @@ const AdminSettings = () => {
            </div>
            <h1 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.03em' }}>Store Settings</h1>
         </div>
-        <button onClick={handleSave} style={{ background: '#e11d48', color: '#fff', border: 'none', padding: '0 1.5rem', borderRadius: '1rem', fontSize: '0.75rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', height: 38, boxShadow: '0 8px 20px rgba(225, 29, 72, 0.15)', transition: 'all 0.3s ease', boxSizing: 'border-box' }} disabled={isSaving}>
+        <button onClick={handleSave} style={{ background: '#e11d48', color: '#fff', border: 'none', padding: '0 1.5rem', borderRadius: '1rem', fontSize: '0.75rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer', height: 38, boxShadow: '0 8px 20px rgba(225, 29, 72, 0.15)', transition: 'all 0.3s ease', boxSizing: 'border-box', width: isMobile ? '100%' : 'auto' }} disabled={isSaving}>
            {isSaving ? <RefreshCcw style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} /> : <Save style={{ width: 16, height: 16 }} />}
            {isSaving ? 'Processing...' : 'Deploy Changes'}
         </button>
@@ -132,12 +134,14 @@ const AdminSettings = () => {
           background: '#fff', 
           borderRadius: '2rem', 
           border: '1px solid #f1f5f9', 
-          padding: '2rem', 
+          padding: isMobile ? '1.5rem 1.25rem' : '2rem', 
           boxShadow: '0 4px 30px rgba(0,0,0,0.015)',
           display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
           alignItems: 'center',
-          gap: '2.5rem',
-          background: 'linear-gradient(to right, #ffffff, #fcfdff)'
+          gap: isMobile ? '1.5rem' : '2.5rem',
+          background: 'linear-gradient(to right, #ffffff, #fcfdff)',
+          textAlign: isMobile ? 'center' : 'left',
         }}
       >
         {/* Circular Logo Preview Frame with Edit Hover Overlay */}

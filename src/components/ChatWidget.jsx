@@ -8,6 +8,7 @@ import api from '../api/axios';
 import { format, isToday, isYesterday } from 'date-fns';
 import ChatMessage, { DateSeparator } from './Chat/ChatMessage';
 import ChatReplyPreview from './Chat/ChatReplyPreview';
+import useMediaQuery from '../hooks/useMediaQuery';
 
 const C = {
   t900: '#0d1117', t700: '#1f2937', t500: '#6b7280', t300: '#adb5bd',
@@ -18,6 +19,7 @@ const C = {
 };
 
 const ChatWidget = () => {
+  const { isMobile } = useMediaQuery();
   const [isOpen, setIsOpen] = useState(() => localStorage.getItem('chat_open') === 'true');
   const [input, setInput] = useState(() => localStorage.getItem('chat_input') || '');
   const [isAdminView, setIsAdminView] = useState(() => localStorage.getItem('chat_admin_view') !== 'false');
@@ -175,7 +177,19 @@ const ChatWidget = () => {
   if (!user || user.role === 'admin' || user.role === 'moderator') return null;
 
   return (
-    <div style={{ position: 'fixed', bottom: '1.5rem', right: '1.5rem', zIndex: 9999, display: 'flex', alignItems: 'flex-end' }}>
+    <div style={{
+      position: 'fixed',
+      bottom: isMobile && isOpen ? 0 : '1.5rem',
+      right: isMobile && isOpen ? 0 : '1.5rem',
+      top: isMobile && isOpen ? 0 : 'auto',
+      left: isMobile && isOpen ? 0 : 'auto',
+      width: isMobile && isOpen ? '100vw' : 'auto',
+      height: isMobile && isOpen ? '100vh' : 'auto',
+      zIndex: 9999,
+      display: 'flex',
+      alignItems: 'flex-end',
+      justifyContent: 'flex-end'
+    }}>
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -183,9 +197,17 @@ const ChatWidget = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             style={{
-              background: '#fff', width: 380, height: 580, borderRadius: C.r2xl,
-              boxShadow: '0 25px 60px -12px rgba(0,0,0,0.25)', display: 'flex', flexDirection: 'column',
-              overflow: 'hidden', border: `1px solid ${C.bSoft}`, marginBottom: '1rem', marginRight: '0.5rem'
+              background: '#fff',
+              width: isMobile ? '100vw' : 380,
+              height: isMobile ? '100vh' : 580,
+              borderRadius: isMobile ? 0 : C.r2xl,
+              boxShadow: '0 25px 60px -12px rgba(0,0,0,0.25)',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              border: isMobile ? 'none' : `1px solid ${C.bSoft}`,
+              marginBottom: isMobile ? 0 : '1rem',
+              marginRight: isMobile ? 0 : '0.5rem'
             }}
           >
             {/* Header */}

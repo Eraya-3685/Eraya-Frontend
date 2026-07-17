@@ -13,6 +13,7 @@ import toast from 'react-hot-toast';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 import useSettingsStore from '../store/useSettingsStore';
 import ConfirmModal from '../components/ConfirmModal';
+import useMediaQuery from '../hooks/useMediaQuery';
 
 const C = {
   t900:'#0d1117', t700:'#1f2937', t500:'#6b7280', t300:'#adb5bd',
@@ -23,6 +24,7 @@ const C = {
 
 const Checkout = () => {
   useDocumentTitle('Checkout | Eraya');
+  const { isMobile } = useMediaQuery();
   const { items, clearCart, updateQuantity, removeItem } = useCartStore();
   const { user, updateProfile } = useAuthStore();
   const { settings, fetchSettings } = useSettingsStore();
@@ -575,7 +577,7 @@ const Checkout = () => {
         </Link>
       </div>
 
-      <div className="checkout-grid" style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '3rem', alignItems: 'start' }}>
+      <div className="checkout-grid" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.5fr 1fr', gap: isMobile ? '1.5rem' : '3rem', alignItems: 'start' }}>
         
         {/* ── LEFT: Form ── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -607,7 +609,7 @@ const Checkout = () => {
             display: 'flex', flexDirection: 'column', gap: '1.5rem'
           }}>
              {/* Name Row */}
-             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1.25rem' }}>
                 <div>
                    <label style={{ fontSize: '0.8rem', fontWeight: 700, color: C.t700, display: 'block', marginBottom: '0.4rem' }}>First Name</label>
                    <div style={{ position: 'relative' }}>
@@ -685,7 +687,7 @@ const Checkout = () => {
                         <span style={{ fontSize: '0.85rem', fontWeight: 900, color: '#166534' }}>bKash Payment Verified</span>
                     </div>
                     
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1.5rem' }}>
                        <div>
                             <p style={{ margin: 0, fontSize: '0.62rem', fontWeight: 800, color: '#15803d', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Transaction ID</p>
                           <p style={{ margin: '0.2rem 0 0', fontSize: '0.9rem', fontWeight: 900, color: C.t900, letterSpacing: '0.05em' }}>{bkashTrxID}</p>

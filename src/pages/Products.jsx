@@ -15,6 +15,7 @@ import useDocumentTitle from '../hooks/useDocumentTitle';
 import ProductCard from '../components/ProductCard';
 import { ProductCardSkeleton } from '../components/Skeleton';
 import Pagination from '../components/Pagination';
+import useMediaQuery from '../hooks/useMediaQuery';
 
 const C = {
   t900: '#0d1117', t700: '#1f2937', t500: '#6b7280', t300: '#adb5bd',
@@ -93,6 +94,7 @@ function PillDropdown({ label, value, opts, onChange }) {
 
 export default function Products() {
   useDocumentTitle('Collection | Eraya');
+  const { isMobile } = useMediaQuery();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -292,9 +294,9 @@ export default function Products() {
           {query && <><span>/</span><span style={{ color: C.t900 }}>"{query}"</span></>}
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '1rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'flex-end', gap: '1rem', flexWrap: 'wrap' }}>
           <div>
-            <h1 style={{ fontSize: '2rem', fontWeight: 900, color: C.t900, margin: 0, letterSpacing: '-0.04em', lineHeight: 1 }}>
+            <h1 style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 900, color: C.t900, margin: 0, letterSpacing: '-0.04em', lineHeight: 1 }}>
               {query ? `Results for "${query}"` : activeCatIDs.length > 0 ? 'Filtered Collection' : 'Our Collection'}
             </h1>
             <p style={{ fontSize: '0.78rem', color: C.t500, margin: '0.4rem 0 0', fontWeight: 600 }}>
@@ -354,23 +356,84 @@ export default function Products() {
         </div>
       </motion.div>
 
-      {/* ── MAIN LAYOUT ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: '1.25rem', alignItems: 'start' }}>
+      {/* ── MOBILE FILTER BUTTON ── */}
+      {isMobile && (
+        <div style={{ marginBottom: '1rem' }}>
+          <button
+            onClick={() => setShowMobileFilter(true)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '0.5rem',
+              padding: '0.7rem 1.25rem', background: '#fff',
+              border: `1px solid ${C.bSoft}`, borderRadius: 9999,
+              fontSize: '0.8rem', fontWeight: 700, color: C.t900,
+              cursor: 'pointer', fontFamily: 'inherit',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+              width: '100%', justifyContent: 'center',
+            }}
+          >
+            <SlidersHorizontal style={{ width: 14, height: 14 }} />
+            Filters {hasFilters ? `(${activeCatIDs.length + (minPrice > 0 || maxPrice < 5000 ? 1 : 0)})` : ''}
+          </button>
+        </div>
+      )}
 
-        {/* ── SIDEBAR ── */}
-        <motion.div
-          initial={{ opacity: 0, x: -16 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.4, delay: 0.05 }}
-          style={{
-            position: 'sticky', top: '6.5rem',
-            background: '#fff', border: `1px solid ${C.bSoft}`,
-            borderRadius: '1.5rem', padding: '1.25rem',
-            boxShadow: '0 2px 16px -4px rgba(0,0,0,0.06)',
-          }}
-        >
-          <SidebarContent />
-        </motion.div>
+      {/* ── MOBILE FILTER DRAWER ── */}
+      <AnimatePresence>
+        {isMobile && showMobileFilter && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setShowMobileFilter(false)}
+              className="mobile-overlay"
+            />
+            <motion.div
+              initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 350 }}
+              className="mobile-drawer"
+              style={{ padding: '1.5rem 1.25rem' }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                <span style={{ fontSize: '1rem', fontWeight: 900, color: C.t900 }}>Filters</span>
+                <button onClick={() => setShowMobileFilter(false)} style={{ width: 36, height: 36, borderRadius: '50%', background: C.bgMuted, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                  <X style={{ width: 18, height: 18, color: C.t900 }} />
+                </button>
+              </div>
+              <SidebarContent />
+              <button
+                onClick={() => setShowMobileFilter(false)}
+                style={{
+                  width: '100%', marginTop: '1.5rem', padding: '0.85rem',
+                  background: C.t900, color: '#fff', border: 'none',
+                  borderRadius: '1rem', fontSize: '0.85rem', fontWeight: 800,
+                  cursor: 'pointer', fontFamily: 'inherit',
+                }}
+              >
+                Apply Filters
+              </button>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ── MAIN LAYOUT ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '240px 1fr', gap: '1.25rem', alignItems: 'start' }}>
+
+        {/* ── SIDEBAR (desktop only) ── */}
+        {!isMobile && (
+          <motion.div
+            initial={{ opacity: 0, x: -16 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4, delay: 0.05 }}
+            style={{
+              position: 'sticky', top: '6.5rem',
+              background: '#fff', border: `1px solid ${C.bSoft}`,
+              borderRadius: '1.5rem', padding: '1.25rem',
+              boxShadow: '0 2px 16px -4px rgba(0,0,0,0.06)',
+            }}
+          >
+            <SidebarContent />
+          </motion.div>
+        )}
 
         {/* ── PRODUCTS AREA ── */}
         <motion.div
@@ -380,7 +443,7 @@ export default function Products() {
         >
           {/* Loading skeletons */}
           {loading ? (
-            <div style={{ display: 'grid', gridTemplateColumns: viewMode === 'list' ? '1fr' : 'repeat(auto-fill, minmax(185px, 1fr))', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: viewMode === 'list' ? '1fr' : isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(185px, 1fr))', gap: isMobile ? '0.6rem' : '1rem' }}>
               {Array.from({ length: 12 }).map((_, i) => <ProductCardSkeleton key={i} />)}
             </div>
           ) : products.length === 0 ? (
@@ -460,7 +523,7 @@ export default function Products() {
             </div>
           ) : (
             /* Grid view */
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(185px, 1fr))', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(185px, 1fr))', gap: isMobile ? '0.6rem' : '1rem' }}>
               {products.map((p, i) => (
                 <motion.div key={p.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }}>
                   <ProductCard

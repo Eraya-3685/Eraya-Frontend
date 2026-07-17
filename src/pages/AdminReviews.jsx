@@ -8,8 +8,10 @@ import api from '../api/axios';
 import toast from 'react-hot-toast';
 import ConfirmModal from '../components/ConfirmModal';
 import Pagination from '../components/Pagination';
+import useMediaQuery from '../hooks/useMediaQuery';
 
 const AdminReviews = () => {
+  const { isMobile } = useMediaQuery();
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('All');
@@ -67,9 +69,9 @@ const AdminReviews = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', paddingBottom: '5rem' }}>
       
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-         <h1 style={{ fontSize: '2rem', fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.03em' }}>Reviews</h1>
-         <div style={{ background: '#fff', padding: '0.35rem', borderRadius: '1.25rem', border: '1px solid #f1f5f9', display: 'flex', gap: '0.2rem', boxShadow: '0 4px 12px rgba(0,0,0,0.01)' }}>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'center', gap: '1rem' }}>
+         <h1 style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.03em' }}>Reviews</h1>
+         <div style={{ background: '#fff', padding: '0.35rem', borderRadius: '1.25rem', border: '1px solid #f1f5f9', display: 'flex', gap: '0.2rem', boxShadow: '0 4px 12px rgba(0,0,0,0.01)', justifyContent: 'center' }}>
             {['All', 'Pending', 'Approved'].map(s => (
                <button key={s} onClick={() => setFilter(s)} style={{ border: 'none', padding: '0.5rem 1.25rem', borderRadius: '0.85rem', fontSize: '0.65rem', fontWeight: 800, cursor: 'pointer', background: filter === s ? '#e11d48' : 'transparent', color: filter === s ? '#fff' : '#64748b', transition: 'all 0.2s' }}>{s}</button>
             ))}
@@ -129,7 +131,7 @@ const AdminReviews = () => {
       {loading ? (
         <div style={{ height: '30vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ width: 30, height: 30, border: '3px solid #f1f5f9', borderTopColor: '#e11d48', borderRadius: '50%', animation: 'spin 1s linear infinite' }} /></div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
            {paginatedReviews.map((rev) => (
               <motion.div 
                 key={rev.id}

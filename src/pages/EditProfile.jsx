@@ -11,6 +11,7 @@ import toast from 'react-hot-toast';
 import OTPModal from '../components/OTPModal';
 import ActionConfirmationModal from '../components/ActionConfirmationModal';
 import ErrorMsg from '../components/ErrorMsg';
+import useMediaQuery from '../hooks/useMediaQuery';
 
 /* ── design tokens (consistent with Dashboard) ── */
 const C = {
@@ -44,6 +45,7 @@ const Input = (props) => (
 );
 
 const EditProfile = () => {
+  const { isMobile } = useMediaQuery();
   const { user, updateProfile, requestOTP, secureUpdate, uploadAvatar, loading } = useAuthStore();
   const navigate = useNavigate();
 
@@ -149,7 +151,7 @@ const EditProfile = () => {
           <ArrowLeft style={{ width: 16, height: 16 }} /> Back to Dashboard
         </button>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '22rem 1fr', gap: '2rem', alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '22rem 1fr', gap: '2rem', alignItems: 'start' }}>
           
           {/* SIDEBAR */}
           <motion.div {...fadeUp(0)} style={{
@@ -204,7 +206,7 @@ const EditProfile = () => {
               </div>
 
               <form onSubmit={handleProfileSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1.5rem' }}>
                   <div>
                     <Label>Full Name</Label>
                     <Input value={profileData.full_name} onChange={e => setProfileData({...profileData, full_name: e.target.value})} />
@@ -225,7 +227,7 @@ const EditProfile = () => {
               </form>
             </motion.div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1.5rem' }}>
               
               {/* CONTACT UPDATES */}
               <motion.div {...fadeUp(0.1)} style={{ background: C.bgCard, borderRadius: C.r2xl, padding: '2rem', border: `1px solid ${C.bSoft}` }}>

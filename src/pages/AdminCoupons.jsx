@@ -8,6 +8,7 @@ import api from '../api/axios';
 import toast from 'react-hot-toast';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 import Pagination from '../components/Pagination';
+import useMediaQuery from '../hooks/useMediaQuery';
 
 const STATUS_COLOR = {
   active: { bg: '#ecfdf5', color: '#059669' },
@@ -17,6 +18,7 @@ const STATUS_COLOR = {
 
 const AdminCoupons = () => {
   useDocumentTitle('Eraya Admin — Coupons');
+  const { isMobile } = useMediaQuery();
   const [coupons, setCoupons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -369,13 +371,15 @@ const AdminCoupons = () => {
             </p>
           </div>
         ) : (
-          <div>
-            {/* Table header */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr 1fr 1fr auto', gap: 0, padding: '0.75rem 1.5rem', background: '#f8fafc', borderBottom: '1px solid #f1f5f9' }}>
-              {['Code', 'Type', 'Discount', 'Min. Cart', 'Expires', 'Status', ''].map((h) => (
-                <span key={h} style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{h}</span>
-              ))}
-            </div>
+          <div style={{ background: '#fff', borderRadius: '1.5rem', border: '1px solid #f1f5f9', overflow: 'hidden' }}>
+            <div className="table-scroll-wrapper">
+              <div style={{ minWidth: '700px' }}>
+                {/* Table header */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr 1fr 1fr auto', gap: 0, padding: '0.75rem 1.5rem', background: '#f8fafc', borderBottom: '1px solid #f1f5f9' }}>
+                  {['Code', 'Type', 'Discount', 'Min. Cart', 'Expires', 'Status', ''].map((h) => (
+                    <span key={h} style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{h}</span>
+                  ))}
+                </div>
 
             <AnimatePresence>
               {paginatedCoupons.map((coupon, idx) => {
@@ -491,6 +495,8 @@ const AdminCoupons = () => {
               })}
             </AnimatePresence>
           </div>
+        </div>
+      </div>
         )}
       </div>
 

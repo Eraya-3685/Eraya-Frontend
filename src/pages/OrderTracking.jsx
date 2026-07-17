@@ -9,6 +9,7 @@ import {
 import api, { getImageUrl } from '../api/axios';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 import { Toaster } from 'react-hot-toast';
+import useMediaQuery from '../hooks/useMediaQuery';
 
 const statusMap = {
   Pending: { color: '#f59e0b', bg: '#fef3c7', icon: Clock, label: 'Order received', desc: 'We have received your order and it is awaiting confirmation.' },
@@ -91,6 +92,7 @@ const OrderTrackbar = ({ status }) => {
 
 const OrderTracking = () => {
   useDocumentTitle('Track your order');
+  const { isMobile } = useMediaQuery();
   const { id } = useParams();
   const navigate = useNavigate();
   const [order, setOrder] = useState(null);
@@ -147,10 +149,10 @@ const OrderTracking = () => {
   const config = statusMap[currentStatus] || statusMap.Pending;
 
   return (
-    <div style={{ minHeight: '100vh', background: '#fcfcfe', padding: '2rem 1rem 6rem', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: '#fcfcfe', padding: isMobile ? '1rem 0.5rem 4rem' : '2rem 1rem 6rem', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         
-        <button onClick={() => navigate('/profile')} style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', marginBottom: '3rem', padding: 0 }}>
+        <button onClick={() => navigate('/profile')} style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', marginBottom: isMobile ? '1.5rem' : '3rem', padding: 0 }}>
           <div style={{ width: 40, height: 40, background: '#fff', border: '1px solid #f1f5f9', borderRadius: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
             <ChevronLeft style={{ width: 18, height: 18, color: '#0d1117' }} />
           </div>
@@ -158,33 +160,33 @@ const OrderTracking = () => {
         </button>
 
         {/* Header Section */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-end', gap: '2rem', marginBottom: '3rem' }}>
-          <div style={{ flex: '1 1 500px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'flex-end', gap: isMobile ? '1rem' : '2rem', marginBottom: isMobile ? '1.5rem' : '3rem' }}>
+          <div style={{ flex: '1 1 300px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.75rem' }}>
                <span style={{ background: config.bg, color: config.color, padding: '0.4rem 1rem', borderRadius: '2rem', fontSize: '0.72rem', fontWeight: 800 }}>Live update</span>
                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8' }}>ID: #{order.id}</span>
             </div>
-            <h1 style={{ fontSize: '3rem', fontWeight: 900, color: '#0d1117', margin: 0, letterSpacing: '-0.04em', lineHeight: 1.1 }}>
+            <h1 style={{ fontSize: isMobile ? '1.75rem' : '3rem', fontWeight: 900, color: '#0d1117', margin: 0, letterSpacing: '-0.04em', lineHeight: 1.1 }}>
               Your order is <span style={{ color: config.color }}>{config.label}</span>
             </h1>
-            <p style={{ fontSize: '0.95rem', fontWeight: 600, color: '#64748b', marginTop: '1rem', maxWidth: 450 }}>{config.desc}</p>
+            <p style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b', marginTop: '0.5rem', maxWidth: 450 }}>{config.desc}</p>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <p style={{ fontSize: '0.68rem', fontWeight: 700, color: '#94a3b8', marginBottom: '0.5rem' }}>Order placed</p>
-            <p style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0d1117', margin: 0 }}>{new Date(order.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+          <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
+            <p style={{ fontSize: '0.68rem', fontWeight: 700, color: '#94a3b8', marginBottom: '0.25rem' }}>Order placed</p>
+            <p style={{ fontSize: '1.1rem', fontWeight: 900, color: '#0d1117', margin: 0 }}>{new Date(order.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
           </div>
         </div>
 
         {/* Trackbar */}
-        <div style={{ background: '#fff', borderRadius: '3rem', border: '1px solid #f1f5f9', padding: '3rem', marginBottom: '3rem', boxShadow: '0 20px 50px rgba(0,0,0,0.03)', overflowX: 'auto' }}>
+        <div style={{ background: '#fff', borderRadius: isMobile ? '1.5rem' : '3rem', border: '1px solid #f1f5f9', padding: isMobile ? '1.5rem 1rem' : '3rem', marginBottom: isMobile ? '1.5rem' : '3rem', boxShadow: '0 20px 50px rgba(0,0,0,0.03)', overflowX: 'auto' }}>
            <div style={{ minWidth: 600 }}>
              <OrderTrackbar status={currentStatus} />
            </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: isMobile ? '1.5rem' : '2.5rem' }}>
            {/* Left: Summary */}
-           <div style={{ background: '#fff', borderRadius: '2.5rem', border: '1px solid #f1f5f9', padding: '2.5rem', boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
+           <div style={{ background: '#fff', borderRadius: '2.5rem', border: '1px solid #f1f5f9', padding: isMobile ? '1.5rem 1.25rem' : '2.5rem', boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2.5rem' }}>
                  <div style={{ width: 36, height: 36, background: '#f8fafc', borderRadius: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <ShoppingBag style={{ width: 16, height: 16, color: '#0d1117' }} />
@@ -233,8 +235,8 @@ const OrderTracking = () => {
            </div>
 
            {/* Right: Info Cards */}
-           <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
-              <div style={{ background: '#0d1117', borderRadius: '2.5rem', padding: '2.5rem', color: '#fff', position: 'relative', overflow: 'hidden' }}>
+           <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '1.5rem' : '2.5rem' }}>
+              <div style={{ background: '#0d1117', borderRadius: '2.5rem', padding: isMobile ? '1.5rem 1.25rem' : '2.5rem', color: '#fff', position: 'relative', overflow: 'hidden' }}>
                  <h2 style={{ fontSize: '0.75rem', fontWeight: 800, color: 'rgba(255,255,255,0.35)', marginBottom: '2rem' }}>Fulfillment details</h2>
                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                     <div style={{ display: 'flex', gap: '1.25rem' }}>
@@ -260,7 +262,7 @@ const OrderTracking = () => {
                  <div style={{ position: 'absolute', bottom: '-2rem', right: '-2rem', width: 140, height: 140, background: 'linear-gradient(135deg, rgba(255,255,255,0.05), transparent)', borderRadius: '50%' }} />
               </div>
 
-              <div style={{ background: '#fff', borderRadius: '2.5rem', border: '1px solid #f1f5f9', padding: '2.5rem', textAlign: 'center' }}>
+              <div style={{ background: '#fff', borderRadius: '2.5rem', border: '1px solid #f1f5f9', padding: isMobile ? '1.5rem 1.25rem' : '2.5rem', textAlign: 'center' }}>
                  <div style={{ width: 56, height: 56, background: '#f8fafc', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
                     <AlertCircle style={{ width: 24, height: 24, color: '#0d1117' }} />
                  </div>

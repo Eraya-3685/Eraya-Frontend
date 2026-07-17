@@ -13,6 +13,7 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 import Pagination from '../components/Pagination';
+import useMediaQuery from '../hooks/useMediaQuery';
 
 /* ── design tokens (consistent with Home) ── */
 const C = {
@@ -93,6 +94,7 @@ const OrderTrackbar = ({ status }) => {
 };
 
 const Profile = () => {
+  const { isMobile } = useMediaQuery();
   useDocumentTitle('Eraya — My Dashboard');
   const { user, token, logout, uploadAvatar, fetchProfile } = useAuthStore();
   const [orders, setOrders] = useState([]);
@@ -200,7 +202,7 @@ const Profile = () => {
 
         {/* ── BUYER STATS ── */}
         <motion.div {...fadeUp(0.05)} style={{
-          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.5rem'
+          display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.5rem'
         }}>
           {[
             {
@@ -241,7 +243,7 @@ const Profile = () => {
           ))}
         </motion.div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 18rem', gap: '1.5rem', alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 18rem', gap: '1.5rem', alignItems: 'start' }}>
           
           {/* ── LEFT: ORDERS ── */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>

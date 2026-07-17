@@ -4,8 +4,10 @@ import { User, Mail, Phone, MapPin, Camera, Save, Shield, UserCircle, Settings, 
 import api, { getImageUrl } from '../api/axios';
 import useAuthStore from '../store/useAuthStore';
 import toast from 'react-hot-toast';
+import useMediaQuery from '../hooks/useMediaQuery';
 
 const AdminProfile = () => {
+  const { isMobile } = useMediaQuery();
   const { user, updateProfile, uploadAvatar, fetchProfile } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
@@ -96,16 +98,16 @@ const AdminProfile = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem', paddingBottom: '5rem' }}>
       
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-           <h1 style={{ fontSize: '2.5rem', fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.03em' }}>My Profile</h1>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'flex-end', gap: '1rem' }}>
+           <h1 style={{ fontSize: isMobile ? '1.75rem' : '2.5rem', fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.03em' }}>My Profile</h1>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '400px 1fr', gap: '2.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '400px 1fr', gap: isMobile ? '1.5rem' : '2.5rem' }}>
          
          {/* Sidebar Profile Card */}
          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-            <div style={{ background: '#fff', borderRadius: '3rem', border: '1px solid #f1f5f9', padding: '3rem', boxShadow: '0 10px 30px rgba(0,0,0,0.02)', textAlign: 'center' }}>
-               <div style={{ position: 'relative', width: 160, height: 160, margin: '0 auto 2rem' }}>
+            <div style={{ background: '#fff', borderRadius: isMobile ? '1.5rem' : '3rem', border: '1px solid #f1f5f9', padding: isMobile ? '1.5rem 1.25rem' : '3rem', boxShadow: '0 10px 30px rgba(0,0,0,0.02)', textAlign: 'center' }}>
+               <div style={{ position: 'relative', width: 160, height: 160, margin: '0 auto 1.5rem' }}>
                   <div style={{ width: '100%', height: '100%', borderRadius: '4rem', overflow: 'hidden', border: '8px solid #fff', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}>
                      {user?.avatar_url ? <img src={getImageUrl(user.avatar_url)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : <div style={{ width: '100%', height: '100%', background: '#0f172a', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem', fontWeight: 900 }}>{user?.full_name?.charAt(0)}</div>}
                   </div>
@@ -132,7 +134,7 @@ const AdminProfile = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
              
              {/* Tab Buttons */}
-             <div style={{ display: 'flex', gap: '1rem', background: '#f8fafc', padding: '0.5rem', borderRadius: '1.5rem', border: '1px solid #f1f5f9', alignSelf: 'flex-start' }}>
+             <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '0.5rem', background: '#f8fafc', padding: '0.5rem', borderRadius: isMobile ? '1rem' : '1.5rem', border: '1px solid #f1f5f9', alignSelf: isMobile ? 'stretch' : 'flex-start' }}>
                 <button
                    type="button"
                    onClick={() => setActiveTab('account')}
@@ -165,14 +167,14 @@ const AdminProfile = () => {
 
              {/* Account Information Tab Content */}
              {activeTab === 'account' && (
-                <div style={{ background: '#fff', borderRadius: '3rem', border: '1px solid #f1f5f9', padding: '3.5rem', boxShadow: '0 10px 30px rgba(0,0,0,0.02)' }}>
+                <div style={{ background: '#fff', borderRadius: isMobile ? '1.5rem' : '3rem', border: '1px solid #f1f5f9', padding: isMobile ? '1.5rem 1.25rem' : '3.5rem', boxShadow: '0 10px 30px rgba(0,0,0,0.02)' }}>
                    <div style={{ marginBottom: '3rem' }}>
                       <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', margin: '0 0 0.5rem' }}>Account Information</h3>
                       <p style={{ fontSize: '0.85rem', fontWeight: 600, color: '#94a3b8', margin: 0 }}>Update your personal details and contact information</p>
                    </div>
 
                    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? '1rem' : '2rem' }}>
                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                             <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', marginLeft: '1rem' }}>Full Name</label>
                             <input type="text" value={form.full_name} onChange={(e) => setForm({...form, full_name: e.target.value})} style={{ width: '100%', background: '#f8f9fc', border: '1px solid #f1f5f9', padding: '1.25rem 1.75rem', borderRadius: '1.5rem', fontSize: '0.9rem', fontWeight: 700, outline: 'none' }} />
@@ -202,7 +204,7 @@ const AdminProfile = () => {
 
              {/* Password Section Tab Content */}
              {activeTab === 'password' && (
-                <div style={{ background: '#fff', borderRadius: '3rem', border: '1px solid #f1f5f9', padding: '3.5rem', boxShadow: '0 10px 30px rgba(0,0,0,0.02)' }}>
+                <div style={{ background: '#fff', borderRadius: isMobile ? '1.5rem' : '3rem', border: '1px solid #f1f5f9', padding: isMobile ? '1.5rem 1.25rem' : '3.5rem', boxShadow: '0 10px 30px rgba(0,0,0,0.02)' }}>
                    <div style={{ marginBottom: '3rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
                       <div style={{ width: 42, height: 42, background: '#fffbeb', borderRadius: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                          <Lock style={{ width: 20, height: 20, color: '#f59e0b' }} />
@@ -238,7 +240,7 @@ const AdminProfile = () => {
                          </div>
                       )}
 
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? '1rem' : '2rem' }}>
                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                             <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', marginLeft: '1rem' }}>New Password</label>
                             <div style={{ position: 'relative' }}>

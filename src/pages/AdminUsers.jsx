@@ -462,7 +462,8 @@ const AdminUsers = () => {
 
       {/* Table */}
       <div style={{ background: '#fff', borderRadius: '1.75rem', border: '1px solid #f1f5f9', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.02)' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+        <div className="table-scroll-wrapper">
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
             <tr style={{ background: '#f8f9fc', borderBottom: '1px solid #f1f5f9' }}>
               <th style={{ padding: '1rem 1.5rem', fontSize: '0.72rem', fontWeight: 800, color: '#64748b' }}>
@@ -600,6 +601,7 @@ const AdminUsers = () => {
           </tbody>
         </table>
       </div>
+    </div>
 
       <Pagination
         page={page}

@@ -4,8 +4,10 @@ import { Sparkles, X, Send, Bot, User, RotateCcw, ShoppingBag, HelpCircle, Trend
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import useAuthStore from '../store/useAuthStore';
+import useMediaQuery from '../hooks/useMediaQuery';
 
 const AIChatBot = () => {
+  const { isMobile } = useMediaQuery();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -185,13 +187,13 @@ const AIChatBot = () => {
             transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
             style={{
               position: 'fixed',
-              bottom: buttonBottom + (isOpen && !hasMainChat ? 0 : (isOpen ? -72 : 0)),
-              right: 24,
-              width: Math.min(400, window.innerWidth - 48),
-              height: Math.min(600, window.innerHeight - 48),
+              bottom: isMobile ? 0 : buttonBottom + (isOpen && !hasMainChat ? 0 : (isOpen ? -72 : 0)),
+              right: isMobile ? 0 : 24,
+              width: isMobile ? '100vw' : Math.min(400, window.innerWidth - 48),
+              height: isMobile ? '100vh' : Math.min(600, window.innerHeight - 48),
               background: '#ffffff',
-              borderRadius: '1.5rem',
-              boxShadow: '0 25px 60px -12px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.05)',
+              borderRadius: isMobile ? 0 : '1.5rem',
+              boxShadow: isMobile ? 'none' : '0 25px 60px -12px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.05)',
               display: 'flex',
               flexDirection: 'column',
               overflow: 'hidden',

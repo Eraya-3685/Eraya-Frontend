@@ -9,9 +9,11 @@ import useDocumentTitle from '../hooks/useDocumentTitle';
 import OTPInput from '../components/OTPInput';
 import useSettingsStore from '../store/useSettingsStore';
 import { getImageUrl } from '../api/axios';
+import useMediaQuery from '../hooks/useMediaQuery';
 
 const Login = () => {
   useDocumentTitle('Login | Eraya');
+  const { isMobile } = useMediaQuery();
   const [email, setEmail]           = useState('');
   const [password, setPassword]     = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -142,7 +144,7 @@ const Login = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f0f2f5', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+    <div style={{ minHeight: '100vh', background: '#f0f2f5', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isMobile ? '1rem' : '2rem' }}>
       {/* Soft background orbs */}
       <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
         <div style={{ position: 'absolute', top: '-10%', left: '-5%', width: '40%', height: '40%', background: 'rgba(204,255,0,0.12)', borderRadius: '50%', filter: 'blur(80px)' }} />

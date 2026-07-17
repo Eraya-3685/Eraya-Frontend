@@ -13,6 +13,7 @@ import useAuthStore from '../store/useAuthStore';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 import ProductCard from '../components/ProductCard';
 import { HomeSkeleton } from '../components/Skeleton';
+import useMediaQuery from '../hooks/useMediaQuery';
 
 /* ── tokens ── */
 const C = {
@@ -32,6 +33,7 @@ const fadeUp = (delay = 0) => ({
 
 export default function Home() {
   useDocumentTitle('Eraya — Curated Collection');
+  const { isMobile, isTablet } = useMediaQuery();
   const [products, setProducts] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -85,7 +87,7 @@ export default function Home() {
       {/* ══════════════════════════════════════════════
           HERO SECTION
       ══════════════════════════════════════════════ */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '1.25rem', alignItems: 'stretch', minHeight: '360px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 340px', gap: '1.25rem', alignItems: 'stretch', minHeight: isMobile ? 'auto' : '360px' }}>
 
         {/* Hero Card */}
         <motion.div {...fadeUp(0)} style={{
@@ -94,7 +96,7 @@ export default function Home() {
           border: `1px solid ${C.bSoft}`,
           overflow: 'hidden',
           position: 'relative',
-          padding: '2.5rem 2.75rem 2rem',
+          padding: isMobile ? '1.5rem 1.25rem 1.25rem' : '2.5rem 2.75rem 2rem',
           display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
         }}>
           {/* Decorative circles */}
@@ -110,9 +112,9 @@ export default function Home() {
               transition={{ duration: 0.4, ease: 'easeInOut' }}
               style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '1.5rem' }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'column-reverse' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'center' : 'flex-start', gap: isMobile ? '1rem' : 0 }}>
                 {/* Left text */}
-                <div style={{ maxWidth: '52%', position: 'relative', zIndex: 2 }}>
+                <div style={{ maxWidth: isMobile ? '100%' : '52%', position: 'relative', zIndex: 2 }}>
                   {/* Badge */}
                   <div style={{
                     display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
@@ -173,7 +175,7 @@ export default function Home() {
 
                 {/* Floating product image */}
                 {activeHero && (
-                  <div style={{ width: '44%', height: 260, position: 'relative', zIndex: 2, flexShrink: 0 }}>
+                  <div style={{ width: isMobile ? '100%' : '44%', height: isMobile ? 200 : 260, position: 'relative', zIndex: 2, flexShrink: 0 }}>
                     <img
                       src={getImageUrl(primaryImg(activeHero.images))}
                       alt={activeHero.name}
@@ -214,7 +216,7 @@ export default function Home() {
         </motion.div>
 
         {/* Right sidebar */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        <div style={{ display: isMobile ? 'grid' : 'flex', gridTemplateColumns: isMobile ? '1fr 1fr' : undefined, flexDirection: isMobile ? undefined : 'column', gap: '1.25rem' }}>
 
           {/* Blue users card */}
           <motion.div {...fadeUp(0.05)} style={{
@@ -292,7 +294,7 @@ export default function Home() {
       {/* ══════════════════════════════════════════════
           PERKS STRIP
       ══════════════════════════════════════════════ */}
-      <motion.div {...fadeUp(0.06)} style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+      <motion.div {...fadeUp(0.06)} style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? '0.75rem' : '1rem' }}>
         {[
           { icon: Truck, label: 'Free Delivery', sub: 'On orders over ৳999' },
           { icon: Shield, label: 'Secure Payment', sub: 'SSL encrypted checkout' },
@@ -364,7 +366,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 300px', gap: '1rem', alignItems: 'stretch', minHeight: '280px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : isTablet ? '1fr 1fr' : '1fr 1fr 300px', gap: '1rem', alignItems: 'stretch', minHeight: isMobile ? 'auto' : '280px' }}>
           {/* Big card 1 */}
           {products[0] && (
             <motion.div {...fadeUp(0.04)} style={{ position: 'relative', borderRadius: '1.75rem', overflow: 'hidden', background: C.bgMuted, border: `1px solid ${C.bSoft}` }}>
@@ -479,7 +481,7 @@ export default function Home() {
           </Link>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(200px, 1fr))', gap: isMobile ? '0.6rem' : '1rem' }}>
           {allProducts.map(p => (
             <ProductCard
               key={p.id}
@@ -498,9 +500,9 @@ export default function Home() {
           CTA NEWSLETTER
       ══════════════════════════════════════════════ */}
       <motion.div {...fadeUp(0.06)} style={{
-        background: C.t900, borderRadius: '2rem',
-        padding: '2.5rem 3rem',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '2rem',
+        background: C.t900, borderRadius: isMobile ? '1.5rem' : '2rem',
+        padding: isMobile ? '1.75rem 1.25rem' : '2.5rem 3rem',
+        display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', justifyContent: 'space-between', gap: isMobile ? '1.5rem' : '2rem',
         position: 'relative', overflow: 'hidden',
       }}>
         <div style={{ position: 'absolute', top: '-50%', right: '20%', width: 300, height: 300, borderRadius: '50%', background: `${C.lime}08`, filter: 'blur(60px)', pointerEvents: 'none' }} />
@@ -510,14 +512,14 @@ export default function Home() {
             Get exclusive drops &<br />early access deals.
           </h2>
         </div>
-        <div style={{ display: 'flex', gap: '0.6rem', flexShrink: 0, position: 'relative', zIndex: 1 }}>
+        <div style={{ display: 'flex', gap: '0.6rem', flexShrink: 0, position: 'relative', zIndex: 1, flexDirection: isMobile ? 'column' : 'row' }}>
           <input
             type="email"
             placeholder="your@email.com"
             style={{
               background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.14)',
               borderRadius: 9999, padding: '0.8rem 1.5rem', fontSize: '0.82rem',
-              fontWeight: 500, color: '#fff', outline: 'none', width: 260, fontFamily: 'inherit',
+              fontWeight: 500, color: '#fff', outline: 'none', width: isMobile ? '100%' : 260, fontFamily: 'inherit',
             }}
           />
           <button className="btn-lime" style={{ height: 48, fontSize: '0.82rem' }}>

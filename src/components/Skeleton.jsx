@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import useMediaQuery from '../hooks/useMediaQuery';
 
 const C = {
   t900: '#0d1117',
@@ -82,6 +83,7 @@ export function ProductCardSkeleton() {
 
 // Shimmering Details Layout to match ProductDetails.jsx
 export function ProductDetailsSkeleton() {
+  const { isMobile } = useMediaQuery();
   return (
     <div style={{ paddingBottom: '4rem' }}>
       {/* Breadcrumbs */}
@@ -98,15 +100,15 @@ export function ProductDetailsSkeleton() {
         background: '#fff',
         border: `1px solid ${C.bSoft}`,
         borderRadius: '2rem',
-        padding: '2rem',
+        padding: isMobile ? '1.25rem' : '2rem',
         boxShadow: '0 2px 24px -6px rgba(0,0,0,0.08)',
         marginBottom: '1.25rem',
       }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? '1.5rem' : '2.5rem' }}>
           {/* Gallery mock (left) */}
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', flexDirection: isMobile ? 'column-reverse' : 'row', gap: '0.75rem' }}>
             {/* Thumbnails */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: 56 }}>
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'row' : 'column', gap: '0.5rem', width: isMobile ? '100%' : 56 }}>
               {[1, 2, 3].map(i => (
                 <Skeleton key={i} width="56px" height="56px" borderRadius="0.75rem" />
               ))}
@@ -163,10 +165,11 @@ export function ProductDetailsSkeleton() {
 
 // Shimmering Home Layout to match Home.jsx
 export function HomeSkeleton() {
+  const { isMobile, isTablet } = useMediaQuery();
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
       {/* Hero section mock */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '1.25rem', minHeight: '360px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 340px', gap: '1.25rem', minHeight: isMobile ? 'auto' : '360px' }}>
         {/* Left Hero Card */}
         <div style={{
           background: C.bgMuted,
@@ -176,6 +179,7 @@ export function HomeSkeleton() {
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
+          padding: isMobile ? '1.5rem 1.25rem' : '2.5rem',
         }}>
           <div>
             <Skeleton width="120px" height="0.8rem" style={{ marginBottom: '1rem' }} />
@@ -186,7 +190,7 @@ export function HomeSkeleton() {
         </div>
 
         {/* Right Sidebar Quick Lists */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        <div style={{ display: isMobile ? 'grid' : 'flex', gridTemplateColumns: isMobile ? '1fr 1fr' : undefined, flexDirection: isMobile ? undefined : 'column', gap: '1.25rem' }}>
           {/* Blue Users card mock */}
           <div style={{
             background: '#3b82f6',
@@ -227,7 +231,7 @@ export function HomeSkeleton() {
       </div>
 
       {/* Perks Strip mock */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? '0.75rem' : '1rem' }}>
         {[1, 2, 3].map(i => (
           <div key={i} style={{
             background: '#fff',
@@ -253,8 +257,8 @@ export function HomeSkeleton() {
           <Skeleton width="120px" height="1.5rem" />
           <Skeleton width="60px" height="1rem" />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '0.85rem' }}>
-          {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(4, 1fr)' : 'repeat(8, 1fr)', gap: '0.85rem' }}>
+          {(isMobile ? [1, 2, 3, 4] : [1, 2, 3, 4, 5, 6, 7, 8]).map(i => (
             <div key={i} style={{
               background: '#fff',
               border: `1px solid ${C.bSoft}`,
@@ -277,7 +281,7 @@ export function HomeSkeleton() {
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
           <Skeleton width="140px" height="1.5rem" />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 300px', gap: '1rem', minHeight: '280px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : isTablet ? '1fr 1fr' : '1fr 1fr 300px', gap: '1rem', minHeight: isMobile ? 'auto' : '280px' }}>
           <div style={{ background: C.bgMuted, borderRadius: '1.75rem', border: `1px solid ${C.bSoft}` }}>
             <div className="skeleton-shimmer" style={{ width: '100%', height: '100%' }} />
           </div>

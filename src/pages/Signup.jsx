@@ -8,9 +8,11 @@ import { supabase } from '../supabase';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 import useSettingsStore from '../store/useSettingsStore';
 import { getImageUrl } from '../api/axios';
+import useMediaQuery from '../hooks/useMediaQuery';
 
 const Signup = () => {
   useDocumentTitle('Create Account | Eraya');
+  const { isMobile } = useMediaQuery();
   const [formData, setFormData] = useState({
     full_name: '',
     email: '',
@@ -74,7 +76,7 @@ const Signup = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f0f2f5', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+    <div style={{ minHeight: '100vh', background: '#f0f2f5', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isMobile ? '1rem' : '2rem' }}>
       {/* Soft background orbs */}
       <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
         <div style={{ position: 'absolute', top: '-10%', right: '-5%', width: '40%', height: '40%', background: 'rgba(204,255,0,0.12)', borderRadius: '50%', filter: 'blur(80px)' }} />
@@ -101,7 +103,7 @@ const Signup = () => {
         </div>
 
         {/* Card */}
-        <div style={{ background: '#fff', borderRadius: '2.5rem', border: '1px solid #eaeef2', boxShadow: '0 20px 60px -15px rgba(0,0,0,0.08)', padding: '2.5rem' }}>
+        <div style={{ background: '#fff', borderRadius: isMobile ? '1.5rem' : '2.5rem', border: '1px solid #eaeef2', boxShadow: '0 20px 60px -15px rgba(0,0,0,0.08)', padding: isMobile ? '1.5rem' : '2.5rem' }}>
           <div style={{ marginBottom: '2rem' }}>
             <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0d1117', margin: '0 0 0.35rem', letterSpacing: '-0.03em' }}>Create Account</h1>
             <p style={{ fontSize: '0.85rem', fontWeight: 500, color: '#94a3b8', margin: 0 }}>Experience the curated collection</p>
@@ -138,7 +140,7 @@ const Signup = () => {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1rem' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: '#64748b', marginBottom: '0.5rem' }}>Password</label>
                 <div style={{ position: 'relative' }}>

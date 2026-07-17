@@ -9,8 +9,10 @@ import toast from 'react-hot-toast';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import Pagination from '../components/Pagination';
+import useMediaQuery from '../hooks/useMediaQuery';
 
 const AdminCategories = () => {
+  const { isMobile } = useMediaQuery();
   const [searchParams, setSearchParams] = useSearchParams();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -312,10 +314,10 @@ const AdminCategories = () => {
              
              <motion.div 
                initial={{ x: '100%' }} 
-               animate={{ x: selectedProductDetails ? (window.innerWidth <= 768 ? 0 : -390) : 0 }} 
+               animate={{ x: selectedProductDetails ? (isMobile ? 0 : -390) : 0 }} 
                exit={{ x: '100%' }} 
                transition={{ type: 'spring', damping: 25, stiffness: 200 }} 
-               style={{ position: 'fixed', right: 0, top: 0, bottom: 0, width: window.innerWidth <= 768 ? '100%' : 380, background: '#fff', boxShadow: '-10px 0 40px rgba(15,23,42,0.1)', zIndex: 999, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}
+               style={{ position: 'fixed', right: 0, top: 0, bottom: 0, width: isMobile ? '100%' : 380, background: '#fff', boxShadow: '-10px 0 40px rgba(15,23,42,0.1)', zIndex: 999, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}
              >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 1.5rem', borderBottom: '1px solid #f1f5f9' }}>
                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -437,7 +439,7 @@ const AdminCategories = () => {
                 animate={{ x: 0 }} 
                 exit={{ x: '100%' }} 
                 transition={{ type: 'spring', damping: 25, stiffness: 200 }} 
-                style={{ position: 'fixed', right: 0, top: 0, bottom: 0, width: window.innerWidth <= 768 ? '100%' : 380, background: '#fff', boxShadow: '-10px 0 40px rgba(15,23,42,0.15)', zIndex: 1001, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}
+                style={{ position: 'fixed', right: 0, top: 0, bottom: 0, width: isMobile ? '100%' : 380, background: '#fff', boxShadow: '-10px 0 40px rgba(15,23,42,0.15)', zIndex: 1001, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 1.5rem', borderBottom: '1px solid #f1f5f9' }}>
                    <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', letterSpacing: '0.05em' }}>Product Details</span>

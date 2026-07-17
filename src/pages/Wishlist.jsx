@@ -10,6 +10,7 @@ import toast from 'react-hot-toast';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 import ConfirmModal from '../components/ConfirmModal';
 import ProductCard from '../components/ProductCard';
+import useMediaQuery from '../hooks/useMediaQuery';
 
 const C = {
   t900:'#0d1117', t700:'#1f2937', t500:'#6b7280', t300:'#adb5bd',
@@ -26,6 +27,7 @@ const fadeUp = (delay = 0) => ({
 });
 
 export default function Wishlist() {
+  const { isMobile } = useMediaQuery();
   useDocumentTitle('My Wishlist | Eraya');
   const { items, toggleWishlist, clearWishlist, syncWishlist } = useWishlistStore();
   const { user }    = useAuthStore();
@@ -112,7 +114,7 @@ export default function Wishlist() {
       </div>
 
       {/* Grid */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(220px, 1fr))', gap:'1.25rem' }}>
+      <div style={{ display:'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(220px, 1fr))', gap: isMobile ? '0.6rem' : '1.25rem' }}>
         <AnimatePresence mode="popLayout">
           {items.map((product, idx) => (
             <motion.div key={product.id} layout {...fadeUp(Math.min(idx, 7) * 0.05)}>

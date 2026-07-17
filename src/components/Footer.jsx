@@ -2,13 +2,20 @@ import { Link } from 'react-router-dom';
 import { Package, Globe, Share2, Link2 } from 'lucide-react';
 import useSettingsStore from '../store/useSettingsStore';
 import { getImageUrl } from '../api/axios';
+import useMediaQuery from '../hooks/useMediaQuery';
 
 export default function Footer() {
   const { settings } = useSettingsStore();
+  const { isMobile, isTablet } = useMediaQuery();
+
   return (
     <footer style={{ background: '#fff', borderTop: '1px solid #eaeef2', marginTop: '3rem' }}>
-      <div style={{ maxWidth: 1400, margin: '0 auto', padding: '3rem 2rem' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 2fr', gap: '3rem' }}>
+      <div style={{ maxWidth: 1400, margin: '0 auto', padding: isMobile ? '2rem 1.25rem' : '3rem 2rem' }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : isTablet ? '1fr 1fr' : '2fr 1fr 1fr 2fr',
+          gap: isMobile ? '2rem' : '3rem',
+        }}>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', textDecoration: 'none' }}>
@@ -68,9 +75,15 @@ export default function Footer() {
           </div>
         </div>
 
-        <div style={{ borderTop: '1px solid #f1f5f9', marginTop: '2.5rem', paddingTop: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+        <div style={{
+          borderTop: '1px solid #f1f5f9', marginTop: '2.5rem', paddingTop: '1.5rem',
+          display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
+          justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center',
+          gap: '1rem',
+        }}>
           <p style={{ fontSize: '0.62rem', fontWeight: 700, color: '#cbd5e1', letterSpacing: '0.2em', margin: 0 }}>© 2026 Eraya. All rights reserved.</p>
-          <div style={{ display: 'flex', gap: '2rem' }}>
+          <div style={{ display: 'flex', gap: isMobile ? '1.25rem' : '2rem' }}>
             {['Privacy','Terms','Cookies'].map(t => (
               <Link key={t} to="#" style={{ fontSize: '0.62rem', fontWeight: 700, color: '#cbd5e1', textDecoration: 'none', letterSpacing: '0.1em', transition: 'color .2s' }}
                 onMouseEnter={e => e.currentTarget.style.color = '#0d1117'}
